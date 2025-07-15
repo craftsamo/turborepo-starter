@@ -126,13 +126,12 @@ log "Created networking service account: $PACKAGE_NAME-net-sa"
 roles=(
   "roles/artifactregistry.admin"
   "roles/run.admin"
-  "roles/run.domainMappingAdmin"
   "roles/iam.serviceAccountUser"
   "roles/iam.serviceAccountTokenCreator"
   "roles/compute.loadBalancerAdmin"
   "roles/compute.networkAdmin"
   "roles/compute.securityAdmin"
-  "roles/certificatemanager.admin"
+  "roles/certificatemanager.owner"
   "roles/dns.admin"
 )
 
