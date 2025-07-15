@@ -13,7 +13,9 @@
     "dev": "turbo run dev --parallel",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "commit": "cz"
+    "commit": "cz",
+    "setup-google-cloud": "./scripts/setup-google-cloud.sh",
+    "gcloud:role.list": "gcloud iam roles list --format=\"table(name, title, description)\""
   },
   "devDependencies": {
     "@commitlint/cli": "^19.6.1",
