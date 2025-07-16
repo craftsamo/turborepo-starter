@@ -174,6 +174,7 @@ services=(
   "domains.googleapis.com"
   "dns.googleapis.com"
   "certificatemanager.googleapis.com"
+  "iamcredentials.googleapis.com"
 )
 
 for service in "${services[@]}"; do
