@@ -168,13 +168,14 @@ log "Added IAM policy binding for application service account (repository)."
 # Enable require services                                                     #
 ###############################################################################
 
-## Enable required services
 services=(
-  "compute.googleapis.com"
-  "domains.googleapis.com"
-  "dns.googleapis.com"
-  "certificatemanager.googleapis.com"
-  "iamcredentials.googleapis.com"
+  "iamcredentials.googleapis.com"     ## Google Auth
+  "compute.googleapis.com"            ## Load balancer
+  "domains.googleapis.com"            ## Cloud domain
+  "dns.googleapis.com"                ## Cloud dns
+  "certificatemanager.googleapis.com" ## Certificate manager
+  "artifactregistry.googleapis.com"   ## Artifact repository
+  "run.googleapis.com"                ## Cloud run
 )
 
 for service in "${services[@]}"; do
