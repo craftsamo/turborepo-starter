@@ -105,7 +105,7 @@ jobs:
           ## System
           export GITHUB_SHA="${{ github.sha }}"
           export CONTAINER_IMAGE="${{ steps.generate_image.outputs.docker_image }}:${{ github.sha }}"
-          export CLOUD_RUN_SERVICE_NAME="${{ inputs.project_name }}-${{ inputs.app_name }}"
+          export CLOUD_RUN_SERVICE_NAME="${{ inputs.project_name }}-${{ inputs.app_name }}-${{ inputs.environment }}"
           export CLOUD_RUN_REVISION_NAME="${{ inputs.project_name }}-${{ inputs.app_name }}-${{ inputs.app_version }}-${GITHUB_SHA::7}"
           export CLOUD_RUN_REVISION_TAG="${{ inputs.environment }}"
           export GOOGLE_CLOUD_PROJECT_ID="${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}"
@@ -119,7 +119,7 @@ jobs:
         uses: google-github-actions/deploy-cloudrun@v2
         timeout-minutes: 5
         with:
-          service: ${{ steps.setup-vars.outputs.service_name }}
+          service: ${{ steps.setup-vars.outputs.service_name }}-${{ inputs.environment }}
           region: ${{ vars.GOOGLE_CLOUD_REGION }}
           metadata: service-${{ inputs.environment }}.yaml
           project_id: ${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}
