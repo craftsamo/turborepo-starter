@@ -10,7 +10,6 @@ metadata:
 spec:
   template:
     metadata:
-      name: ${CLOUD_RUN_REVISION_NAME}
       annotations:
         autoscaling.knative.dev/maxScale: '5'
         autoscaling.knative.dev/minScale: '0'
@@ -32,10 +31,6 @@ spec:
               value: '${GOOGLE_CLOUD_PROJECT_NUMBER}'
             - name: CLOUD_RUN_SERVICE_NAME
               value: '${CLOUD_RUN_SERVICE_NAME}'
-            - name: CLOUD_RUN_REVISION_NAME
-              value: '${CLOUD_RUN_REVISION_NAME}'
-            - name: CLOUD_RUN_REVISION_TAG
-              value: '${CLOUD_RUN_REVISION_TAG}'
             - name: ENVIRONMENT
               value: '${ENVIRONMENT}'
 
