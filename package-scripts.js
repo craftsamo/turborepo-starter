@@ -9,6 +9,7 @@ module.exports = {
     prepare: {
       default: `nps prepare.web`,
       web: `yarn`,
+      docker: "docker compose -f docker-compose.proxy.yml up -d",
       ci: {
         web: `npx turbo prune --scope=web && cd out && yarn install --frozen-lockfile`,
       },
@@ -39,6 +40,7 @@ module.exports = {
     },
     start: {
       web: "docker compose -f docker-compose.web.yml up --build",
+      proxy: "nps prepare.docker",
     },
     dev: {
       default: "npx turbo run dev",
