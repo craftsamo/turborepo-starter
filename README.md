@@ -73,6 +73,7 @@ purposes:
 | [ui](packages/ui/README.md)               | Common UI package.                                     |
 | [types](packages/types/README.md)         | Common types package.                                  |
 | [constants](packages/constants/README.md) | Common constants package.                              |
+| [logger](packages/logger/README.md)       | Common logger package.                                 |
 
 These packages can be added as dependencies in `apps/**` and `packages/**` to
 utilize them.
