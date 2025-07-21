@@ -59,6 +59,9 @@
 - name: "📦package: constants"
   description: "Shared constants package"
   color: "F9D0C4"
+- name: "📦package: logger"
+  description: "Logger specialized for Cloudrun"
+  color: "F9D0C4"
 
 ## Github actions
 - name: "🔄workflow: sync-labels"
