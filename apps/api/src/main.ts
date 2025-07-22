@@ -64,7 +64,7 @@ async function bootstrap() {
       resave: false,
       saveUninitialized: false,
       cookie: {
-        secure: process.env.NODE_ENV === 'production' && process.env.BASE_URL !== 'http://localhost',
+        secure: process.env.NODE_ENV === 'production',
         maxAge: 3600000,
       },
       store: MongoStore.create({
