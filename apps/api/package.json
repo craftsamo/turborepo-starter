@@ -90,11 +90,6 @@
       "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node",
-    "moduleNameMapper": {
-      "^utils/(.*)$": "<rootDir>/utils/$1",
-      "^database/(.*)$": "<rootDir>/database/$1",
-      "^config/(.*)$": "<rootDir>/config/$1"
-    }
+    "testEnvironment": "node"
   }
 }
