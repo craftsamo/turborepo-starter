@@ -9,6 +9,27 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   transpilePackages: ['@workspace/ui'],
 
+  /**
+   * Configures URL rewrites for the application.
+   * If the `CLOUD_RUN_API_SERVICE_URL` environment variable is set,
+   * incoming requests to `/api/:path*` will be proxied to the specified service URL.
+   * Otherwise, no rewrites will be applied.
+   *
+   * @returns {Promise<Array<{ source: string, destination: string }>>}
+   *          An array of rewrite rules or an empty array if no rewrites are applied.
+   */
+  async rewrites() {
+    if (process.env.CLOUD_RUN_API_SERVICE_URL) {
+      return [
+        {
+          source: '/api/:path*',
+          destination: `${process.env.CLOUD_RUN_API_SERVICE_URL}/:path*`,
+        },
+      ];
+    }
+    return [];
+  },
+
   images: {
     remotePatterns: [
       {

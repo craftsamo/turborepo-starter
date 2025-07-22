@@ -33,6 +33,9 @@
 - name: "🌐app: web"
   description: "Web application"
   color: "C5DEF5"
+- name: "🌐app: api"
+  description: "API application"
+  color: "C5DEF5"
 
 ## Workspaces
 - name: "📦package: jest"
