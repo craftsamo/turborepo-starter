@@ -91,11 +91,10 @@ jobs:
           ## Environment variables specific to `apps/web`
           if [ "${{ inputs.app_name }}" == "web" ]; then
             if [ "${{ inputs.environment }}" == "production" ]; then
-              echo "There are no environment variables specific to the production environment."
+              export BASE_URL="https://${{ vars.DOMAIN }}"
             else
-              echo "There are no environment variables specific to the production environment."
+              export BASE_URL="https://dev.${{ vars.DOMAIN }}"
             fi
-            echo "There are no environment variables specific to the web."
           fi
 
           ## NOTE: ...increase as `apps/**` is added
