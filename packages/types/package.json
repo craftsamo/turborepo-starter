@@ -6,9 +6,12 @@
   "devDependencies": {
     "@workspace/eslint": "*",
     "@workspace/prettier": "*",
-    "@workspace/tsconfig": "*"
+    "@workspace/tsconfig": "*",
+    "mongoose": "^8.8.1",
+    "react": "^19.0.0"
   },
   "exports": {
-    "./web": "./src/web/index.ts"
+    "./web": "./src/web/index.ts",
+    "./api": "./src/api/index.ts"
   }
 }
