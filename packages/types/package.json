@@ -15,7 +15,9 @@
     "@workspace/constants": "*",
     "@workspace/eslint": "*",
     "@workspace/prettier": "*",
-    "@workspace/tsconfig": "*"
+    "@workspace/tsconfig": "*",
+    "mongoose": "^8.8.1",
+    "react": "^19.0.0"
   },
   "exports": {
     ".": {
@@ -27,6 +29,11 @@
       "types": "./dist/web/index.d.ts",
       "import": "./dist/web/index.mjs",
       "require": "./dist/web/index.js"
+    },
+    "./api": {
+      "types": "./dist/api/index.d.ts",
+      "import": "./dist/api/index.mjs",
+      "require": "./dist/api/index.js"
     }
   }
 }
