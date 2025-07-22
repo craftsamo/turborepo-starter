@@ -88,10 +88,6 @@ jobs:
 
       - name: Create Service declaration
         run: |
-          APP_NAME="${{ inputs.app_name }}"
-          ENVIRONMENT="${{ inputs.environment }}"
-          PROJECT_NAME="${{ inputs.project_name }}"
-          GOOGLE_CLOUD_PROJECT_ID="${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}"
           SERVICE="${{ inputs.app_name }}-${{ inputs.environment }}"
 
           ## Environment variables specific to `apps/web`
@@ -101,14 +97,18 @@ jobs:
             else
               export BASE_URL="https://dev.${{ vars.DOMAIN }}"
             fi
-            export SERVICE_ACCOUNT="$PROJECT_NAME-cloudrun-sa@$GOOGLE_CLOUD_PROJECT_ID.iam.gserviceaccount.com"
+            export UPSTASH_REDIS_REST_URL="${{ secrets.UPSTASH_REDIS_REST_URL }}"
+            export UPSTASH_REDIS_REST_TOKEN="${{ secrets.UPSTASH_REDIS_REST_TOKEN }}"
             export CLOUD_RUN_API_SERVICE_URL="https://$SERVICE-${{ secrets.GOOGLE_CLOUD_PROJECT_NUMBER }}-${{ vars.GOOGLE_CLOUD_REGION }}.run.app"
           fi
 
           ## Environment variables specific to `apps/api`
-          if [ "$APP_NAME" == "api" ]; then
-            export BASE_URL="https://$SERVICE-${{ secrets.GOOGLE_CLOUD_PROJECT_NUMBER }}-${{ vars.GOOGLE_CLOUD_REGION }}.run.app"
-            export SERVICE_ACCOUNT="$PROJECT_NAME-cloudrun-sa@$GOOGLE_CLOUD_PROJECT_ID.iam.gserviceaccount.com"
+          if [ "${{ inputs.app_name }}" == "api" ]; then
+              export BASE_URL="https://$SERVICE-${{ secrets.GOOGLE_CLOUD_PROJECT_NUMBER }}-${{ vars.GOOGLE_CLOUD_REGION }}.run.app"
+              export MONGODB_USER_NAME="${{ secrets.MONGODB_USER_NAME }}"
+              export MONGODB_USER_PASSWORD="${{ secrets.MONGODB_USER_PASSWORD }}"
+              export MONGODB_HOST_NAME="${{ secrets.MONGODB_HOST_NAME }}"
+              export JWT_SECRET="${{ secrets.JWT_SECRET }}"
           fi
 
           ## NOTE: ...increase as `apps/**` is added
