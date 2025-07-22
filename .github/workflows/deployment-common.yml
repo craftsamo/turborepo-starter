@@ -92,6 +92,7 @@ jobs:
           ENVIRONMENT="${{ inputs.environment }}"
           PROJECT_NAME="${{ inputs.project_name }}"
           GOOGLE_CLOUD_PROJECT_ID="${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}"
+          SERVICE="${{ inputs.app_name }}-${{ inputs.environment }}"
 
           ## Environment variables specific to `apps/web`
           if [ "$APP_NAME" == "web" ]; then
@@ -100,6 +101,13 @@ jobs:
             else
               export BASE_URL="https://dev.${{ vars.DOMAIN }}"
             fi
+            export SERVICE_ACCOUNT="$PROJECT_NAME-cloudrun-sa@$GOOGLE_CLOUD_PROJECT_ID.iam.gserviceaccount.com"
+            export CLOUD_RUN_API_SERVICE_URL="https://$SERVICE-${{ secrets.GOOGLE_CLOUD_PROJECT_NUMBER }}-${{ vars.GOOGLE_CLOUD_REGION }}.run.app"
+          fi
+
+          ## Environment variables specific to `apps/api`
+          if [ "$APP_NAME" == "api" ]; then
+            export BASE_URL="https://$SERVICE-${{ secrets.GOOGLE_CLOUD_PROJECT_NUMBER }}-${{ vars.GOOGLE_CLOUD_REGION }}.run.app"
             export SERVICE_ACCOUNT="$PROJECT_NAME-cloudrun-sa@$GOOGLE_CLOUD_PROJECT_ID.iam.gserviceaccount.com"
           fi
 
@@ -135,6 +143,13 @@ jobs:
           if [ "${{ inputs.app_name }}" == "web" ]; then
             MAP["UPSTASH_REDIS_REST_URL"]="${{ secrets.UPSTASH_REDIS_REST_URL_SECRET }}"
             MAP["UPSTASH_REDIS_REST_TOKEN"]="${{ secrets.UPSTASH_REDIS_REST_TOKEN_SECRET }}"
+          fi
+
+          if [ "${{ inputs.app_name }}" == "api" ]; then
+            MAP["MONGODB_USER_NAME"]="${{ secrets.MONGODB_USER_NAME }}"
+            MAP["MONGODB_USER_PASSWORD"]="${{ secrets.MONGODB_USER_PASSWORD }}"
+            MAP["MONGODB_HOST_NAME"]="${{ secrets.MONGODB_HOST_NAME }}"
+            MAP["JWT_SECRET"]="${{ secrets.JWT_SECRET }}"
           fi
 
           for name in "${!MAP[@]}"; do

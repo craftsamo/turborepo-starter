@@ -25,11 +25,41 @@ const MaximumRetryAttemptsExceeded = {
   notice: 'The maximum number of operation attempts has been exceeded. Please try again after some time.',
 } as const;
 
+const UnknownAccount = {
+  log: 'An account specified in the `UserDocument` does not exist.',
+  notice: 'The specified account could not be found.',
+} as const;
+
+const AlreadyAccount = {
+  log: 'The specified account already exists in the `UserDocument`, so the creation failed.',
+  notice: 'The specified account already exists.',
+} as const;
+
+const InvalidEmail = {
+  log: 'The specified email address is invalid.',
+  notice: 'The specified email address is invalid.',
+} as const;
+
+const InvalidPassword = {
+  log: 'The specified password is invalid.',
+  notice: 'The specified password is invalid.',
+} as const;
+
+const MissingUserPassword = {
+  log: 'The `password` was not set in the specified `User` document. Please review the implementation.',
+  notice: 'A problem has occurred.',
+} as const;
+
 export const ErrorMessage: Record<ErrorCode, ErrorMessage> = {
   [ErrorCode.General]: General,
   [ErrorCode.InvalidBody]: InvalidBody,
   [ErrorCode.InvalidParameter]: InvalidParameter,
   [ErrorCode.MaximumRetryAttemptsExceeded]: MaximumRetryAttemptsExceeded,
+  [ErrorCode.UnknownAccount]: UnknownAccount,
+  [ErrorCode.AlreadyAccount]: AlreadyAccount,
+  [ErrorCode.InvalidEmail]: InvalidEmail,
+  [ErrorCode.InvalidPassword]: InvalidPassword,
+  [ErrorCode.MissingUserPassword]: MissingUserPassword,
 } as const;
 
 const NodeError = {
