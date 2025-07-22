@@ -111,6 +111,13 @@ jobs:
           ## Environment variables specific to `apps/api`
           if [ "$APP_NAME" == "api" ]; then
             export SERVICE_ACCOUNT="$PROJECT_NAME-cloudrun-sa@$GOOGLE_CLOUD_PROJECT_ID.iam.gserviceaccount.com"
+            export CLOUD_RUN_API_SERVICE_URL="https://$SERVICE-${{ secrets.GOOGLE_CLOUD_PROJECT_NUMBER }}-${{ vars.GOOGLE_CLOUD_REGION }}.run.app"
+          fi
+
+          ## Environment variables specific to `apps/api`
+          if [ "$APP_NAME" == "api" ]; then
+            export BASE_URL="https://$SERVICE-${{ secrets.GOOGLE_CLOUD_PROJECT_NUMBER }}-${{ vars.GOOGLE_CLOUD_REGION }}.run.app"
+            export SERVICE_ACCOUNT="$PROJECT_NAME-cloudrun-sa@$GOOGLE_CLOUD_PROJECT_ID.iam.gserviceaccount.com"
           fi
 
           ## NOTE: ...increase as `apps/**` is added
