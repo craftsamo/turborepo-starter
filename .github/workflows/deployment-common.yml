@@ -88,18 +88,26 @@ jobs:
 
       - name: Create Service declaration
         run: |
-          ## Application
+          ## Environment variables specific to `apps/web`
           if [ "${{ inputs.app_name }}" == "web" ]; then
-            ## Web
+            if [ "${{ inputs.environment }}" == "production" ]; then
+              echo "There are no environment variables specific to the production environment."
+            else
+              echo "There are no environment variables specific to the production environment."
+            fi
             echo "There are no environment variables specific to the web."
           fi
 
-          ## Common
+          ## NOTE: ...increase as `apps/**` is added
+
+          ## Common environment variables by mode
           if [ "${{ inputs.environment }}" == "production" ]; then
             echo "There are no environment variables specific to the production environment."
           else
             echo "There are no environment variables specific to the development environment."
           fi
+
+          ## Common environment variables
           export LOG_FORMAT="json"
 
           ## System
