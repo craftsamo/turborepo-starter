@@ -37,6 +37,8 @@ spec:
             ## Application
             - name: LOG_FORMAT
               value: '${LOG_FORMAT}'
+            - name: BASE_URL
+              value: '${BASE_URL}'
           startupProbe:
             httpGet:
               path: /
