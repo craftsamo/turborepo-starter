@@ -163,6 +163,13 @@ jobs:
             MAP["JWT_SECRET"]="${{ secrets.JWT_SECRET }}"
           fi
 
+          if [ "${{ inputs.app_name }}" == "api" ]; then
+            MAP["MONGODB_USER_NAME"]="${{ secrets.MONGODB_USER_NAME }}"
+            MAP["MONGODB_USER_PASSWORD"]="${{ secrets.MONGODB_USER_PASSWORD }}"
+            MAP["MONGODB_HOST_NAME"]="${{ secrets.MONGODB_HOST_NAME }}"
+            MAP["JWT_SECRET"]="${{ secrets.JWT_SECRET }}"
+          fi
+
           for name in "${!MAP[@]}"; do
             val="${MAP[$name]}"
             if gcloud secrets describe "$name" --project="$GOOGLE_CLOUD_PROJECT_ID" >/dev/null 2>&1; then
