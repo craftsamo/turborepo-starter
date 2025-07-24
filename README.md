@@ -34,9 +34,7 @@ configurations.
 1. **Clone the repository**
 
 ```sh
-- [Logger Usage](#logger-usage)
 git clone https://github.com/itou-rui/turborepo-starter.git
-
 ```
 
 To clone a specific branch, use:
