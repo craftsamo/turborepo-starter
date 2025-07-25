@@ -3051,9 +3051,9 @@
     "@upstash/core-analytics" "^0.0.10"
 
 "@upstash/redis@^1.28.3", "@upstash/redis@^1.35.1":
-  version "1.35.3"
-  resolved "https://registry.yarnpkg.com/@upstash/redis/-/redis-1.35.3.tgz#7b383b6a8af57e619c054bdccdb7a6159860cdf5"
-  integrity sha512-hSjv66NOuahW3MisRGlSgoszU2uONAY2l5Qo3Sae8OT3/Tng9K+2/cBRuyPBX8egwEGcNNCF9+r0V6grNnhL+w==
+  version "1.35.1"
+  resolved "https://registry.yarnpkg.com/@upstash/redis/-/redis-1.35.1.tgz#6c34b914d1b85e14c62da95bfd9e3afee15795dd"
+  integrity sha512-sIMuAMU9IYbE2bkgDby8KLoQKRiBMXn0moXxqLvUmQ7VUu2CvulZLtK8O0x3WQZFvvZhU5sRC2/lOVZdGfudkA==
   dependencies:
     uncrypto "^0.1.3"
 
