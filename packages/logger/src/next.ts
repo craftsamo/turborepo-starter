@@ -5,6 +5,10 @@ import type { LogContext, LoggerOptions } from './types';
  * A structured logger for NextJS applications.
  */
 export class NextStructuredLogger extends BaseLogger {
+  protected print(str: string) {
+    console.log(str);
+  }
+
   /**
    * Creates an instance of NextStructuredLogger.
    * @param options - The options for the logger.
