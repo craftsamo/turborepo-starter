@@ -21,6 +21,8 @@ env:
   GOOGLE_CLOUD_PROJECT_NUMBER: ${{ secrets.GOOGLE_CLOUD_PROJECT_NUMBER }}
   GOOGLE_CLOUD_IDENTITY_POOL_ID: ${{ secrets.GOOGLE_CLOUD_IDENTITY_POOL_ID }}
   GOOGLE_CLOUD_IDENTITY_PROVIDER_ID: ${{ secrets.GOOGLE_CLOUD_IDENTITY_PROVIDER_ID }}
+  UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
+  UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
 
 jobs:
   #############################################################################
