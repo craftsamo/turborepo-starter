@@ -41,6 +41,10 @@ spec:
               value: '${BASE_URL}'
             - name: DISCORD_BOT_TOKEN
               value: '{DISCORD_BOT_TOKEN}'
+            - name: DISCORD_CLIENT_ID
+              value: '${DISCORD_CLIENT_ID}'
+            - name: DISCORD_CLIENT_SECRET
+              value: '${DISCORD_CLIENT_SECRET}'
 
             ## Secrets (from Secret Manager)
             - name: MONGODB_USER_NAME
