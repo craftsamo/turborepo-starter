@@ -6,6 +6,8 @@ import { CONFIG_DATABASE, DatabaseConfig, databaseConfig } from '../config/datab
 import { validationSchemaForEnv } from '../config/env-validation';
 import { UsersModule } from './users';
 import { AuthModule } from './auth';
+import { DiscordModule } from './discord';
+import { GuildsModule } from './guilds';
 
 @Module({
   imports: [
@@ -36,8 +38,32 @@ import { AuthModule } from './auth';
       },
       inject: [ConfigService],
     }),
+    MongooseModule.forRootAsync({
+      imports: [ConfigModule],
+      connectionName: 'discord',
+      useFactory: async (configService: ConfigService) => {
+        const baseConfig = configService.get<DatabaseConfig>(CONFIG_DATABASE)!.discord;
+        const logger = new Logger(AppModule.name);
+        const formatMesssge = (operation: string) => `${operation} to discord database (${baseConfig.connectionName})`;
+        return {
+          uri: baseConfig.uri,
+          ...baseConfig.options,
+          onConnectionCreate: (connection: Connection) => {
+            connection.on('connected', () => logger.log(formatMesssge('Connected')));
+            connection.on('open', () => logger.log(formatMesssge('Opened')));
+            connection.on('disconnected', () => logger.warn(formatMesssge('Disconnected')));
+            connection.on('reconnected', () => logger.log(formatMesssge('Reconnected')));
+            connection.on('disconnecting', () => logger.warn(formatMesssge('Disconnecting')));
+            return connection;
+          },
+        };
+      },
+      inject: [ConfigService],
+    }),
     UsersModule,
     AuthModule,
+    DiscordModule,
+    GuildsModule,
   ],
 })
 export class AppModule {}

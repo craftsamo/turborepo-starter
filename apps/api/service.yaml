@@ -39,6 +39,8 @@ spec:
               value: '${LOG_FORMAT}'
             - name: BASE_URL
               value: '${BASE_URL}'
+            - name: DISCORD_BOT_TOKEN
+              value: '{DISCORD_BOT_TOKEN}'
 
             ## Secrets (from Secret Manager)
             - name: MONGODB_USER_NAME
