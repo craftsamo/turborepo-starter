@@ -30,9 +30,34 @@ const UnknownAccount = {
   notice: 'The specified account could not be found.',
 } as const;
 
+const UnknownGuild = {
+  log: 'A DiscordServer that does not exist in the `GuildDocument` was specified.',
+  notice: 'The specified Discord server could not be found.',
+} as const;
+
+const UnknownRole = {
+  log: 'A role that does not exist in the `RoleDocument` was specified.',
+  notice: 'The specified role could not be found.',
+} as const;
+
 const AlreadyAccount = {
   log: 'The specified account already exists in the `UserDocument`, so the creation failed.',
   notice: 'The specified account already exists.',
+} as const;
+
+const AlreadyGuild = {
+  log: 'The specified DiscordServer already exists in the `GuildDocument`, so the creation failed.',
+  notice: 'The specified Discord server already exists.',
+} as const;
+
+const AlreadyRole = {
+  log: 'The specified Role already exists in the `RoleDocument`, so the creation failed.',
+  notice: 'The specified role already exists.',
+} as const;
+
+const AlreadyCommand = {
+  log: 'The specified Command already exists in the `CommandDocument`, so the creation failed.',
+  notice: 'The specified command already exists.',
 } as const;
 
 const InvalidEmail = {
@@ -56,7 +81,12 @@ export const ErrorMessage: Record<ErrorCode, ErrorMessage> = {
   [ErrorCode.InvalidParameter]: InvalidParameter,
   [ErrorCode.MaximumRetryAttemptsExceeded]: MaximumRetryAttemptsExceeded,
   [ErrorCode.UnknownAccount]: UnknownAccount,
+  [ErrorCode.UnknownGuild]: UnknownGuild,
+  [ErrorCode.UnknownRole]: UnknownRole,
   [ErrorCode.AlreadyAccount]: AlreadyAccount,
+  [ErrorCode.AlreadyGuild]: AlreadyGuild,
+  [ErrorCode.AlreadyRole]: AlreadyRole,
+  [ErrorCode.AlreadyCommand]: AlreadyCommand,
   [ErrorCode.InvalidEmail]: InvalidEmail,
   [ErrorCode.InvalidPassword]: InvalidPassword,
   [ErrorCode.MissingUserPassword]: MissingUserPassword,
