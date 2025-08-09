@@ -12,6 +12,7 @@
     "clean": "rm -rf dist"
   },
   "devDependencies": {
+    "@types/passport-discord": "^0.1.14",
     "@workspace/constants": "*",
     "@workspace/eslint": "*",
     "@workspace/prettier": "*",
