@@ -26,7 +26,7 @@ export interface FetchErrorResult extends RESTAPIErrorResult {
  * If the generic type T is void, it returns a FetchSuccessResult with void.
  * Otherwise, it returns either a FetchSuccessResult with T or a FetchErrorResult.
  */
-export type FetchResult<T> = T extends void ? FetchSuccessResult<void> : FetchSuccessResult<T> | FetchErrorResult;
+export type FetchResult<T> = FetchSuccessResult<T> | FetchErrorResult;
 
 /**
  * Options for HTTP requests.
