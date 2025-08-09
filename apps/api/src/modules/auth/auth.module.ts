@@ -1,15 +1,15 @@
 import { Module } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
 import { UsersModule } from '../users';
-import { LocalAuthController } from './controllers';
-import { LocalAuthService } from './services';
-import { LocalAuthSessionSerializer } from './session-serializers/';
-import { LocalStrategy } from './strategies/';
+import { DiscordAuthController } from './controllers';
+import { DiscordAuthService } from './services';
+import { DiscordAuthSessionSerializer } from './session-serializers';
+import { DiscordStrategy } from './strategies';
 
 @Module({
   imports: [UsersModule, PassportModule],
-  controllers: [LocalAuthController],
-  providers: [LocalAuthService, LocalStrategy, LocalAuthSessionSerializer],
-  exports: [LocalAuthService],
+  controllers: [DiscordAuthController],
+  providers: [DiscordAuthService, DiscordStrategy, DiscordAuthSessionSerializer],
+  exports: [DiscordAuthService],
 })
 export class AuthModule {}

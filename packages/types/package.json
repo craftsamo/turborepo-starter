@@ -4,6 +4,7 @@
   "type": "module",
   "private": true,
   "devDependencies": {
+    "@types/passport-discord": "^0.1.14",
     "@workspace/eslint": "*",
     "@workspace/prettier": "*",
     "@workspace/tsconfig": "*",

@@ -1,5 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@workspace/ui/components/card';
-import { LocalAuthLoginForm, DiscordLoginButton } from './components';
+import { DiscordLoginButton } from './components';
 
 export default async function LoginPage() {
   return (
@@ -11,15 +11,9 @@ export default async function LoginPage() {
         </CardHeader>
         <CardContent>
           <div className='grid gap-6'>
-            <div className='grid gap-6'>
-              <div className='flex flex-col gap-4'>
-                <DiscordLoginButton />
-              </div>
-              <div className='relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border'>
-                <span className='relative z-10 bg-background px-2 text-muted-foreground'>Or continue with</span>
-              </div>
+            <div className='flex flex-col gap-4'>
+              <DiscordLoginButton />
             </div>
-            <LocalAuthLoginForm />
           </div>
         </CardContent>
       </Card>

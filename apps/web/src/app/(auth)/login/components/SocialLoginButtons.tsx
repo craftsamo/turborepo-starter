@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { Button } from '@workspace/ui/components/button';
+import { login } from './actions';
 
 interface SocialLoginButtonProps {
   children: ReactNode;
@@ -9,7 +10,7 @@ interface SocialLoginButtonProps {
 }
 
 const SocialLoginButton = ({ children, provider }: SocialLoginButtonProps) => {
-  const handleClick = () => console.log(`Login with ${provider}`);
+  const handleClick = () => login(provider);
   return (
     <Button variant='outline' className='w-full' onClick={handleClick}>
       {children}

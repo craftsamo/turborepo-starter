@@ -1,1 +1,1 @@
-export * from './local.stratgy';
+export * from './discord.strategy';

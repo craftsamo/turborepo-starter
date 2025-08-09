@@ -8,9 +8,9 @@ export class PatchUserDto implements RESTPatchAPIUserJSON {
 
   @IsString()
   @IsNotEmpty()
-  email?: string;
+  discordId?: string;
 
   @IsString()
   @IsNotEmpty()
-  password?: string;
+  displayName?: string;
 }
