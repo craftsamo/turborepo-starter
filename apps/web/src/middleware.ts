@@ -1,5 +1,5 @@
 import { type NextMiddleware, NextResponse } from 'next/server';
-import { ratelimit } from './middlewares';
+import { ratelimit, auth } from './middlewares';
 
 //#############################################################################
 // Middleware Configuration                                                   #
@@ -48,5 +48,6 @@ export function chain(functions: MiddlewareFactory[], index = 0): NextMiddleware
 
 export default chain([
   ratelimit,
+  auth,
   // ...Add middleware here (executed in order from top to bottom)
 ]);
