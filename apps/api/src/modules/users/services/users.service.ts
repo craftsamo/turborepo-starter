@@ -20,7 +20,8 @@ export class UsersService {
   toAPIUser(user: UserDocument): APIUser {
     return {
       uid: user.uid,
-      email: user.email,
+      discordId: user.discordId,
+      displayName: user.displayName,
       username: user.username,
       createdAt: user.createdAt.toISOString(),
       updatedAt: user.updatedAt.toISOString(),
