@@ -9,7 +9,7 @@ import { LocalAuthService } from '../services';
 
 @UseFilters(HttpExceptionFilter)
 @UseInterceptors(HttpResponseInterceptor)
-@Controller('internal/auth/local')
+@Controller('auth/local')
 export class LocalAuthController {
   constructor(private readonly localAuthService: LocalAuthService) {}
 
