@@ -8,14 +8,14 @@ export class User extends BaseDocument implements IUserModel {
   @Prop({ required: true, unique: true })
   uid!: string;
 
+  @Prop()
+  discordId!: string;
+
+  @Prop({ required: true })
+  displayName!: string;
+
   @Prop({ required: true })
   username!: string;
-
-  @Prop()
-  email!: string;
-
-  @Prop()
-  password?: string;
 }
 
 export type UserDocument = HydratedDocument<User>;

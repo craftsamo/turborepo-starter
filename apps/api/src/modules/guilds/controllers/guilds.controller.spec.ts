@@ -18,7 +18,7 @@ describe('GuildsController', () => {
   const mockGuildsService = {
     findAll: jest.fn(),
     findOne: jest.fn(),
-    createOne: jest.fn(),
+    create: jest.fn(),
     toAPIGuild: jest.fn(),
   };
 
@@ -42,7 +42,7 @@ describe('GuildsController', () => {
   });
 
   describe('findAll', () => {
-    it('全てのギルドを取得できること', async () => {
+    it('should retrieve all guilds', async () => {
       const guilds = [mockGuild];
       mockGuildsService.findAll.mockResolvedValue(guilds);
       mockGuildsService.toAPIGuild.mockReturnValue(mockGuild);
@@ -55,7 +55,7 @@ describe('GuildsController', () => {
   });
 
   describe('findOne', () => {
-    it('指定されたUIDのギルドを取得できること', async () => {
+    it('should retrieve the guild with the specified UID', async () => {
       mockGuildsService.findOne.mockResolvedValue(mockGuild);
       mockGuildsService.toAPIGuild.mockReturnValue(mockGuild);
 
@@ -65,7 +65,7 @@ describe('GuildsController', () => {
       expect(result).toEqual(mockGuild);
     });
 
-    it('ギルドが存在しない場合にGuildNotFoundExceptionを投げること', async () => {
+    it('should throw GuildNotFoundException when the guild does not exist', async () => {
       mockGuildsService.findOne.mockResolvedValue(null);
 
       await expect(controller.findOne('non-existent-id')).rejects.toThrow(GuildNotFoundException);
@@ -73,18 +73,18 @@ describe('GuildsController', () => {
   });
 
   describe('create', () => {
-    it('新しいギルドを作成できること', async () => {
+    it('should be able to create a new guild', async () => {
       const createGuildDto: CreateGuildDto = {
         uid: 'new-guild-id',
         name: 'New Guild',
       };
 
-      mockGuildsService.createOne.mockResolvedValue(mockGuild);
+      mockGuildsService.create.mockResolvedValue(mockGuild);
       mockGuildsService.toAPIGuild.mockReturnValue(mockGuild);
 
       const result = await controller.create(createGuildDto);
 
-      expect(service.createOne).toHaveBeenCalledWith(createGuildDto);
+      expect(service.create).toHaveBeenCalledWith([createGuildDto]);
       expect(result).toEqual(mockGuild);
     });
   });

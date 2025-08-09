@@ -8,9 +8,9 @@ export class CreateUserDto implements RESTPostAPIUserJSON {
 
   @IsString()
   @IsNotEmpty()
-  email!: string;
+  discordId!: string;
 
   @IsString()
   @IsNotEmpty()
-  password!: string;
+  displayName!: string;
 }

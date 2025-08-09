@@ -1,20 +1,20 @@
 'use server';
 
 import { cookies, headers } from 'next/headers';
-import type { LocalAuthProfile } from '@workspace/types/api';
+import type { DiscordAuthProfile } from '@workspace/types/api';
 import { NodeErrorMessage, ErrorMessage } from '@workspace/constants';
 import { FETCH_ERROR_MESSAGES, fetcher, FetcherError } from './fetcher';
 import { logger } from './logger';
 import { ApiError } from './errors';
 
-export async function getSession<T = LocalAuthProfile>(): Promise<T | null> {
+export async function getSession<T = DiscordAuthProfile>(): Promise<T | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get('connect.sid');
   if (!token) return null;
 
   const headerStore = await headers();
   const userAgent = headerStore.get('user-agent');
-  const path = `/api/auth/local/me`;
+  const path = `/api/auth/discord/me`;
   const logDetails = { method: 'GET', url: path, agent: userAgent };
 
   try {

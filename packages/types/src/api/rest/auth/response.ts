@@ -1,19 +1,20 @@
+import type { Profile } from 'passport-discord';
+
 /**
- * Represents a local authentication profile.
+ * Represents a Discord authentication profile.
+ * Contains the Discord user profile, access token, and optionally a refresh token.
  */
-export interface LocalAuthProfile {
+export interface DiscordAuthProfile {
   /**
-   * Unique identifier for the user.
+   * Discord user profile returned by passport-discord.
    */
-  uid: string;
-
+  profile: Profile;
   /**
-   * Username of the user.
+   * OAuth2 access token for Discord API.
    */
-  username: string;
-
+  accessToken: string;
   /**
-   * Email address of the user.
+   * Optional OAuth2 refresh token for Discord API.
    */
-  email: string;
+  refreshToken?: string;
 }

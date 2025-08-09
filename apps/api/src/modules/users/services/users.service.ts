@@ -21,7 +21,8 @@ export class UsersService {
     return {
       _id: user._id.toString(),
       uid: user.uid,
-      email: user.email,
+      discordId: user.discordId,
+      displayName: user.displayName,
       username: user.username,
       createdAt: user.createdAt.toISOString(),
       updatedAt: user.updatedAt.toISOString(),
