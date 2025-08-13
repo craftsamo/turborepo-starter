@@ -52,7 +52,7 @@ jobs:
           fi
           ## Abort processing if "production" is specified for a branch other than `main`
           if [ "${{ github.event.inputs.environment }}" == "production" ]; then
-            if [ "${{ needs.get-details.outputs.repository.ref_name }}" != "main" ]; then
+            if [ "${{ fromJson(needs.get-details.outputs.repository).ref_name }}" != "main" ]; then
               echo '::error::`production` can only be specified for the `main` branch.'
               exit 1
             fi
