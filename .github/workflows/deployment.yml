@@ -63,39 +63,40 @@ jobs:
           VALID_TARGETS="$(echo '${{ needs.get-details.outputs.apps }}' | jq -r '.[].name')"
           ## If the value is empty, stop processing
           if [ "${{ github.event.inputs.targets }}" == "" ]; then
-            echo "::error::`target` must be one of $VALID_TARGETS."
+            echo "::error::\`target\` must be one of $VALID_TARGETS."
             exit 1
           fi
           ## Parse and validate the "targets" input from the workflow dispatch event.
           TARGETS="${{ github.event.inputs.targets }}"
           ## Check for invalid characters in the "targets" input (only alphanumeric and commas are allowed).
-          if [[ "$TARGETS" == *[^,a-zA-Z0-9]* ]]; then
-            echo "::error::Invalid separator detected in targets: "$TARGETS""
+          if [[ "$TARGETS" =~ [^,a-zA-Z0-9] ]]; then
+            echo "::error::Invalid separator detected in targets: $TARGETS"
             exit 1
           fi
           ## Split the "targets" input into an array using commas as separators.
-          if [[ "$TARGETS" == *[^,]* ]]; then
-            TARGET_ARRAY=("$TARGETS")
-          else
-            IFS=',' read -ra TARGET_ARRAY <<< "$TARGETS"
-          fi
           ## Initialize JSON array for matrix
+          IFS=',' read -ra TARGET_ARRAY <<< "$TARGETS"
           JSON_ARRAY="["
           FIRST=true
           ## Iterate through each target value and check for validity.
           for target in "${TARGET_ARRAY[@]}"; do
             ## Validate targets: only targets in the array are considered valid.
-            if [[ "${VALID_TARGETS[@]}" =~ "$target" ]]; then
-              echo "Valid target: $target"
-              if [ "$FIRST" = true ]; then
-                JSON_ARRAY="$JSON_ARRAY\"$target\""
-                FIRST=false
-              else
-                JSON_ARRAY="$JSON_ARRAY,\"$target\""
+            found=false
+            while read -r valid; do
+              if [[ "$target" == "$valid" ]]; then
+                found=true
+                break
               fi
-            else
-              echo "::error::`$target` is an invalid value. Valid values are one of $VALID_TARGETS."
+            done <<< "$VALID_TARGETS"
+            if ! $found; then
+              echo "::error::\`$target\` is an invalid value. Valid values are one of $VALID_TARGETS."
               exit 1
+            fi
+            if [ "$FIRST" = true ]; then
+              JSON_ARRAY="$JSON_ARRAY\"$target\""
+              FIRST=false
+            else
+              JSON_ARRAY="$JSON_ARRAY,\"$target\""
             fi
           done
           JSON_ARRAY="$JSON_ARRAY]"
