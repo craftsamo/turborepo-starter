@@ -1,7 +1,7 @@
 {
   "name": "turborepo-starter",
   "description": "Boilerplate for streamlined development of Turborepo applications with best practices and curated configurations.",
-  "author": "itou-rui",
+  "author": "craftsamo",
   "version": "0.0.0",
   "private": true,
   "workspaces": [
