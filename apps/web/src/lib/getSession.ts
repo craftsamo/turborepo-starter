@@ -6,7 +6,7 @@ import { NodeErrorMessage, ErrorMessage } from '@workspace/constants';
 import { fetcher, FetcherError, ApiError, FETCH_ERROR_MESSAGES } from '@workspace/http';
 import { logger } from './logger';
 
-export async function getSession<T = LocalAuthProfile>(): Promise<T | null> {
+export async function getSession(): Promise<LocalAuthProfile | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get('connect.sid');
   if (!token) return null;
@@ -17,7 +17,7 @@ export async function getSession<T = LocalAuthProfile>(): Promise<T | null> {
   const logDetails = { method: 'GET', url: path, agent: userAgent };
 
   try {
-    const response = await fetcher.get<T>(path, {
+    const response = await fetcher.get<LocalAuthProfile>(path, {
       headers: {
         Cookie: `connect.sid=${token.value}`,
       },
