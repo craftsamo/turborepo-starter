@@ -19,13 +19,11 @@ export class UsersService {
    */
   toAPIUser(user: UserDocument): APIUser {
     return {
-      _id: user._id.toString(),
       uid: user.uid,
       email: user.email,
       username: user.username,
       createdAt: user.createdAt.toISOString(),
       updatedAt: user.updatedAt.toISOString(),
-      _version: user._version,
     };
   }
 
