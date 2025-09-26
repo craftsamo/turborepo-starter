@@ -38,13 +38,11 @@ export class RolesService {
     const guildDocument = await this.resolveGuildDocument(role);
 
     return {
-      _id: role._id.toString(),
       uid: role.uid,
       name: role.name,
       guild: this.guildsService.toAPIGuild(guildDocument),
       createdAt: role.createdAt.toISOString(),
       updatedAt: role.updatedAt.toISOString(),
-      _version: role._version,
     };
   }
 
