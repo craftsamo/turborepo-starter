@@ -1,0 +1,33 @@
+{
+  "name": "@workspace/http",
+  "version": "0.0.0",
+  "type": "commonjs",
+  "private": true,
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsup",
+    "clean": "rm -rf dist",
+    "dev": "tsup --watch",
+    "lint": "eslint src/",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@workspace/constants": "*"
+  },
+  "devDependencies": {
+    "@workspace/eslint": "*",
+    "@workspace/prettier": "*",
+    "@workspace/tsconfig": "*",
+    "@workspace/types": "*",
+    "tsup": "^8.3.6"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  }
+}

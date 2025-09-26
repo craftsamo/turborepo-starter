@@ -41,7 +41,7 @@ module.exports = {
       },
     },
     docker: {
-      default: "nps docker.build.web docker.build.ap",
+      default: "nps docker.build.web docker.build.api",
       build: {
         web: `docker build -t web . -f ${webPath}/Dockerfile`,
         api: `docker build -t api . -f ${apiPath}/Dockerfile`,
@@ -55,6 +55,7 @@ module.exports = {
     dev: {
       default: "npx turbo run dev",
       web: "npx turbo run dev --filter=web",
+      api: "npx turbo run dev --filter=api",
     },
   },
 };
