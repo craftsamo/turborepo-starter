@@ -21,7 +21,7 @@ import { EnvironmentVariables, validationSchemaForEnv } from './config/env-valid
           IntentsBitField.Flags.MessageContent,
           IntentsBitField.Flags.DirectMessages,
         ],
-        development: ['1414986205765959782'],
+        development: configService.get('TEST_GUILD'),
       }),
       inject: [ConfigService],
     }),

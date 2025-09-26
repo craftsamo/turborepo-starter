@@ -19,6 +19,8 @@ export interface EnvironmentVariables {
    * The token for Discord authentication.
    */
   DISCORD_BOT_TOKEN: string;
+
+  TEST_GUILD?: string;
 }
 
 /**
@@ -42,6 +44,10 @@ export class EnvironmentVariablesDto {
   @IsString()
   @IsNotEmpty()
   DISCORD_BOT_TOKEN!: string;
+
+  @IsOptional()
+  @IsString()
+  TEST_GUILD?: string;
 }
 
 /**
@@ -58,4 +64,6 @@ export const validationSchemaForEnv = Joi.object<EnvironmentVariables, true>({
    * Application
    */
   DISCORD_BOT_TOKEN: Joi.string().required(),
+
+  TEST_GUILD: Joi.string(),
 });
