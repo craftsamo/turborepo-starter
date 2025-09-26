@@ -1,8 +1,5 @@
-import { type RESTAPISuccessResult, type RESTAPIErrorResult } from '@workspace/types/api';
-import { buildFullPath } from './utils';
+import type { RESTAPISuccessResult, RESTAPIErrorResult } from '@workspace/types/api';
 import { FetcherError } from './errors';
-
-const BASE_URL = process.env.BASE_URL as string;
 
 /**
  * Interface representing a successful fetch result.
@@ -29,43 +26,25 @@ export interface FetchErrorResult extends RESTAPIErrorResult {
 export type FetchResult<T> = FetchSuccessResult<T> | FetchErrorResult;
 
 /**
- * Options for HTTP requests.
- */
-export interface HttpOptions {
-  next?: NextFetchRequestConfig;
-}
-
-/**
  * Makes an HTTP request to the specified path with the given configuration.
  *
  * @template T - The expected response type.
- * @param {string} path - The API endpoint path.
+ * @param {string} url - The API endpoint path.
  * @param {RequestInit} config - The request configuration.
  */
-export async function http<T>(path: string, config: RequestInit, options?: HttpOptions): Promise<FetchResult<T>> {
-  if (!BASE_URL) {
-    throw new FetcherError('MISSING_BASE_URL');
+export async function http<T>(url: string, config: RequestInit): Promise<FetchResult<T>> {
+  if (!url) {
+    throw new FetcherError('MISSING_URL');
   }
-  if (typeof BASE_URL !== 'string') {
-    throw new FetcherError('BASE_URL_NOT_STRING', {
-      baseUrl: BASE_URL,
-    });
-  }
-
-  const fullPath = buildFullPath(BASE_URL, path);
-
-  const url = new URL(fullPath);
-  if (url.origin !== new URL(BASE_URL).origin) {
-    throw new FetcherError('INVALID_URL', {
-      baseUrl: BASE_URL,
-      fullPath: fullPath,
-      origin: url.origin,
+  if (typeof url !== 'string') {
+    throw new FetcherError('URL_NOT_STRING', {
+      baseUrl: url,
     });
   }
 
   try {
-    const response = await fetch(new Request(fullPath, config), options);
-    const data = await response.json().catch(() => null);
+    const response = await fetch(new Request(url, config));
+    const data = await response.json();
 
     // 2xx
     if (response.ok) {
@@ -80,13 +59,11 @@ export async function http<T>(path: string, config: RequestInit, options?: HttpO
     }
     if (e instanceof Error) {
       throw new FetcherError('FETCH_ERROR', e.message, {
-        baseUrl: BASE_URL,
-        fullPath: fullPath,
+        baseUrl: url,
       });
     }
     throw new FetcherError('FETCH_ERROR', 'Unknown error occurred.', {
-      baseUrl: BASE_URL,
-      fullPath: fullPath,
+      baseUrl: url,
     });
   }
 }
