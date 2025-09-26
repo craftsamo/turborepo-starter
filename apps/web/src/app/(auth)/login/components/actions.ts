@@ -2,7 +2,7 @@
 
 import { redirect } from 'next/navigation';
 import type { RESTPostAPILocalAuthLoginJSON } from '@workspace/types/api';
-import { fetcher } from '@/lib/fetcher';
+import { fetcher } from '@workspace/http';
 import { setCookie } from '@/lib/setCookie';
 
 async function loginLocalAuth(email: string, password: string) {
