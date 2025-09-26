@@ -65,6 +65,9 @@
 - name: "📦package: logger"
   description: "Logger specialized for Cloudrun"
   color: "F9D0C4"
+- name: "📦package: http"
+  description: "Shared HTTP utilities: request/response helpers and client methods"
+  color: "F9D0C4"
 
 ## Github actions
 - name: "🔄workflow: sync-labels"
