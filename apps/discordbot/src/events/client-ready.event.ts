@@ -4,8 +4,8 @@ import { DiscordBotExceptionFilter } from '../filters';
 
 @Injectable()
 @UseFilters(DiscordBotExceptionFilter)
-export class ReadyEvent {
-  private readonly logger = new Logger(ReadyEvent.name);
+export class ClientReadyEvent {
+  private readonly logger = new Logger(ClientReadyEvent.name);
 
   constructor() {}
 
