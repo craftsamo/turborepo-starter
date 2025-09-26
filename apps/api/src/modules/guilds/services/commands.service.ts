@@ -44,7 +44,6 @@ export class CommandsService {
     const apiGuilds = guilds.length > 0 ? await Promise.all(guilds.map((guild) => this.guildsService.toAPIGuild(guild))) : [];
 
     return {
-      _id: command._id.toString(),
       uid: command.uid,
       name: command.name,
       description: command.description,
@@ -52,7 +51,6 @@ export class CommandsService {
       guilds: apiGuilds,
       createdAt: command.createdAt.toISOString(),
       updatedAt: command.updatedAt.toISOString(),
-      _version: command._version,
     };
   }
 

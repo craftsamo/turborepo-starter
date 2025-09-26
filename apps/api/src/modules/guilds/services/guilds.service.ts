@@ -20,13 +20,11 @@ export class GuildsService {
    */
   toAPIGuild(guild: GuildDocument): APIGuild {
     return {
-      _id: guild._id.toString(),
       uid: guild.uid,
       name: guild.name,
       icon: guild.icon,
       createdAt: guild.createdAt.toISOString(),
       updatedAt: guild.updatedAt.toISOString(),
-      _version: guild._version,
     };
   }
 
