@@ -1,0 +1,23 @@
+services:
+  discordbot:
+    container_name: torborepo-starter-discordbot
+    image: discordbot:latest
+    build:
+      context: .
+      dockerfile: ./apps/discordbot/Dockerfile
+    env_file:
+      - ./apps/discordbot/.env
+    environment:
+      - BASE_URL=http://nginx
+      - LOF_FORMAT=text
+    stop_signal: SIGINT
+    ports:
+      - 5002:5002
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    external: true
