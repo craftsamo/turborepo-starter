@@ -5,6 +5,7 @@ import type {
   APIGuild,
   APIRole,
   APIUser,
+  RESTPatchAPIUserJSON,
   RESTPostAPIGuildJSON,
   RESTPostAPIRoleJSON,
   RESTPostAPIUserJSON,
@@ -33,6 +34,13 @@ export class HttpsService {
     if (response.code === ErrorCode.AlreadyAccount) {
       return this.fetchApiUser(data.discordId) as Promise<APIUser>;
     }
+    throw new ApiError(response);
+  }
+
+  async updateApiUser(data: RESTPatchAPIUserJSON) {
+    const url = process.env.BASE_URL + `/api/users/${data.uid}`;
+    const response = await fetcher.patch<RESTPatchAPIUserJSON, APIUser>(url, data);
+    if (response.ok) return response.data;
     throw new ApiError(response);
   }
 
