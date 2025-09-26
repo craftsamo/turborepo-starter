@@ -17,6 +17,7 @@
     "@upstash/ratelimit": "^2.0.6",
     "@upstash/redis": "^1.35.1",
     "@workspace/constants": "*",
+    "@workspace/http": "*",
     "@workspace/logger": "*",
     "@workspace/ui": "*",
     "next": "15.1.5",

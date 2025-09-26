@@ -1,9 +1,8 @@
 import { buildCredentials, buildHeaders, buildPathWithSearchParams } from '../utils';
 import { http, type FetchResult } from '../http';
-import { type PostOptions } from './post';
 
-export interface GetOptions<T> extends PostOptions<T> {
-  next?: NextFetchRequestConfig;
+export interface GetOptions<T> extends RequestInit {
+  params?: T;
 }
 
 /**
@@ -15,12 +14,9 @@ export interface GetOptions<T> extends PostOptions<T> {
  * @param {GetOptions<U>} [options] - The request options.
  */
 export async function get<T, U = object>(path: string, options?: GetOptions<U>): Promise<FetchResult<T>> {
-  return http<T>(
-    buildPathWithSearchParams(path, options?.params ?? undefined),
-    {
-      headers: buildHeaders(options?.headers),
-      credentials: buildCredentials(options?.credentials),
-    },
-    { next: options?.next },
-  );
+  return http<T>(buildPathWithSearchParams(path, options?.params ?? undefined), {
+    ...options,
+    headers: buildHeaders(options?.headers),
+    credentials: buildCredentials(options?.credentials),
+  });
 }

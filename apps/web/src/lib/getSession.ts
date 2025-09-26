@@ -3,9 +3,8 @@
 import { cookies, headers } from 'next/headers';
 import type { LocalAuthProfile } from '@workspace/types/api';
 import { NodeErrorMessage, ErrorMessage } from '@workspace/constants';
-import { FETCH_ERROR_MESSAGES, fetcher, FetcherError } from './fetcher';
+import { fetcher, FetcherError, ApiError, FETCH_ERROR_MESSAGES } from '@workspace/http';
 import { logger } from './logger';
-import { ApiError } from './errors';
 
 export async function getSession<T = LocalAuthProfile>(): Promise<T | null> {
   const cookieStore = await cookies();
