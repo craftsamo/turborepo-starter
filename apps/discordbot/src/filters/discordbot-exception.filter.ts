@@ -1,7 +1,7 @@
 import { Catch, type ArgumentsHost } from '@nestjs/common';
 import { BaseExceptionFilter } from '@nestjs/core';
 import { NecordArgumentsHost } from 'necord';
-import { BaseInteraction, MessageFlags } from 'discord.js';
+import { BaseInteraction } from 'discord.js';
 import type { LogFormat } from '@workspace/logger';
 import { StructuredLogger } from '../utils/logger';
 
@@ -22,7 +22,14 @@ export class DiscordBotExceptionFilter extends BaseExceptionFilter {
     this.logger.warn(exception.message);
 
     if (interaction && interaction instanceof BaseInteraction && interaction.isRepliable()) {
-      return await interaction.reply({ content: exception.message, flags: MessageFlags.Ephemeral });
+      try {
+        if (interaction.replied || interaction.deferred) {
+          return interaction.editReply({ content: exception.message });
+        }
+        return interaction.reply({ content: exception.message, flags: 'Ephemeral' });
+      } catch (e: unknown) {
+        return interaction.followUp({ content: exception.message, flags: 'Ephemeral' });
+      }
     }
   }
 }
