@@ -5,6 +5,10 @@ import { NecordModule } from 'necord';
 import { NestedLocalizationAdapter, NecordLocalizationModule, UserResolver } from '@necord/localization';
 import { EnvironmentVariables, validationSchemaForEnv } from './config/env-validation';
 import { locales } from './config/locales';
+import * as Events from './events';
+import * as Commands from './commands';
+import * as Components from './components';
+import * as Services from './services';
 
 @Module({
   imports: [
@@ -39,5 +43,6 @@ import { locales } from './config/locales';
       inject: [ConfigService],
     }),
   ],
+  providers: [Commands, Events, Components, Services].map((e) => Object.values(e)).flat(),
 })
 export class AppModule {}
