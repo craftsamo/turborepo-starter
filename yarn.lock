@@ -1476,6 +1476,11 @@
     "@emnapi/runtime" "^1.4.3"
     "@tybys/wasm-util" "^0.10.0"
 
+"@necord/localization@^4.0.2":
+  version "4.0.2"
+  resolved "https://registry.yarnpkg.com/@necord/localization/-/localization-4.0.2.tgz#d9d88a36bbaffe8300297cf514d6ba86a53263bc"
+  integrity sha512-W5CUFQWQCA3JQIcSBdxBQxaA3sD6Abm1do+i+5s7QOyII+of5CZVkuk/wDzY/jqyHO3oOYWJpYpjzYl4SV2nyA==
+
 "@nestjs/cli@^10.1.11":
   version "10.4.9"
   resolved "https://registry.yarnpkg.com/@nestjs/cli/-/cli-10.4.9.tgz#ac3a23096a4725465360d8d60810f3e857f4a803"
