@@ -4,7 +4,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { CONFIG_DATABASE, DatabaseConfig, databaseConfig } from '../config/database.config';
 import { validationSchemaForEnv } from '../config/env-validation';
-import { DiscordBotModule } from '../discordbot';
 import { UsersModule } from './users';
 import { AuthModule } from './auth';
 import { DiscordModule } from './discord';
@@ -61,7 +60,6 @@ import { GuildsModule } from './guilds';
       },
       inject: [ConfigService],
     }),
-    DiscordBotModule,
     UsersModule,
     AuthModule,
     DiscordModule,

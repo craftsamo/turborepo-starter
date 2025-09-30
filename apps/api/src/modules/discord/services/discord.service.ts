@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { type DiscordErrorData } from 'discord.js';
+import { type RESTError as DiscordAPIError } from 'discord-api-types/v10';
 import { DiscordAPIErrorException, MaximumRetryAttemptsExceededException } from '../../../exceptions';
 
 /**
@@ -70,7 +70,7 @@ export class DiscordService {
     }
 
     // Handle error response with Filter
-    const { code, message, errors } = (await response.json()) as DiscordErrorData;
+    const { code, message, errors } = (await response.json()) as DiscordAPIError;
     throw new DiscordAPIErrorException(code, message, response.status, errors);
   }
 
