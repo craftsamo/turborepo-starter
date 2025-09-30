@@ -26,6 +26,8 @@
     "@workspace/constants": "*",
     "@workspace/http": "*",
     "@workspace/logger": "*",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.1",
     "bcryptjs": "^3.0.1",
     "discord.js": "^14.18.0",
     "joi": "^17.9.2",
