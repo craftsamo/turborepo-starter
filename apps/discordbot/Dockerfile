@@ -28,6 +28,9 @@ RUN turbo prune --scope=discordbot --docker
 ###############################################################################
 FROM base AS installer
 
+# Update apk package index and install libc6-compat for compatibility
+RUN apk update && apk add --no-cache libc6-compat python3 python3-dev make g++ linux-headers libusb-dev eudev-dev
+
 # Set the working directory for the installation process
 WORKDIR /app
 
