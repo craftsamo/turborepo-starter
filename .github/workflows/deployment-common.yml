@@ -41,7 +41,7 @@ jobs:
         with:
           token_format: "access_token"
           workload_identity_provider: "projects/${{ secrets.GOOGLE_CLOUD_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/${{ secrets.GOOGLE_CLOUD_IDENTITY_POOL_ID }}/providers/${{ secrets.GOOGLE_CLOUD_IDENTITY_PROVIDER_ID }}"
-          service_account: "${{ inputs.project_name }}-app-sa@${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}.iam.gserviceaccount.com"
+          service_account: "${{ inputs.project_name }}-github-sa@${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}.iam.gserviceaccount.com"
           project_id: "${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}"
 
       ## Initially, an Artifact Repository will be created
@@ -88,21 +88,25 @@ jobs:
 
       - name: Create Service declaration
         run: |
+          APP_NAME="${{ inputs.app_name }}"
+          ENVIRONMENT="${{ inputs.environment }}"
+          PROJECT_NAME="${{ inputs.project_name }}"
+          GOOGLE_CLOUD_PROJECT_ID="${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}"
+
           ## Environment variables specific to `apps/web`
-          if [ "${{ inputs.app_name }}" == "web" ]; then
-            if [ "${{ inputs.environment }}" == "production" ]; then
+          if [ "$APP_NAME" == "web" ]; then
+            if [ "$ENVIRONMENT" == "production" ]; then
               export BASE_URL="https://${{ vars.DOMAIN }}"
             else
               export BASE_URL="https://dev.${{ vars.DOMAIN }}"
             fi
-            export UPSTASH_REDIS_REST_URL="${{ secrets.UPSTASH_REDIS_REST_URL }}"
-            export UPSTASH_REDIS_REST_TOKEN="${{ secrets.UPSTASH_REDIS_REST_TOKEN }}"
+            export SERVICE_ACCOUNT="$PROJECT_NAME-cloudrun-sa@$GOOGLE_CLOUD_PROJECT_ID.iam.gserviceaccount.com"
           fi
 
           ## NOTE: ...increase as `apps/**` is added
 
           ## Common environment variables by mode
-          if [ "${{ inputs.environment }}" == "production" ]; then
+          if [ "$ENVIRONMENT" == "production" ]; then
             echo "There are no environment variables specific to the production environment."
           else
             echo "There are no environment variables specific to the development environment."
@@ -114,13 +118,35 @@ jobs:
           ## System
           export GITHUB_SHA="${{ github.sha }}"
           export CONTAINER_IMAGE="${{ steps.generate_image.outputs.docker_image }}:${{ github.sha }}"
-          export CLOUD_RUN_SERVICE_NAME="${{ inputs.project_name }}-${{ inputs.app_name }}-${{ inputs.environment }}"
-          export GOOGLE_CLOUD_PROJECT_ID="${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}"
+          export CLOUD_RUN_SERVICE_NAME="$PROJECT_NAME-$APP_NAME-$ENVIRONMENT"
+          export GOOGLE_CLOUD_PROJECT_ID="$GOOGLE_CLOUD_PROJECT_ID"
           export GOOGLE_CLOUD_PROJECT_NUMBER="${{ secrets.GOOGLE_CLOUD_PROJECT_NUMBER }}"
-          export ENVIRONMENT="${{ inputs.environment }}"
-          export CLOUD_RUN_SERVICE_ACCOUNT="${{ inputs.project_name }}-app-sa@${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}.iam.gserviceaccount.com"
+          export ENVIRONMENT="$ENVIRONMENT"
 
-          envsubst < ./apps/${{ inputs.app_name }}/service.yaml > service-${{ inputs.environment }}.yaml
+          envsubst < ./apps/$APP_NAME/service.yaml > service-$ENVIRONMENT.yaml
+
+      - name: Prepare and upsert secrets
+        run: |
+          GOOGLE_CLOUD_PROJECT_ID="${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}"
+
+          set -euo pipefail
+          declare -A MAP
+
+          if [ "${{ inputs.app_name }}" == "web" ]; then
+            MAP["UPSTASH_REDIS_REST_URL"]="${{ secrets.UPSTASH_REDIS_REST_URL_SECRET }}"
+            MAP["UPSTASH_REDIS_REST_TOKEN"]="${{ secrets.UPSTASH_REDIS_REST_TOKEN_SECRET }}"
+          fi
+
+          for name in "${!MAP[@]}"; do
+            val="${MAP[$name]}"
+            if gcloud secrets describe "$name" --project="$GOOGLE_CLOUD_PROJECT_ID" >/dev/null 2>&1; then
+              echo "Adding new version for secret: $name"
+              printf '%s' "$val" | gcloud secrets versions add "$name" --data-file=- --project="$GOOGLE_CLOUD_PROJECT_ID"
+            else
+              echo "Creating secret: $name"
+              printf '%s' "$val" | gcloud secrets create "$name" --data-file=- --replication-policy="automatic" --project="$GOOGLE_CLOUD_PROJECT_ID"
+            fi
+          done
 
       - name: Deploy to Cloud Run
         uses: google-github-actions/deploy-cloudrun@v2
