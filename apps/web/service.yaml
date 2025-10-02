@@ -36,8 +36,18 @@ spec:
               value: '${LOG_FORMAT}'
             - name: BASE_URL
               value: '${BASE_URL}'
+
+            ## Secrets (from Secret Manager)
             - name: UPSTASH_REDIS_REST_URL
+              valueFrom:
+                secretKeyRef:
+                  name: UPSTASH_REDIS_REST_URL
+                  version: latest
             - name: UPSTASH_REDIS_REST_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: UPSTASH_REDIS_REST_TOKEN
+                  version: latest
           startupProbe:
             httpGet:
               path: /

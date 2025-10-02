@@ -120,6 +120,29 @@ jobs:
 
           envsubst < ./apps/${{ inputs.app_name }}/service.yaml > service-${{ inputs.environment }}.yaml
 
+      - name: Prepare and upsert secrets
+        run: |
+          GOOGLE_CLOUD_PROJECT_ID="${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}"
+
+          set -euo pipefail
+          declare -A MAP
+
+          if [ "${{ inputs.app_name }}" == "web" ]; then
+            MAP["UPSTASH_REDIS_REST_URL"]="${{ secrets.UPSTASH_REDIS_REST_URL_SECRET }}"
+            MAP["UPSTASH_REDIS_REST_TOKEN"]="${{ secrets.UPSTASH_REDIS_REST_TOKEN_SECRET }}"
+          fi
+
+          for name in "${!MAP[@]}"; do
+            val="${MAP[$name]}"
+            if gcloud secrets describe "$name" --project="$GOOGLE_CLOUD_PROJECT_ID" >/dev/null 2>&1; then
+              echo "Adding new version for secret: $name"
+              printf '%s' "$val" | gcloud secrets versions add "$name" --data-file=- --project="$GOOGLE_CLOUD_PROJECT_ID"
+            else
+              echo "Creating secret: $name"
+              printf '%s' "$val" | gcloud secrets create "$name" --data-file=- --replication-policy="automatic" --project="$GOOGLE_CLOUD_PROJECT_ID"
+            fi
+          done
+
       - name: Deploy to Cloud Run
         uses: google-github-actions/deploy-cloudrun@v2
         timeout-minutes: 5
