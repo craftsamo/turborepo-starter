@@ -37,9 +37,7 @@ spec:
             - name: BASE_URL
               value: '${BASE_URL}'
             - name: UPSTASH_REDIS_REST_URL
-              value: '${UPSTASH_REDIS_REST_URL}'
             - name: UPSTASH_REDIS_REST_TOKEN
-              value: '${UPSTASH_REDIS_REST_TOKEN}'
           startupProbe:
             httpGet:
               path: /
