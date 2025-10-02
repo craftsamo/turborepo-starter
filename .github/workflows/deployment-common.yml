@@ -41,7 +41,7 @@ jobs:
         with:
           token_format: "access_token"
           workload_identity_provider: "projects/${{ secrets.GOOGLE_CLOUD_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/${{ secrets.GOOGLE_CLOUD_IDENTITY_POOL_ID }}/providers/${{ secrets.GOOGLE_CLOUD_IDENTITY_PROVIDER_ID }}"
-          service_account: "${{ inputs.project_name }}-app-sa@${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}.iam.gserviceaccount.com"
+          service_account: "${{ inputs.project_name }}-github-sa@${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}.iam.gserviceaccount.com"
           project_id: "${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}"
 
       ## Initially, an Artifact Repository will be created
@@ -100,6 +100,7 @@ jobs:
             else
               export BASE_URL="https://dev.${{ vars.DOMAIN }}"
             fi
+            export SERVICE_ACCOUNT="$PROJECT_NAME-cloudrun-sa@$GOOGLE_CLOUD_PROJECT_ID.iam.gserviceaccount.com"
           fi
 
           ## NOTE: ...increase as `apps/**` is added
@@ -120,7 +121,6 @@ jobs:
           export CLOUD_RUN_SERVICE_NAME="$PROJECT_NAME-$APP_NAME-$ENVIRONMENT"
           export GOOGLE_CLOUD_PROJECT_ID="$GOOGLE_CLOUD_PROJECT_ID"
           export GOOGLE_CLOUD_PROJECT_NUMBER="${{ secrets.GOOGLE_CLOUD_PROJECT_NUMBER }}"
-          export CLOUD_RUN_SERVICE_ACCOUNT="${{ inputs.project_name }}-app-sa@${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}.iam.gserviceaccount.com"
           export ENVIRONMENT="$ENVIRONMENT"
 
           envsubst < ./apps/$APP_NAME/service.yaml > service-$ENVIRONMENT.yaml

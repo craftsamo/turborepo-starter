@@ -11,6 +11,7 @@ spec:
         autoscaling.knative.dev/maxScale: '5'
         autoscaling.knative.dev/minScale: '0'
     spec:
+      serviceAccountName: ${SERVICE_ACCOUNT}
       containerConcurrency: 50
       containers:
         - image: ${CONTAINER_IMAGE}
