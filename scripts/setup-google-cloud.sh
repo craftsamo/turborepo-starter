@@ -101,81 +101,88 @@ gcloud iam workload-identity-pools providers create-oidc "$GOOGLE_CLOUD_IDENTITY
 log "Created workload identity provider: $GOOGLE_CLOUD_IDENTITY_PROVIDER_ID"
 
 ###############################################################################
-# Setup service account                                                       #
+# Setup service account
 ###############################################################################
 
-# Create application service account
-gcloud iam service-accounts create "$PACKAGE_NAME-app-sa" \
-  --display-name="Application Service Account" \
-  --description="manages the application resources" \
+# Create "Github Workflows" service account
+gcloud iam service-accounts create "$PACKAGE_NAME-github-sa" \
+  --display-name="Github Workflows Account" \
+  --description="Manages GitHub Actions authentication and deployment access" \
   --project="$GOOGLE_CLOUD_PROJECT_ID"
-log "Created application service account: $PACKAGE_NAME-app-sa"
+log "Created Github Workflow service account: $PACKAGE_NAME-github-sa"
 
-# Create networking service account
-gcloud iam service-accounts create "$PACKAGE_NAME-net-sa" \
-  --display-name="Networking Service Account" \
-  --description="manages the networking resources" \
+# Create "Cloud Run" service account
+gcloud iam service-accounts create "$PACKAGE_NAME-cloudrun-sa" \
+  --display-name="Cloud Run Service Account" \
+  --description="Manages Cloud Run runtime permissions" \
   --project="$GOOGLE_CLOUD_PROJECT_ID"
-log "Created networking service account: $PACKAGE_NAME-net-sa"
+log "Created Cloud Run service account: $PACKAGE_NAME-cloudrun-sa"
 
 ###############################################################################
 #  Binding IAM polycy for service account                                     #
 ###############################################################################
 
-# Add IAM policy bindings for application service account
-roles=(
-  "roles/artifactregistry.admin"
-  "roles/run.admin"
-  "roles/iam.serviceAccountUser"
-  "roles/iam.serviceAccountTokenCreator"
-  "roles/compute.loadBalancerAdmin"
-  "roles/compute.networkAdmin"
-  "roles/compute.securityAdmin"
-  "roles/certificatemanager.owner"
-  "roles/dns.admin"
+# Define role sets per service account
+github_roles=(
+  "roles/artifactregistry.admin"         ## Read,Create,Update Artifactregistry
+  "roles/run.admin"                      ## Create,Update Cloud Run
+  "roles/iam.serviceAccountUser"         ## Authorize the use of service accounts on behalf of others
+  "roles/iam.serviceAccountTokenCreator" ## Create, Service Account Tokens
+  "roles/secretmanager.admin"            ## Create,Update SecretManager
 )
 
-# Add IAM policy bindings for application service account
-for role in "${roles[@]}"; do
+cloudrun_roles=(
+  "roles/logging.logWriter"
+  "roles/monitoring.metricWriter"
+  "roles/run.admin"                    ## Excute Cloud Run
+  "roles/secretmanager.secretAccessor" ## Runtime read access to Secret Manager
+)
+
+# Bind roles to GitHub workflows service account
+for role in "${github_roles[@]}"; do
   gcloud projects add-iam-policy-binding "${GOOGLE_CLOUD_PROJECT_ID}" \
-    --member="serviceAccount:$PACKAGE_NAME-app-sa@$GOOGLE_CLOUD_PROJECT_ID.iam.gserviceaccount.com" \
+    --member="serviceAccount:$PACKAGE_NAME-github-sa@$GOOGLE_CLOUD_PROJECT_ID.iam.gserviceaccount.com" \
     --role="$role"
 done
-log "Added IAM policy bindings for application service account."
+log "Added IAM policy bindings for GitHub workflows service account."
 
-# Add IAM policy binding for networking service account
-gcloud iam service-accounts add-iam-policy-binding "$PACKAGE_NAME-net-sa@$GOOGLE_CLOUD_PROJECT_ID.iam.gserviceaccount.com" \
+# Bind roles to Cloud Run service account
+for role in "${cloudrun_roles[@]}"; do
+  gcloud projects add-iam-policy-binding "${GOOGLE_CLOUD_PROJECT_ID}" \
+    --member="serviceAccount:$PACKAGE_NAME-cloudrun-sa@$GOOGLE_CLOUD_PROJECT_ID.iam.gserviceaccount.com" \
+    --role="$role"
+done
+log "Added IAM policy bindings for Cloud Run service account."
+
+# Add workload identity binding for Cloud Run service account (allow pool members to impersonate)
+gcloud iam service-accounts add-iam-policy-binding "$PACKAGE_NAME-cloudrun-sa@$GOOGLE_CLOUD_PROJECT_ID.iam.gserviceaccount.com" \
   --role="roles/iam.workloadIdentityUser" \
   --member="principalSet://iam.googleapis.com/projects/$GOOGLE_CLOUD_PROJECT_NUMBER/locations/global/workloadIdentityPools/$GOOGLE_CLOUD_IDENTITY_POOL_ID/attribute.repository/$REPO_OWNER/$REPO_NAME" \
   --project="$GOOGLE_CLOUD_PROJECT_ID"
-log "Added IAM policy binding for networking service account."
+log "Added IAM policy binding for Cloud Run service account."
 
-# Add IAM policy binding for application service account
-gcloud iam service-accounts add-iam-policy-binding "$PACKAGE_NAME-app-sa@$GOOGLE_CLOUD_PROJECT_ID.iam.gserviceaccount.com" \
+# Add workload identity bindings for GitHub workflows service account (main branch + repository)
+gcloud iam service-accounts add-iam-policy-binding "$PACKAGE_NAME-github-sa@$GOOGLE_CLOUD_PROJECT_ID.iam.gserviceaccount.com" \
   --project="${GOOGLE_CLOUD_PROJECT_ID}" \
   --role="roles/iam.workloadIdentityUser" \
   --member="principal://iam.googleapis.com/projects/$GOOGLE_CLOUD_PROJECT_NUMBER/locations/global/workloadIdentityPools/$GOOGLE_CLOUD_IDENTITY_POOL_ID/subject/repo:$REPO_OWNER/application-repo:ref:refs/heads/main"
-log "Added IAM policy binding for application service account (main branch)."
+log "Added IAM policy binding for GitHub workflows service account (main branch)."
 
-# Add IAM policy binding for application service account
-gcloud iam service-accounts add-iam-policy-binding "$PACKAGE_NAME-app-sa@$GOOGLE_CLOUD_PROJECT_ID.iam.gserviceaccount.com" \
+gcloud iam service-accounts add-iam-policy-binding "$PACKAGE_NAME-github-sa@$GOOGLE_CLOUD_PROJECT_ID.iam.gserviceaccount.com" \
   --project="${GOOGLE_CLOUD_PROJECT_ID}" \
   --role="roles/iam.workloadIdentityUser" \
   --member="principalSet://iam.googleapis.com/projects/$GOOGLE_CLOUD_PROJECT_NUMBER/locations/global/workloadIdentityPools/$GOOGLE_CLOUD_IDENTITY_POOL_ID/attribute.repository/$REPO_OWNER/$REPO_NAME"
-log "Added IAM policy binding for application service account (repository)."
+log "Added IAM policy binding for GitHub workflows service account (repository)."
 
 ###############################################################################
 # Enable require services                                                     #
 ###############################################################################
 
 services=(
-  "iamcredentials.googleapis.com"     ## Google Auth
-  "compute.googleapis.com"            ## Load balancer
-  "domains.googleapis.com"            ## Cloud domain
-  "dns.googleapis.com"                ## Cloud dns
-  "certificatemanager.googleapis.com" ## Certificate manager
-  "artifactregistry.googleapis.com"   ## Artifact repository
-  "run.googleapis.com"                ## Cloud run
+  "iamcredentials.googleapis.com"   ## Google Auth
+  "artifactregistry.googleapis.com" ## Artifact repository
+  "run.googleapis.com"              ## Cloud run
+  "secretmanager.googleapis.com"    ## Secret Manager
 )
 
 for service in "${services[@]}"; do
