@@ -4,9 +4,6 @@ apiVersion: serving.knative.dev/v1
 kind: Service
 metadata:
   name: ${CLOUD_RUN_SERVICE_NAME}
-  annotations:
-    run.googleapis.com/ingress: 'internal-and-cloud-load-balancing'
-    run.googleapis.com/ingress-status: 'internal-and-cloud-load-balancing'
 spec:
   template:
     metadata:
