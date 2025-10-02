@@ -88,9 +88,14 @@ jobs:
 
       - name: Create Service declaration
         run: |
+          APP_NAME="${{ inputs.app_name }}"
+          ENVIRONMENT="${{ inputs.environment }}"
+          PROJECT_NAME="${{ inputs.project_name }}"
+          GOOGLE_CLOUD_PROJECT_ID="${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}"
+
           ## Environment variables specific to `apps/web`
-          if [ "${{ inputs.app_name }}" == "web" ]; then
-            if [ "${{ inputs.environment }}" == "production" ]; then
+          if [ "$APP_NAME" == "web" ]; then
+            if [ "$ENVIRONMENT" == "production" ]; then
               export BASE_URL="https://${{ vars.DOMAIN }}"
             else
               export BASE_URL="https://dev.${{ vars.DOMAIN }}"
@@ -100,7 +105,7 @@ jobs:
           ## NOTE: ...increase as `apps/**` is added
 
           ## Common environment variables by mode
-          if [ "${{ inputs.environment }}" == "production" ]; then
+          if [ "$ENVIRONMENT" == "production" ]; then
             echo "There are no environment variables specific to the production environment."
           else
             echo "There are no environment variables specific to the development environment."
@@ -112,13 +117,13 @@ jobs:
           ## System
           export GITHUB_SHA="${{ github.sha }}"
           export CONTAINER_IMAGE="${{ steps.generate_image.outputs.docker_image }}:${{ github.sha }}"
-          export CLOUD_RUN_SERVICE_NAME="${{ inputs.project_name }}-${{ inputs.app_name }}-${{ inputs.environment }}"
-          export GOOGLE_CLOUD_PROJECT_ID="${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}"
+          export CLOUD_RUN_SERVICE_NAME="$PROJECT_NAME-$APP_NAME-$ENVIRONMENT"
+          export GOOGLE_CLOUD_PROJECT_ID="$GOOGLE_CLOUD_PROJECT_ID"
           export GOOGLE_CLOUD_PROJECT_NUMBER="${{ secrets.GOOGLE_CLOUD_PROJECT_NUMBER }}"
-          export ENVIRONMENT="${{ inputs.environment }}"
           export CLOUD_RUN_SERVICE_ACCOUNT="${{ inputs.project_name }}-app-sa@${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}.iam.gserviceaccount.com"
+          export ENVIRONMENT="$ENVIRONMENT"
 
-          envsubst < ./apps/${{ inputs.app_name }}/service.yaml > service-${{ inputs.environment }}.yaml
+          envsubst < ./apps/$APP_NAME/service.yaml > service-$ENVIRONMENT.yaml
 
       - name: Prepare and upsert secrets
         run: |
