@@ -19,6 +19,7 @@ jobs:
     outputs:
       web: ${{ steps.filter.outputs.web }}
       api: ${{ steps.filter.outputs.api }}
+      discordbot: ${{ steps.filter.outputs.discordbot }}
     steps:
       - uses: actions/checkout@v5
       - uses: dorny/paths-filter@v3
@@ -30,6 +31,9 @@ jobs:
               - 'packages/**'
             api:
               - 'apps/api/**'
+              - 'packages/**'
+            discordbot:
+              - 'apps/discordbot/**'
               - 'packages/**'
 
   setup:
@@ -69,6 +73,8 @@ jobs:
             run: ${{ needs.changes.outputs.web }}
           - target: api
             run: ${{ needs.changes.outputs.api }}
+          - target: discordbot
+            run: ${{ needs.changes.outputs.discordbot }}
     steps:
       - uses: actions/checkout@v5
       - name: Use Node.js 20.x
