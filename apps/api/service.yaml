@@ -62,6 +62,21 @@ spec:
                 secretKeyRef:
                   name: JWT_SECRET
                   key: latest
+            - name: DISCORD_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: DISCORD_CLIENT_ID
+                  key: latest
+            - name: DISCORD_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: DISCORD_CLIENT_SECRET
+                  key: latest
+            - name: DISCORD_BOT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: DISCORD_BOT_TOKEN
+                  key: latest
           startupProbe:
             httpGet:
               path: /
