@@ -43,10 +43,12 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: UPSTASH_REDIS_REST_URL
+                  key: latest
             - name: UPSTASH_REDIS_REST_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: UPSTASH_REDIS_REST_TOKEN
+                  key: latest
           startupProbe:
             httpGet:
               path: /
