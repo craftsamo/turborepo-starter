@@ -42,11 +42,6 @@ spec:
               value: '${BASE_URL}'
 
             ## Secrets (from Secret Manager)
-            - name: JWT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: JWT_SECRET
-                  version: latest
             - name: MONGODB_USER_NAME
               valueFrom:
                 secretKeyRef:
