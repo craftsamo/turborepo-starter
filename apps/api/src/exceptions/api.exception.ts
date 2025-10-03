@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
-import type { DiscordErrorData } from 'discord.js';
+import type { RESTError as DiscordAPIError } from 'discord-api-types/v10';
+import type { RESTErrorData } from '@workspace/types/api';
 import { ErrorCode } from '@workspace/constants';
-import { type RESTErrorData } from '@workspace/types/api';
 
 export type APIExceptionDetails = {
   code: ErrorCode;
@@ -40,7 +40,7 @@ export class DiscordAPIErrorException extends APIException {
    *
    * @example
    * ```ts
-   * import { type DiscordErrorData } from 'discord.js';
+   * import type { RESTError as DiscordAPIError } from 'discord-api-types/v10';
    *
    * const response = await fetch(url);
    *
@@ -51,7 +51,7 @@ export class DiscordAPIErrorException extends APIException {
    * ```
    *
    */
-  constructor(code: number, message: string, status: number, errors?: DiscordErrorData['errors']) {
+  constructor(code: number, message: string, status: number, errors?: DiscordAPIError['errors']) {
     if (!errors) {
       // If there is no detailed error information
       super(code, message, status, undefined);
