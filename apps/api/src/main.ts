@@ -12,7 +12,7 @@ import cookieParser from 'cookie-parser';
 import session from 'express-session';
 import MongoStore from 'connect-mongo';
 import { type LogFormat } from '@workspace/logger';
-import { StructuredLogger } from 'utils/logger';
+import { StructuredLogger } from './utils/logger';
 import { AllExceptionsFilter } from './filters';
 import { GlobalValidationException } from './exceptions';
 import { databaseConfig } from './config/database.config';
