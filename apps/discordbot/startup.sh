@@ -10,6 +10,13 @@ echo "[$(date --iso-8601=seconds)] startup.sh: begin"
 # Expected template variables (provided by envsubst):
 #   IMAGE, REGION, ENVIRONMENT, CLOUD_RUN_API_SERVICE_URL, GOOGLE_CLOUD_PROJECT_ID
 
+# envsubst will replace these simple assignments (ensures later ${VAR:?} checks pass)
+IMAGE="${IMAGE}"
+REGION="${REGION}"
+ENVIRONMENT="${ENVIRONMENT}"
+GOOGLE_CLOUD_PROJECT_ID="${GOOGLE_CLOUD_PROJECT_ID}"
+CLOUD_RUN_API_SERVICE_URL="${CLOUD_RUN_API_SERVICE_URL:-}"
+
 : "${IMAGE:?IMAGE must be set by envsubst}"
 : "${REGION:?REGION must be set by envsubst}"
 : "${ENVIRONMENT:?ENVIRONMENT must be set by envsubst}"
