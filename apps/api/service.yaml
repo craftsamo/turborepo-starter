@@ -45,18 +45,22 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: MONGODB_USER_NAME
+                  key: latest
             - name: MONGODB_USER_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: MONGODB_USER_PASSWORD
+                  key: latest
             - name: MONGODB_HOST_NAME
               valueFrom:
                 secretKeyRef:
                   name: MONGODB_HOST_NAME
+                  key: latest
             - name: JWT_SECRET
               valueFrom:
                 secretKeyRef:
                   name: JWT_SECRET
+                  key: latest
           startupProbe:
             httpGet:
               path: /
