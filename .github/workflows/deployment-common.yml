@@ -97,21 +97,14 @@ jobs:
             else
               export BASE_URL="https://dev.${{ vars.DOMAIN }}"
             fi
-            export UPSTASH_REDIS_REST_URL="${{ secrets.UPSTASH_REDIS_REST_URL }}"
-            export UPSTASH_REDIS_REST_TOKEN="${{ secrets.UPSTASH_REDIS_REST_TOKEN }}"
+            export SERVICE_ACCOUNT="$PROJECT_NAME-cloudrun-sa@$GOOGLE_CLOUD_PROJECT_ID.iam.gserviceaccount.com"
             export CLOUD_RUN_API_SERVICE_URL="https://$SERVICE-${{ secrets.GOOGLE_CLOUD_PROJECT_NUMBER }}-${{ vars.GOOGLE_CLOUD_REGION }}.run.app"
           fi
 
           ## Environment variables specific to `apps/api`
           if [ "${{ inputs.app_name }}" == "api" ]; then
-              export BASE_URL="https://$SERVICE-${{ secrets.GOOGLE_CLOUD_PROJECT_NUMBER }}-${{ vars.GOOGLE_CLOUD_REGION }}.run.app"
-              export MONGODB_USER_NAME="${{ secrets.MONGODB_USER_NAME }}"
-              export MONGODB_USER_PASSWORD="${{ secrets.MONGODB_USER_PASSWORD }}"
-              export MONGODB_HOST_NAME="${{ secrets.MONGODB_HOST_NAME }}"
-              export JWT_SECRET="${{ secrets.JWT_SECRET }}"
-              export DISCORD_BOT_TOKEN="${{ secrets.DISCORD_BOT_TOKEN }}"
-              export DISCORD_CLIENT_ID="${{ secrets.DISCORD_CLIENT_ID }}"
-              export DISCORD_CLIENT_SECRET="${{ secrets.DISCORD_CLIENT_SECRET }}"
+            export BASE_URL="https://$SERVICE-${{ secrets.GOOGLE_CLOUD_PROJECT_NUMBER }}-${{ vars.GOOGLE_CLOUD_REGION }}.run.app"
+            export SERVICE_ACCOUNT="$PROJECT_NAME-cloudrun-sa@$GOOGLE_CLOUD_PROJECT_ID.iam.gserviceaccount.com"
           fi
 
           ## NOTE: ...increase as `apps/**` is added
@@ -153,6 +146,9 @@ jobs:
             MAP["MONGODB_USER_PASSWORD"]="${{ secrets.MONGODB_USER_PASSWORD }}"
             MAP["MONGODB_HOST_NAME"]="${{ secrets.MONGODB_HOST_NAME }}"
             MAP["JWT_SECRET"]="${{ secrets.JWT_SECRET }}"
+            MAP["DISCORD_DISCORD_CLIENT_ID"]="${{ secrets.DISCORD_CLIENT_ID }}"
+            MAP["DISCORD_CLIENT_SECRET"]="${{ secrets.DISCORD_CLIENT_SECRET }}"
+            MAP["DISCORD_BOT_TOKEN"]="${{ secrets.DISCORD_BOT_TOKEN }}"
           fi
 
           for name in "${!MAP[@]}"; do
