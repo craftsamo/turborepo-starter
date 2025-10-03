@@ -39,14 +39,13 @@ spec:
               value: '${LOG_FORMAT}'
             - name: BASE_URL
               value: '${BASE_URL}'
-            - name: DISCORD_BOT_TOKEN
-              value: '{DISCORD_BOT_TOKEN}'
-            - name: DISCORD_CLIENT_ID
-              value: '${DISCORD_CLIENT_ID}'
-            - name: DISCORD_CLIENT_SECRET
-              value: '${DISCORD_CLIENT_SECRET}'
 
             ## Secrets (from Secret Manager)
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: JWT_SECRET
+                  version: latest
             - name: MONGODB_USER_NAME
               valueFrom:
                 secretKeyRef:
@@ -62,10 +61,20 @@ spec:
                 secretKeyRef:
                   name: MONGODB_HOST_NAME
                   version: latest
-            - name: JWT_SECRET
+            - name: DISCORD_BOT_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: JWT_SECRET
+                  name: DISCORD_BOT_TOKEN
+                  version: latest
+            - name: DISCORD_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: DISCORD_CLIENT_ID
+                  version: latest
+            - name: DISCORD_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: DISCORD_CLIENT_SECRET
                   version: latest
           startupProbe:
             httpGet:
