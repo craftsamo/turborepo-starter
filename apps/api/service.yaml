@@ -35,18 +35,32 @@ spec:
               value: '${ENVIRONMENT}'
 
             ## Application
-            - name: MONGODB_USER_NAME
-              value: '${MONGODB_USER_NAME}'
-            - name: MONGODB_USER_PASSWORD
-              value: '${MONGODB_USER_PASSWORD}'
-            - name: MONGODB_HOST_NAME
-              value: '${MONGODB_HOST_NAME}'
-            - name: JWT_SECRET
-              value: '${JWT_SECRET}'
             - name: LOG_FORMAT
               value: '${LOG_FORMAT}'
             - name: BASE_URL
               value: '${BASE_URL}'
+
+            ## Secrets (from Secret Manager)
+            - name: MONGODB_USER_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: MONGODB_USER_NAME
+                  version: latest
+            - name: MONGODB_USER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: MONGODB_USER_PASSWORD
+                  version: latest
+            - name: MONGODB_HOST_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: MONGODB_HOST_NAME
+                  version: latest
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: JWT_SECRET
+                  version: latest
           startupProbe:
             httpGet:
               path: /
