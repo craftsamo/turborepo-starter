@@ -36,6 +36,11 @@
       "types": "./dist/api/index.d.ts",
       "import": "./dist/api/index.mjs",
       "require": "./dist/api/index.js"
+    },
+    "./discordbot": {
+      "types": "./dist/discordbot/index.d.ts",
+      "import": "./dist/discordbot/index.mjs",
+      "require": "./dist/discordbot/index.js"
     }
   }
 }
