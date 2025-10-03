@@ -172,7 +172,7 @@ jobs:
             MAP["MONGODB_USER_PASSWORD"]="${{ secrets.MONGODB_USER_PASSWORD }}"
             MAP["MONGODB_HOST_NAME"]="${{ secrets.MONGODB_HOST_NAME }}"
             MAP["JWT_SECRET"]="${{ secrets.JWT_SECRET }}"
-            MAP["DISCORD_DISCORD_CLIENT_ID"]="${{ secrets.DISCORD_CLIENT_ID }}"
+            MAP["DISCORD_CLIENT_ID"]="${{ secrets.DISCORD_CLIENT_ID }}"
             MAP["DISCORD_CLIENT_SECRET"]="${{ secrets.DISCORD_CLIENT_SECRET }}"
             MAP["DISCORD_BOT_TOKEN"]="${{ secrets.DISCORD_BOT_TOKEN }}"
           fi
