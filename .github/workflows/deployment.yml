@@ -127,4 +127,5 @@ jobs:
       app_version: ${{ fromJson(needs.get-details.outputs.apps_by_name)[matrix.target].lowercase_version }}
       repo_name: ${{ fromJson(needs.get-details.outputs.repository).repo_name_lowercase }}
       ref_name: ${{ fromJson(needs.get-details.outputs.repository).ref_name_lowercase }}
+      deploy_target: ${{ matrix.target == 'discordbot' && 'compute' || 'cloudrun' }}
     secrets: inherit

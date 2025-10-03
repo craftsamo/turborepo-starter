@@ -21,6 +21,9 @@ on:
       ref_name:
         required: true
         type: string
+      deploy_target:
+        required: true
+        type: string
 
 jobs:
   #############################################################################
@@ -87,6 +90,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=${{ inputs.app_name }}-${{ inputs.ref_name }}
 
       - name: Create Service declaration
+        if: ${{ inputs.deploy_target == 'cloudrun' }}
         run: |
           SERVICE="${{ inputs.app_name }}-${{ inputs.environment }}"
 
@@ -151,6 +155,10 @@ jobs:
             MAP["DISCORD_BOT_TOKEN"]="${{ secrets.DISCORD_BOT_TOKEN }}"
           fi
 
+          if [ "${{ inputs.app_name }}" == "discordbot" ]; then
+            MAP["DISCORD_BOT_TOKEN"]="${{ secrets.DISCORD_BOT_TOKEN }}"
+          fi
+
           for name in "${!MAP[@]}"; do
             val="${MAP[$name]}"
             if gcloud secrets describe "$name" --project="$GOOGLE_CLOUD_PROJECT_ID" >/dev/null 2>&1; then
@@ -162,7 +170,12 @@ jobs:
             fi
           done
 
+      #########################################################################
+      # Deploy Google Cloudrun
+      #########################################################################
+
       - name: Deploy to Cloud Run
+        if: ${{ inputs.deploy_target == 'cloudrun' }}
         uses: google-github-actions/deploy-cloudrun@v2
         timeout-minutes: 5
         with:
@@ -170,3 +183,69 @@ jobs:
           region: ${{ vars.GOOGLE_CLOUD_REGION }}
           metadata: service-${{ inputs.environment }}.yaml
           project_id: ${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}
+
+      #########################################################################
+      # Deploy Google Compute Engine
+      #########################################################################
+
+      - name: Deploy to Compute Engine
+        if: ${{ inputs.deploy_target == 'compute' }}
+        run: |
+          PROJECT_NAME="${{ inputs.project_name }}"
+          APP_NAME="${{ inputs.app_name }}"
+          export ENVIRONMENT="${{ inputs.environment }}"
+
+          export GOOGLE_CLOUD_PROJECT_ID="${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}"
+          GOOGLE_CLOUD_PROJECT_NUMBER="${{ secrets.GOOGLE_CLOUD_PROJECT_NUMBER }}"
+          export REGION="${{ vars.GOOGLE_CLOUD_REGION }}"
+          SERVICE_ACCOUNT="$PROJECT_NAME-vm-sa@$GOOGLE_CLOUD_PROJECT_ID.iam.gserviceaccount.com"
+          export IMAGE="${{ steps.generate_image.outputs.docker_image }}:${{ github.sha }}"
+
+          ZONE="${{ vars.GOOGLE_CLOUD_ZONE }}"
+          VM="$PROJECT_NAME-$APP_NAME-$ENVIRONMENT"
+          MIG_NAME="$VM-mig"
+          TEMPLATE_NAME="$VM-template"
+
+          ## Environment variables specific to `apps/discordbot`
+          if [ "$APP_NAME" == "discordbot" ]; then
+            export CLOUD_RUN_API_SERVICE_URL="https://$APP_NAME-$ENVIRONMENT-$GOOGLE_CLOUD_PROJECT_NUMBER-$REGION.run.app"
+          fi
+
+          echo "Generating startup script from template"
+          envsubst < ./apps/$APP_NAME/startup.sh > startup.sh
+
+          echo "Creating instance template: ${TEMPLATE_NAME}"
+          gcloud compute instance-templates create "${TEMPLATE_NAME}" \
+            --project="${GOOGLE_CLOUD_PROJECT_ID}" \
+            --machine-type=e2-medium \
+            --image-family=cos-stable \
+            --image-project=cos-cloud \
+            --service-account="${SERVICE_ACCOUNT}" \
+            --metadata-from-file=startup-script=./startup.sh || true
+
+          # Create MIG if it does not exist
+          if gcloud compute instance-groups managed describe "${MIG_NAME}" --zone="${ZONE}" --project="${GOOGLE_CLOUD_PROJECT_ID}" >/dev/null 2>&1; then
+            echo "MIG ${MIG_NAME} exists. Updating template..."
+            gcloud compute instance-groups managed set-instance-template "${MIG_NAME}" \
+              --template="${TEMPLATE_NAME}" \
+              --zone="${ZONE}" \
+              --project="${GOOGLE_CLOUD_PROJECT_ID}"
+          else
+            echo "Creating MIG ${MIG_NAME} with initial template..."
+            gcloud compute instance-groups managed create "${MIG_NAME}" \
+              --base-instance-name="${PROJECT_NAME}-${APP_NAME}" \
+              --size=1 \
+              --template="${TEMPLATE_NAME}" \
+              --zone="${ZONE}" \
+              --project="${GOOGLE_CLOUD_PROJECT_ID}"
+          fi
+
+          echo "Starting rolling update for MIG ${MIG_NAME}"
+          gcloud compute instance-groups managed rolling-action start-update "${MIG_NAME}" \
+            --version=template="${TEMPLATE_NAME}" \
+            --zone="${ZONE}" \
+            --max-surge=1 \
+            --max-unavailable=0 \
+            --project="${GOOGLE_CLOUD_PROJECT_ID}"
+
+          echo "Triggered rolling update for ${MIG_NAME} with template ${TEMPLATE_NAME}"
