@@ -1,5 +1,5 @@
 import { Injectable, Scope } from '@nestjs/common';
-import type { Task, TaskStatus } from '@workspace/types/discord-bot';
+import type { Task, TaskStatus } from '@workspace/types/discordbot';
 
 /**
  * Service responsible for managing an ordered collection of tasks in-memory.
