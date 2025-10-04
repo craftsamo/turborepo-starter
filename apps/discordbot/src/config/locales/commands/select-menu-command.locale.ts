@@ -1,4 +1,4 @@
-import type { Locales, CommandLocale, LocaleKeyPathsWithoutTasks } from '@workspace/types/discord-bot';
+import type { Locales, CommandLocale, LocaleKeyPathsWithoutTasks } from '@workspace/types/discordbot';
 
 export interface SelectMenuComandLocale extends CommandLocale {
   placeholder: string;
