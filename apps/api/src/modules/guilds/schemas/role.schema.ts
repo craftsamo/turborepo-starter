@@ -1,7 +1,7 @@
 import { type Model, type HydratedDocument, Types } from 'mongoose';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import type { IRoleModel } from '@workspace/types/api';
-import { BaseDocument, BaseDocumentSchema } from 'database/base.schema';
+import { BaseDocument, BaseDocumentSchema } from '../../../database/base.schema';
 import { type GuildDocument } from './guild.schema';
 
 @Schema()
