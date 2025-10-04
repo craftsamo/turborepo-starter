@@ -1,4 +1,4 @@
-import type { Locales, BaseLocale, BaseLocaleDotKey } from '@workspace/types/discord-bot';
+import type { Locales, BaseLocale, BaseLocaleDotKey } from '@workspace/types/discordbot';
 
 export const selectMenuComponentLocale: Locales<BaseLocale> = {
   'en-US': {
