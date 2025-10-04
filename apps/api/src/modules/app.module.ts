@@ -6,6 +6,7 @@ import { CONFIG_DATABASE, DatabaseConfig, databaseConfig } from '../config/datab
 import { validationSchemaForEnv } from '../config/env-validation';
 import { UsersModule } from './users';
 import { AuthModule } from './auth';
+import { AppController } from './app.controller';
 
 @Module({
   imports: [
@@ -39,5 +40,6 @@ import { AuthModule } from './auth';
     UsersModule,
     AuthModule,
   ],
+  controllers: [AppController],
 })
 export class AppModule {}
