@@ -1,14 +1,32 @@
 {
   "name": "@workspace/types",
   "version": "0.0.0",
-  "type": "module",
   "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist/**"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist"
+  },
   "devDependencies": {
+    "@workspace/constants": "*",
     "@workspace/eslint": "*",
     "@workspace/prettier": "*",
     "@workspace/tsconfig": "*"
   },
   "exports": {
-    "./web": "./src/web/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./web": {
+      "types": "./dist/web/index.d.ts",
+      "import": "./dist/web/index.mjs",
+      "require": "./dist/web/index.js"
+    }
   }
 }
