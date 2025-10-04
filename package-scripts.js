@@ -52,7 +52,7 @@ module.exports = {
       build: {
         web: `docker build -t web . -f ${webPath}/Dockerfile`,
         api: `docker build -t api . -f ${apiPath}/Dockerfile`,
-        discordbot: `docker build -t api . -f ${discordPath}/Dockerfile`,
+        discordbot: `docker build -t discordbot . -f ${discordPath}/Dockerfile`,
       },
     },
     start: {
