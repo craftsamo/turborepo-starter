@@ -92,7 +92,7 @@ jobs:
           ENVIRONMENT="${{ inputs.environment }}"
           PROJECT_NAME="${{ inputs.project_name }}"
           GOOGLE_CLOUD_PROJECT_ID="${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}"
-          SERVICE="${{ inputs.app_name }}-${{ inputs.environment }}"
+          SERVICE="$PROJECT_NAME-$APP_NAME-$ENVIRONMENT"
 
           ## Environment variables specific to `apps/web`
           if [ "$APP_NAME" == "web" ]; then
@@ -124,7 +124,7 @@ jobs:
           ## System
           export GITHUB_SHA="${{ github.sha }}"
           export CONTAINER_IMAGE="${{ steps.generate_image.outputs.docker_image }}:${{ github.sha }}"
-          export CLOUD_RUN_SERVICE_NAME="$PROJECT_NAME-$APP_NAME-$ENVIRONMENT"
+          export CLOUD_RUN_SERVICE_NAME="$SERVICE"
           export GOOGLE_CLOUD_PROJECT_ID="$GOOGLE_CLOUD_PROJECT_ID"
           export GOOGLE_CLOUD_PROJECT_NUMBER="$GOOGLE_CLOUD_PROJECT_NUMBER"
           export ENVIRONMENT="$ENVIRONMENT"
