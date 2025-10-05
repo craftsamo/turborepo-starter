@@ -238,7 +238,7 @@ jobs:
           fi
 
           echo "Generating startup script from template"
-          envsubst < ./apps/$APP_NAME/startup.sh > startup.sh
+          envsubst '${APP_NAME} ${IMAGE} ${REGION} ${ENVIRONMENT} ${GOOGLE_CLOUD_PROJECT_ID} ${CLOUD_RUN_API_SERVICE_URL} ${SECRET_NAMES} ${SECRET_MAP}' < ./apps/$APP_NAME/startup.sh > startup.sh
 
           echo "Creating instance template: ${TEMPLATE_NAME}"
           gcloud compute instance-templates create "${TEMPLATE_NAME}" \
