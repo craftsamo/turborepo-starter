@@ -227,7 +227,6 @@ jobs:
           ZONE="${{ vars.GOOGLE_CLOUD_ZONE }}"
           VM="$SERVICE"
           MIG_NAME="$VM-mig"
-          TEMPLATE_NAME="$VM-template"
 
           ## Environment variables specific to `apps/discordbot`
           if [ "$APP_NAME" == "discordbot" ]; then
@@ -240,14 +239,25 @@ jobs:
           echo "Generating startup script from template"
           envsubst '${APP_NAME} ${IMAGE} ${REGION} ${ENVIRONMENT} ${GOOGLE_CLOUD_PROJECT_ID} ${CLOUD_RUN_API_SERVICE_URL} ${SECRET_NAMES} ${SECRET_MAP}' < ./apps/$APP_NAME/startup.sh > startup.sh
 
-          echo "Creating instance template: ${TEMPLATE_NAME}"
-          gcloud compute instance-templates create "${TEMPLATE_NAME}" \
-            --project="${GOOGLE_CLOUD_PROJECT_ID}" \
-            --machine-type=e2-medium \
-            --image-family=cos-stable \
-            --image-project=cos-cloud \
-            --service-account="${SERVICE_ACCOUNT}" \
-            --metadata-from-file=startup-script=./startup.sh || true
+          # Compute a hash of the generated startup script and name templates by hash
+          STARTUP_HASH=$(sha256sum ./startup.sh | awk '{print $1}' | cut -c1-12)
+          TEMPLATE_NAME="$VM-template-${STARTUP_HASH}"
+
+          echo "Using template name: ${TEMPLATE_NAME}"
+
+          # Create the instance template only if it doesn't already exist (hash prevents duplicates)
+          if gcloud compute instance-templates describe "${TEMPLATE_NAME}" --project="${GOOGLE_CLOUD_PROJECT_ID}" >/dev/null 2>&1; then
+            echo "Instance template ${TEMPLATE_NAME} already exists"
+          else
+            echo "Creating instance template: ${TEMPLATE_NAME}"
+            gcloud compute instance-templates create "${TEMPLATE_NAME}" \
+              --project="${GOOGLE_CLOUD_PROJECT_ID}" \
+              --machine-type=e2-medium \
+              --image-family=cos-stable \
+              --image-project=cos-cloud \
+              --service-account="${SERVICE_ACCOUNT}" \
+              --metadata-from-file=startup-script=./startup.sh
+          fi
 
           # Create MIG if it does not exist
           if gcloud compute instance-groups managed describe "${MIG_NAME}" --zone="${ZONE}" --project="${GOOGLE_CLOUD_PROJECT_ID}" >/dev/null 2>&1; then
