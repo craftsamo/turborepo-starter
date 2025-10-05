@@ -214,7 +214,7 @@ jobs:
         if: ${{ inputs.deploy_target == 'compute' }}
         run: |
           PROJECT_NAME="${{ inputs.project_name }}"
-          APP_NAME="${{ inputs.app_name }}"
+          export APP_NAME="${{ inputs.app_name }}"
           export ENVIRONMENT="${{ inputs.environment }}"
 
           export GOOGLE_CLOUD_PROJECT_ID="${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}"
