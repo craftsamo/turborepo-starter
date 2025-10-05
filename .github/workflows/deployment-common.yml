@@ -216,6 +216,7 @@ jobs:
           PROJECT_NAME="${{ inputs.project_name }}"
           export APP_NAME="${{ inputs.app_name }}"
           export ENVIRONMENT="${{ inputs.environment }}"
+          SERVICE="$PROJECT_NAME-$APP_NAME-$ENVIRONMENT"
 
           export GOOGLE_CLOUD_PROJECT_ID="${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}"
           GOOGLE_CLOUD_PROJECT_NUMBER="${{ secrets.GOOGLE_CLOUD_PROJECT_NUMBER }}"
@@ -224,13 +225,13 @@ jobs:
           export IMAGE="${{ steps.generate_image.outputs.docker_image }}:${{ github.sha }}"
 
           ZONE="${{ vars.GOOGLE_CLOUD_ZONE }}"
-          VM="$PROJECT_NAME-$APP_NAME-$ENVIRONMENT"
+          VM="$SERVICE"
           MIG_NAME="$VM-mig"
           TEMPLATE_NAME="$VM-template"
 
           ## Environment variables specific to `apps/discordbot`
           if [ "$APP_NAME" == "discordbot" ]; then
-            export CLOUD_RUN_API_SERVICE_URL="https://$APP_NAME-$ENVIRONMENT-$GOOGLE_CLOUD_PROJECT_NUMBER-$REGION.run.app"
+            export CLOUD_RUN_API_SERVICE_URL="https://$SERVICE-$GOOGLE_CLOUD_PROJECT_NUMBER-$REGION.run.app"
             # Make these Secret Manager secret names available to the startup script
             # Comma-separated list; startup.sh supports SECRET_NAMES and SECRET_MAP
             export SECRET_NAMES="DISCORD_BOT_TOKEN"
