@@ -38,13 +38,17 @@ extract_json_field() {
 # Get GCE metadata access token
 get_metadata_token() {
   local url="http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/token"
-  local token_json
+  local token_json token
   for i in 1 2 3; do
     log "Attempt $i: fetching metadata token from $url"
     token_json=$(curl -fsS -H "Metadata-Flavor: Google" "$url" || true)
     if [ -n "$token_json" ]; then
-      echo "$token_json" | extract_json_field access_token
-      return 0
+      token=$(echo "$token_json" | extract_json_field access_token)
+      if [ -n "$token" ]; then
+        echo "$token"
+        return 0
+      fi
+      log "metadata token JSON received but access_token empty, retrying..."
     fi
     log "retrying metadata token fetch ($i)"
     sleep 1
@@ -83,10 +87,17 @@ TOKEN=$(get_metadata_token) || {
 
 REGISTRY="${REGION}-docker.pkg.dev"
 log "Logging into Artifact Registry at ${REGISTRY}..."
-if ! printf '%s' "${TOKEN}" | docker login -u oauth2accesstoken --password-stdin "${REGISTRY}"; then
-  log "Docker login failed"
-  exit 1
-fi
+for i in 1 2 3; do
+  if printf '%s' "${TOKEN}" | docker login -u oauth2accesstoken --password-stdin "${REGISTRY}"; then
+    break
+  fi
+  log "Docker login failed, retry ${i}/3"
+  sleep 1
+  if [ "$i" = "3" ]; then
+    log "Docker login failed after retries"
+    exit 1
+  fi
+done
 
 ###############################################################################
 # Fetch secrets from Secret Manager if not provided via env
