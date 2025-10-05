@@ -11,7 +11,7 @@ log() {
 # Environment validation (values are expected to be substituted by envsubst)
 ###############################################################################
 
-CONTAINER_NAME="${CONTAINER_NAME}"
+CONTAINER_NAME="${APP_NAME}"
 IMAGE="${IMAGE}"
 REGION="${REGION}"
 ENVIRONMENT="${ENVIRONMENT}"
