@@ -37,9 +37,10 @@ extract_json_field() {
 
 # Get GCE metadata access token
 get_metadata_token() {
-  local url="http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token"
+  local url="http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/token"
   local token_json
   for i in 1 2 3; do
+    log "Attempt $i: fetching metadata token from $url"
     token_json=$(curl -fsS -H "Metadata-Flavor: Google" "$url" || true)
     if [ -n "$token_json" ]; then
       echo "$token_json" | extract_json_field access_token
