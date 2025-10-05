@@ -1,155 +1,221 @@
 #!/bin/bash
 set -euo pipefail
 
-# Startup script for Discord bot on GCE
-# This file is a template: the workflow runs `envsubst` to substitute
-# variables such as IMAGE, REGION, ENVIRONMENT, CLOUD_RUN_API_SERVICE_URL.
-
 echo "[$(date --iso-8601=seconds)] startup.sh: begin"
-
-# Expected template variables (provided by envsubst):
-#   IMAGE, REGION, ENVIRONMENT, CLOUD_RUN_API_SERVICE_URL, GOOGLE_CLOUD_PROJECT_ID
-
-# envsubst will replace these simple assignments (ensures later ${VAR:?} checks pass)
-IMAGE="${IMAGE}"
-REGION="${REGION}"
-ENVIRONMENT="${ENVIRONMENT}"
-GOOGLE_CLOUD_PROJECT_ID="${GOOGLE_CLOUD_PROJECT_ID}"
-CLOUD_RUN_API_SERVICE_URL="${CLOUD_RUN_API_SERVICE_URL:-}"
-
-: "${IMAGE:?IMAGE must be set by envsubst}"
-: "${REGION:?REGION must be set by envsubst}"
-: "${ENVIRONMENT:?ENVIRONMENT must be set by envsubst}"
-: "${GOOGLE_CLOUD_PROJECT_ID:?GOOGLE_CLOUD_PROJECT_ID must be set by envsubst}"
-
-CONTAINER_NAME="discordbot"
 
 log() {
   echo "[$(date --iso-8601=seconds)] $*"
 }
 
-log "Retrieving access token from metadata server..."
-TOKEN_JSON=$(curl -s -H "Metadata-Flavor: Google" "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token" || true)
-if [ -z "$TOKEN_JSON" ]; then
-  log "Failed to contact metadata server to retrieve token"
+###############################################################################
+# Environment validation (values are expected to be substituted by envsubst)
+###############################################################################
+
+CONTAINER_NAME="${CONTAINER_NAME}"
+IMAGE="${IMAGE}"
+REGION="${REGION}"
+ENVIRONMENT="${ENVIRONMENT}"
+GOOGLE_CLOUD_PROJECT_ID="${GOOGLE_CLOUD_PROJECT_ID}"
+CLOUD_RUN_API_SERVICE_URL="${CLOUD_RUN_API_SERVICE_URL}"
+
+: "${CONTAINER_NAME?:CONTAINER_NAME must be set by envsubst}"
+: "${IMAGE:?IMAGE must be set by envsubst}"
+: "${REGION:?REGION must be set by envsubst}"
+: "${ENVIRONMENT:?ENVIRONMENT must be set by envsubst}"
+: "${GOOGLE_CLOUD_PROJECT_ID:?GOOGLE_CLOUD_PROJECT_ID must be set by envsubst}"
+: "${CLOUD_RUN_API_SERVICE_URL:?CLOUD_RUN_API_SERVICE_URL must be set by envsubst}"
+
+###############################################################################
+# Helpers
+###############################################################################
+
+# Simple JSON field extractor (avoids jq dependency)
+extract_json_field() {
+  local key="$1"
+  sed -nE 's/.*"'$key'"\s*:\s*"([^"]+)".*/\1/p'
+}
+
+# Get GCE metadata access token
+get_metadata_token() {
+  local url="http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token"
+  local token_json
+  for i in 1 2 3; do
+    token_json=$(curl -fsS -H "Metadata-Flavor: Google" "$url" || true)
+    if [ -n "$token_json" ]; then
+      echo "$token_json" | extract_json_field access_token
+      return 0
+    fi
+    log "retrying metadata token fetch ($i)"
+    sleep 1
+  done
+  return 1
+}
+
+# Base64 decode helper
+b64_decode() {
+  if command -v base64 >/dev/null 2>&1; then
+    base64 --decode
+  else
+    openssl base64 -d
+  fi
+}
+
+###############################################################################
+# Runtime checks
+###############################################################################
+
+log "Checking docker availability..."
+if ! command -v docker >/dev/null 2>&1; then
+  log "docker not found. Exiting."
   exit 1
 fi
 
-# Extract access_token without requiring jq (use python if available, else fallback to shell parsing)
-if command -v python3 >/dev/null 2>&1; then
-  ACCESS_TOKEN=$(printf '%s' "$TOKEN_JSON" | python3 -c "import sys, json; print(json.load(sys.stdin).get('access_token',''))")
-else
-  ACCESS_TOKEN=$(printf '%s' "$TOKEN_JSON" | sed -n 's/.*"access_token" *: *"\([^\"]*\)".*/\1/p')
-fi
+###############################################################################
+# Authenticate to Artifact Registry via metadata token
+###############################################################################
 
-if [ -z "$ACCESS_TOKEN" ]; then
-  log "Failed to extract access token"
+log "Retrieving metadata token for Artifact Registry login..."
+TOKEN=$(get_metadata_token) || {
+  log "Failed to get metadata token"
   exit 1
-fi
+}
 
-log "Logging in to Artifact Registry: ${REGION}-docker.pkg.dev"
-printf '%s' "$ACCESS_TOKEN" | docker login -u oauth2accesstoken --password-stdin "${REGION}-docker.pkg.dev" >/dev/null 2>&1 || {
+REGISTRY="${REGION}-docker.pkg.dev"
+log "Logging into Artifact Registry at ${REGISTRY}..."
+if ! docker login -u oauth2accesstoken -p "${TOKEN}" "${REGISTRY}"; then
   log "Docker login failed"
   exit 1
+fi
+
+###############################################################################
+# Fetch secrets from Secret Manager if not provided via env
+# Supports two options:
+#  - SECRET_NAMES: comma-separated list of secret resource names (short names)
+#      e.g. SECRET_NAMES="DISCORD_BOT_TOKEN,ANOTHER_SECRET"
+#    maps each secret name to an env var with the same name
+#  - SECRET_MAP: comma-separated list of mappings secret_name:ENV_VAR
+#      e.g. SECRET_MAP="DISCORD_BOT_TOKEN:DISCORD_BOT_TOKEN,projects/.../secrets/DB_PASS:DB_PASS"
+#    allows custom env var names and full secret resource names
+# If both provided, SECRET_MAP takes precedence.
+###############################################################################
+
+# Helper: fetch a single secret value by name (short name or full resource)
+fetch_secret() {
+  local secret_resource="$1"
+  local sm_url
+  # If resource looks like a full resource (contains /), use as-is, else build
+  if [[ "$secret_resource" == *"/"* ]]; then
+    sm_url="https://secretmanager.googleapis.com/v1/${secret_resource}/versions/latest:access"
+  else
+    sm_url="https://secretmanager.googleapis.com/v1/projects/${GOOGLE_CLOUD_PROJECT_ID}/secrets/${secret_resource}/versions/latest:access"
+  fi
+
+  local resp
+  resp=$(curl -fsS -H "Authorization: Bearer ${TOKEN}" "$sm_url" || true)
+  if [ -z "$resp" ]; then
+    return 1
+  fi
+  local payload_b64
+  payload_b64=$(echo "$resp" | extract_json_field data)
+  if [ -z "$payload_b64" ]; then
+    return 2
+  fi
+  echo "$payload_b64" | b64_decode
 }
+
+# Process SECRET_MAP first (higher priority)
+if [ -n "${SECRET_MAP:-}" ]; then
+  IFS=',' read -ra MAP_PAIRS <<<"${SECRET_MAP}"
+  for pair in "${MAP_PAIRS[@]}"; do
+    # split on first colon
+    secret_name="${pair%%:*}"
+    env_name="${pair#*:}"
+    if [ -z "$secret_name" ] || [ -z "$env_name" ]; then
+      log "Skipping invalid SECRET_MAP pair: $pair"
+      continue
+    fi
+    log "Fetching secret for mapping: $secret_name -> $env_name"
+    val=$(fetch_secret "$secret_name") || {
+      log "Failed to fetch secret $secret_name"
+      exit 1
+    }
+    export "$env_name"="$val"
+  done
+elif [ -n "${SECRET_NAMES:-}" ]; then
+  IFS=',' read -ra NAMES <<<"${SECRET_NAMES}"
+  for name in "${NAMES[@]}"; do
+    name_trimmed=$(echo "$name" | sed 's/^\s*//;s/\s*$//')
+    if [ -z "$name_trimmed" ]; then
+      continue
+    fi
+    log "Fetching secret: $name_trimmed"
+    val=$(fetch_secret "$name_trimmed") || {
+      log "Failed to fetch secret $name_trimmed"
+      exit 1
+    }
+    export "$name_trimmed"="$val"
+  done
+else
+  # Backwards compatible: if DISCORD_BOT_TOKEN env not set, fetch it
+  if [ -z "${DISCORD_BOT_TOKEN:-}" ]; then
+    log "Fetching DISCORD_BOT_TOKEN from Secret Manager..."
+    DISCORD_BOT_TOKEN=$(fetch_secret "DISCORD_BOT_TOKEN") || {
+      log "Failed to fetch DISCORD_BOT_TOKEN"
+      exit 1
+    }
+    export DISCORD_BOT_TOKEN
+  fi
+fi
+
+###############################################################################
+# Pull image and run container
+###############################################################################
 
 log "Pulling image: ${IMAGE}"
-docker pull "${IMAGE}" || {
-  log "Failed to pull image ${IMAGE}"
-  exit 1
-}
-
-# Generic secret fetcher: accepts SECRET_NAME and ENV_VAR_NAME
-fetch_secret_to_envfile() {
-  local secret_name="$1" env_var="$2"
-
-  log "Fetching secret ${secret_name}"
-  local secret_url="https://secretmanager.googleapis.com/v1/projects/${GOOGLE_CLOUD_PROJECT_ID}/secrets/${secret_name}/versions/latest:access"
-  local secret_json
-  secret_json=$(curl -s -H "Authorization: Bearer ${ACCESS_TOKEN}" -H "Accept: application/json" "${secret_url}" || true)
-  if [ -z "$secret_json" ]; then
-    log "Failed to fetch secret ${secret_name} from Secret Manager"
-    return 1
+for i in 1 2 3; do
+  if docker pull "${IMAGE}"; then
+    break
   fi
-
-  local secret_value
-  if command -v python3 >/dev/null 2>&1; then
-    secret_value=$(printf '%s' "$secret_json" | python3 -c "import sys,json,base64; j=json.load(sys.stdin); print(base64.b64decode(j['payload']['data']).decode())")
-  else
-    local data_b64
-    data_b64=$(printf '%s' "$secret_json" | sed -n 's/.*"data" *: *"\([^\"]*\)".*/\1/p')
-    if [ -z "$data_b64" ]; then
-      log "Failed to parse secret payload for ${secret_name}"
-      return 1
-    fi
-    if printf '%s' "$data_b64" | base64 --decode >/dev/null 2>&1; then
-      secret_value=$(printf '%s' "$data_b64" | base64 --decode)
-    elif printf '%s' "$data_b64" | base64 -d >/dev/null 2>&1; then
-      secret_value=$(printf '%s' "$data_b64" | base64 -d)
-    elif printf '%s' "$data_b64" | base64 -D >/dev/null 2>&1; then
-      secret_value=$(printf '%s' "$data_b64" | base64 -D)
-    else
-      log "No suitable base64 decode available on this system for ${secret_name}"
-      return 1
-    fi
-  fi
-
-  if [ -z "${secret_value:-}" ]; then
-    log "Secret ${secret_name} is empty"
-    return 1
-  fi
-
-  # Append to env file (will be used with --env-file)
-  # Ensure env file exists with strict permissions
-  printf '%s=%s\n' "$env_var" "$secret_value" >>"$SECRETS_ENV_FILE"
-  return 0
-}
-
-# NOTE: Prepare secrets list. Format: SECRET_NAME:ENV_VAR_NAME,comma-separated
-SECRETS=${SECRETS:-DISCORD_BOT_TOKEN:DISCORD_BOT_TOKEN}
-
-# Prepare env file for docker --env-file
-SECRETS_DIR="/run/discord"
-SECRETS_ENV_FILE="$SECRETS_DIR/secrets.env"
-mkdir -p "$SECRETS_DIR"
-umask 077
-: >"$SECRETS_ENV_FILE"
-chmod 600 "$SECRETS_ENV_FILE"
-
-# If SECRETS is non-empty, iterate and fetch
-IFS=',' read -ra pairs <<<"$SECRETS"
-for pair in "${pairs[@]}"; do
-  # skip empty
-  [ -z "$pair" ] && continue
-  secret_name=${pair%%:*}
-  env_var=${pair##*:}
-  if [ -z "$secret_name" ] || [ -z "$env_var" ] || [ "$secret_name" = "$env_var" -a "$secret_name" = "" ]; then
-    log "Invalid secret pair: $pair"
-    exit 1
-  fi
-  if ! fetch_secret_to_envfile "$secret_name" "$env_var"; then
-    log "Failed to fetch secret for $secret_name"
+  log "docker pull failed, retry ${i}/3"
+  sleep 1
+  if [ "$i" = "3" ]; then
+    log "Failed to pull image after retries"
     exit 1
   fi
 done
 
-log "Stopping existing container (if any)"
+log "Removing existing container (if any): ${CONTAINER_NAME}"
 docker rm -f "${CONTAINER_NAME}" >/dev/null 2>&1 || true
 
-# Run the container with sensible defaults. Use --env-file to pass secrets safely.
 log "Starting container ${CONTAINER_NAME}"
-docker run -d --restart unless-stopped \
+docker run -d \
   --name "${CONTAINER_NAME}" \
-  --env-file "$SECRETS_ENV_FILE" \
+  --restart unless-stopped \
   -e ENVIRONMENT="${ENVIRONMENT}" \
-  -e CLOUD_RUN_API_SERVICE_URL="${CLOUD_RUN_API_SERVICE_URL:-}" \
+  -e CLOUD_RUN_API_SERVICE_URL="${CLOUD_RUN_API_SERVICE_URL}" \
+  -e DISCORD_BOT_TOKEN="${DISCORD_BOT_TOKEN}" \
   "${IMAGE}"
 
-if [ $? -ne 0 ]; then
-  log "Failed to start container"
-  exit 1
-fi
+###############################################################################
+# Signal handling
+###############################################################################
 
-# Don't print secrets
-log "startup.sh: finished"
-exit 0
+on_terminate() {
+  log "Received termination signal, stopping container ${CONTAINER_NAME}"
+  docker stop -t 30 "${CONTAINER_NAME}" || true
+  exit 0
+}
+trap on_terminate SIGTERM SIGINT
+
+###############################################################################
+# Tail logs and keep process alive
+###############################################################################
+
+log "Tailing container logs for ${CONTAINER_NAME}"
+
+docker logs -f "${CONTAINER_NAME}" &
+
+# Keep the script running so the instance considers the startup script successful
+while true; do
+  sleep 60
+done
