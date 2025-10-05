@@ -133,8 +133,8 @@ jobs:
           declare -A MAP
 
           if [ "${{ inputs.app_name }}" == "web" ]; then
-            MAP["UPSTASH_REDIS_REST_URL"]="${{ secrets.UPSTASH_REDIS_REST_URL_SECRET }}"
-            MAP["UPSTASH_REDIS_REST_TOKEN"]="${{ secrets.UPSTASH_REDIS_REST_TOKEN_SECRET }}"
+            MAP["UPSTASH_REDIS_REST_URL"]="${{ secrets.UPSTASH_REDIS_REST_URL }}"
+            MAP["UPSTASH_REDIS_REST_TOKEN"]="${{ secrets.UPSTASH_REDIS_REST_TOKEN }}"
           fi
 
           for name in "${!MAP[@]}"; do
