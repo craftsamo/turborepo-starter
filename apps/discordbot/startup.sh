@@ -83,7 +83,7 @@ TOKEN=$(get_metadata_token) || {
 
 REGISTRY="${REGION}-docker.pkg.dev"
 log "Logging into Artifact Registry at ${REGISTRY}..."
-if ! docker login -u oauth2accesstoken -p "${TOKEN}" "${REGISTRY}"; then
+if ! printf '%s' "${TOKEN}" | docker login -u oauth2accesstoken --password-stdin "${REGISTRY}"; then
   log "Docker login failed"
   exit 1
 fi
