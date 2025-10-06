@@ -221,7 +221,7 @@ jobs:
           export GOOGLE_CLOUD_PROJECT_ID="${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}"
           GOOGLE_CLOUD_PROJECT_NUMBER="${{ secrets.GOOGLE_CLOUD_PROJECT_NUMBER }}"
           export REGION="${{ vars.GOOGLE_CLOUD_REGION }}"
-          SERVICE_ACCOUNT="$PROJECT_NAME-vm-sa@$GOOGLE_CLOUD_PROJECT_ID.iam.gserviceaccount.com"
+          export SERVICE_ACCOUNT="$PROJECT_NAME-vm-sa@$GOOGLE_CLOUD_PROJECT_ID.iam.gserviceaccount.com"
           export IMAGE="${{ steps.generate_image.outputs.docker_image }}:${{ github.sha }}"
 
           ZONE="${{ vars.GOOGLE_CLOUD_ZONE }}"
@@ -237,7 +237,7 @@ jobs:
           fi
 
           echo "Generating startup script from template"
-          envsubst '${APP_NAME} ${IMAGE} ${REGION} ${ENVIRONMENT} ${GOOGLE_CLOUD_PROJECT_ID} ${CLOUD_RUN_API_SERVICE_URL} ${SECRET_NAMES} ${SECRET_MAP}' < ./apps/$APP_NAME/startup.sh > startup.sh
+          envsubst '${APP_NAME} ${IMAGE} ${REGION} ${ENVIRONMENT} ${GOOGLE_CLOUD_PROJECT_ID} ${SERVICE_ACCOUNT} ${CLOUD_RUN_API_SERVICE_URL} ${SECRET_NAMES} ${SECRET_MAP}' < ./apps/$APP_NAME/startup.sh > startup.sh
 
           # Compute a hash of the generated startup script and name templates by hash
           STARTUP_HASH=$(sha256sum ./startup.sh | awk '{print $1}' | cut -c1-12)

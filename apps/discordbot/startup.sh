@@ -17,6 +17,7 @@ IMAGE="${IMAGE}"
 REGION="${REGION}"
 ENVIRONMENT="${ENVIRONMENT}"
 GOOGLE_CLOUD_PROJECT_ID="${GOOGLE_CLOUD_PROJECT_ID}"
+SERVICE_ACCOUNT="${SERVICE_ACCOUNT}"
 CLOUD_RUN_API_SERVICE_URL="${CLOUD_RUN_API_SERVICE_URL}"
 
 : "${CONTAINER_NAME:?APP_NAME is required}"
@@ -24,51 +25,38 @@ CLOUD_RUN_API_SERVICE_URL="${CLOUD_RUN_API_SERVICE_URL}"
 : "${REGION:?REGION is required}"
 : "${ENVIRONMENT:?ENVIRONMENT is required}"
 : "${GOOGLE_CLOUD_PROJECT_ID:?GOOGLE_CLOUD_PROJECT_ID is required}"
+: "${SERVICE_ACCOUNT:?SERVICE_ACCOUNT is required}"
 : "${CLOUD_RUN_API_SERVICE_URL:?CLOUD_RUN_API_SERVICE_URL is required}"
 
 ###############################################################################
-# Helper functions
+# Install gcloud CLI (Container-Optimized OS)
 ###############################################################################
 
-metadata_ready_wait() {
-  local url="http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/token"
-  for i in $(seq 1 10); do
-    if curl -fs -H "Metadata-Flavor: Google" "$url" -o /dev/null 2>/dev/null; then
-      log "Metadata server is ready (after $i attempt(s))"
-      return 0
-    fi
-    log "Waiting for metadata server... ($i/10)"
-    sleep 2
-  done
-  log "ERROR: Metadata server not responding after retries"
-  return 1
+install_gcloud() {
+  log "Installing Google Cloud SDK..."
+
+  # Check if gcloud is already installed
+  if command -v gcloud >/dev/null 2>&1; then
+    log "gcloud is already installed"
+    return 0
+  fi
+
+  # Install gcloud CLI for Container-Optimized OS
+  export CLOUDSDK_CORE_DISABLE_PROMPTS=1
+  curl -sSL https://sdk.cloud.google.com | bash
+
+  # Add to PATH
+  export PATH="/root/google-cloud-sdk/bin:$PATH"
+
+  # Initialize gcloud with the instance's service account
+  gcloud config set account "${SERVICE_ACCOUNT}"
+  gcloud config set project "${GOOGLE_CLOUD_PROJECT_ID}"
+
+  log "gcloud installation completed"
 }
 
-extract_json_field() {
-  local key="$1"
-  sed -nE 's/.*"'$key'"\s*:\s*"([^"]+)".*/\1/p'
-}
-
-get_metadata_token() {
-  local url="http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/token"
-  local token_json token
-  for i in $(seq 1 3); do
-    log "Attempt $i: retrieving metadata token..."
-    token_json=$(curl -fsS -H "Metadata-Flavor: Google" "$url" || true)
-    token=$(echo "$token_json" | extract_json_field access_token || true)
-    if [ -n "$token" ]; then
-      echo "$token"
-      return 0
-    fi
-    log "Token empty or invalid JSON, retrying ($i)..."
-    sleep 2
-  done
-  return 1
-}
-
-b64_decode() {
-  if command -v base64 >/dev/null 2>&1; then base64 --decode; else openssl base64 -d -A; fi
-}
+# Install gcloud first
+install_gcloud
 
 ###############################################################################
 # Docker availability
@@ -81,16 +69,8 @@ command -v docker >/dev/null 2>&1 || {
 }
 
 ###############################################################################
-# Artifact Registry authentication
+# Artifact Registry authentication using gcloud
 ###############################################################################
-
-metadata_ready_wait
-
-log "Obtaining metadata token..."
-TOKEN=$(get_metadata_token) || {
-  log "ERROR: Failed to get metadata token"
-  exit 1
-}
 
 DEFAULT_REGISTRY="${REGION}-docker.pkg.dev"
 IMAGE_REGISTRY="${IMAGE%%/*}"
@@ -99,48 +79,36 @@ if [[ "$IMAGE_REGISTRY" == *".pkg.dev" ]]; then
 else
   REGISTRY_HOST="$DEFAULT_REGISTRY"
 fi
-REGISTRY_URL="https://${REGISTRY_HOST}"
 
-log "Logging into Artifact Registry ($REGISTRY_URL)..."
-for i in $(seq 1 3); do
-  if printf '%s' "$TOKEN" | docker login -u oauth2accesstoken --password-stdin "$REGISTRY_URL"; then
-    log "Docker login succeeded"
-    break
-  else
-    log "Docker login failed (attempt $i/3) — refreshing token"
-    TOKEN=$(get_metadata_token) || log "WARN: token refresh failed (attempt $i)"
-  fi
-  sleep 2
-  if [ "$i" -eq 3 ]; then
-    log "ERROR: Docker login failed after 3 attempts"
-    exit 1
-  fi
-done
+log "Configuring Docker authentication for ${REGISTRY_HOST}..."
+
+# Configure docker to use gcloud as credential helper
+gcloud auth configure-docker "${REGISTRY_HOST}" --quiet
+
+log "Docker authentication configured"
 
 ###############################################################################
-# Secret Manager
+# Secret Manager access using gcloud
 ###############################################################################
 
 fetch_secret() {
   local secret_ref="$1" env_name="$2"
-  local sm_url
-  if [[ "$secret_ref" == *"/"* ]]; then
-    sm_url="https://secretmanager.googleapis.com/v1/${secret_ref}/versions/latest:access"
-  else
-    sm_url="https://secretmanager.googleapis.com/v1/projects/${GOOGLE_CLOUD_PROJECT_ID}/secrets/${secret_ref}/versions/latest:access"
-  fi
-  log "Fetching secret $secret_ref"
-  local resp=$(curl -fsS -H "Authorization: Bearer ${TOKEN}" "$sm_url" || true)
-  local data_b64=$(echo "$resp" | extract_json_field data)
-  if [ -z "$data_b64" ]; then
-    log "ERROR: Secret $secret_ref missing data"
+
+  log "Fetching secret $secret_ref using gcloud..."
+
+  # Use gcloud to access the secret
+  local value=$(gcloud secrets versions access latest --secret="$secret_ref" --project="${GOOGLE_CLOUD_PROJECT_ID}" 2>/dev/null || true)
+
+  if [ -z "$value" ]; then
+    log "ERROR: Failed to fetch secret $secret_ref"
     return 1
   fi
-  local value=$(echo "$data_b64" | b64_decode)
+
   export "$env_name"="$value"
   log "Secret $secret_ref loaded into $env_name"
 }
 
+# Fetch secrets
 if [ -n "${SECRET_MAP:-}" ]; then
   IFS=',' read -ra PAIRS <<<"$SECRET_MAP"
   for pair in "${PAIRS[@]}"; do
@@ -163,10 +131,16 @@ fi
 
 log "Pulling image $IMAGE"
 for i in $(seq 1 3); do
-  docker pull "$IMAGE" && break || log "docker pull failed ($i/3)"
+  if docker pull "$IMAGE" 2>&1 | tee /tmp/docker_pull.log; then
+    log "Image pulled successfully"
+    break
+  else
+    log "docker pull failed ($i/3)"
+    cat /tmp/docker_pull.log
+  fi
   sleep 2
   [ "$i" -eq 3 ] && {
-    log "ERROR: image pull failed"
+    log "ERROR: image pull failed after 3 attempts"
     exit 1
   }
 done
