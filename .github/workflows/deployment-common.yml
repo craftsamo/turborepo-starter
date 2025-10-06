@@ -282,7 +282,7 @@ jobs:
             --version=template="${TEMPLATE_NAME}" \
             --zone="${ZONE}" \
             --max-surge=1 \
-            --max-unavailable=0 \
+            --max-unavailable=1 \
             --project="${GOOGLE_CLOUD_PROJECT_ID}"
 
           echo "Triggered rolling update for ${MIG_NAME} with template ${TEMPLATE_NAME}"

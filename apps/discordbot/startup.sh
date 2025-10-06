@@ -172,7 +172,7 @@ if setup_docker_gcr_auth; then
   # Attempt pull (credential helper handles authentication automatically)
   for i in $(seq 1 3); do
     log "Attempt $i/3: Pulling image with credential helper..."
-    if DOCKER_CONFIG="$DOCKER_CONFIG" docker pull "$IMAGE" 2>&1 | tee /tmp/docker_pull.log | head -n 10; then
+    if DOCKER_CONFIG="$DOCKER_CONFIG" docker pull "$IMAGE" 2>&1 | tee /tmp/docker_pull.log; then
       log "Successfully authenticated and pulled image"
       login_success=true
       break
@@ -201,7 +201,7 @@ if [ "$login_success" != "true" ]; then
       log "Docker login succeeded"
 
       # After successful login, attempt pull
-      if DOCKER_CONFIG="$DOCKER_CONFIG" docker pull "$IMAGE" 2>&1 | head -n 10; then
+      if DOCKER_CONFIG="$DOCKER_CONFIG" docker pull "$IMAGE" 2>&1 | tee /tmp/docker_pull_fallback.log; then
         login_success=true
         break
       fi
