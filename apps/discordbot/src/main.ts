@@ -5,8 +5,7 @@
 
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { type LogFormat } from '@workspace/logger';
-import { StructuredLogger } from 'utils/logger';
+import { NestStructuredLogger, type LogFormat } from '@workspace/logger';
 import { AppModule } from './app.module';
 
 declare const module: any;
@@ -20,7 +19,7 @@ async function bootstrap() {
   /**
    * Use structured logging with specified options.
    */
-  app.useLogger(new StructuredLogger({ level: 'info', format: process.env.LOG_FORMAT as LogFormat }));
+  app.useLogger(new NestStructuredLogger({ level: 'info', format: process.env.LOG_FORMAT as LogFormat }));
 
   const logger = new Logger('EntryPoint');
 
