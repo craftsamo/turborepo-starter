@@ -95,21 +95,19 @@ jobs:
 
           ## Environment variables specific to `apps/web`
           if [ "$APP_NAME" == "web" ]; then
-            if [ "$ENVIRONMENT" == "production" ]; then
-              export BASE_URL="https://${{ vars.DOMAIN }}"
-            else
-              export BASE_URL="https://dev.${{ vars.DOMAIN }}"
-            fi
             export SERVICE_ACCOUNT="$PROJECT_NAME-cloudrun-sa@$GOOGLE_CLOUD_PROJECT_ID.iam.gserviceaccount.com"
           fi
 
           ## NOTE: ...increase as `apps/**` is added
 
           ## Common environment variables by mode
+          GOOGLE_CLOUD_PROJECT_NUMBER="${{ secrets.GOOGLE_CLOUD_PROJECT_NUMBER }}"
+          DOMAIN="${{ vars.DOMAIN }}"
           if [ "$ENVIRONMENT" == "production" ]; then
-            echo "There are no environment variables specific to the production environment."
+            export BASE_URL="https://${DOMAIN:-"$PROJECT_NAME-$APP_NAME-$ENVIRONMENT-$GOOGLE_CLOUD_PROJECT_NUMBER.${{ vars.GOOGLE_CLOUD_REGION }}.run.app"}"
           else
-            echo "There are no environment variables specific to the development environment."
+            HOST=${DOMAIN:+dev.$DOMAIN}
+            export BASE_URL="https://${HOST:-$PROJECT_NAME-web-$ENVIRONMENT-$GOOGLE_CLOUD_PROJECT_NUMBER.${{ vars.GOOGLE_CLOUD_REGION }}.run.app}"
           fi
 
           ## Common environment variables
@@ -120,7 +118,7 @@ jobs:
           export CONTAINER_IMAGE="${{ steps.generate_image.outputs.docker_image }}:${{ github.sha }}"
           export CLOUD_RUN_SERVICE_NAME="$PROJECT_NAME-$APP_NAME-$ENVIRONMENT"
           export GOOGLE_CLOUD_PROJECT_ID="$GOOGLE_CLOUD_PROJECT_ID"
-          export GOOGLE_CLOUD_PROJECT_NUMBER="${{ secrets.GOOGLE_CLOUD_PROJECT_NUMBER }}"
+          export GOOGLE_CLOUD_PROJECT_NUMBER="$GOOGLE_CLOUD_PROJECT_NUMBER"
           export ENVIRONMENT="$ENVIRONMENT"
 
           envsubst < ./apps/$APP_NAME/service.yaml > service-$ENVIRONMENT.yaml
