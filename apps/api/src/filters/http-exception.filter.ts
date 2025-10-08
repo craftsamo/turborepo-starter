@@ -1,8 +1,9 @@
-import { ExceptionFilter, Catch, ArgumentsHost, HttpException } from '@nestjs/common';
+import { ExceptionFilter, Catch, ArgumentsHost, HttpException, Logger } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { ErrorCode } from '@workspace/constants';
 import type { RESTErrorData, RESTAPIErrorResult } from '@workspace/types/api';
 import { APIException, type APIExceptionDetails } from '../exceptions';
+import { formatUserAgent } from '../utils';
 
 type HttpExceptionGetResponse = {
   message: string | object | object[];
@@ -15,6 +16,8 @@ type HttpExceptionGetResponse = {
  */
 @Catch(HttpException)
 export class HttpExceptionFilter implements ExceptionFilter<APIException> {
+  private logger = new Logger(HttpExceptionFilter.name);
+
   /**
    * Creates a JSON response object for an API error.
    *
@@ -101,6 +104,11 @@ export class HttpExceptionFilter implements ExceptionFilter<APIException> {
               message: 'An error occurred.',
               errors: this.convertToRESTAPIErrorData(exceptionResponse as HttpExceptionGetResponse),
             };
+
+    this.logger.error(
+      `${request.method} ${status} ${formatUserAgent(request.header('user-agent'))} ${request.url} ${response.statusMessage || ''} ${exception}`,
+      { ...errorDetails, error: exception },
+    );
 
     const responseJson = this.createErrorResponseJson(errorDetails, status, request.url);
     response.status(status).json(responseJson);
