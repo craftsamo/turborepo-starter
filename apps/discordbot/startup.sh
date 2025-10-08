@@ -3,7 +3,7 @@ set -euo pipefail
 
 log() {
   if timestamp=$(date --iso-8601=seconds 2>/dev/null); then :; else timestamp=$(date +"%Y-%m-%dT%H:%M:%S%z"); fi
-  echo "[$timestamp] $*"
+  echo "[$timestamp] $*" 1>&2
 }
 
 log "startup.sh: begin"
@@ -50,7 +50,7 @@ extract_json_field() {
 }
 
 get_metadata_token() {
-  local url="http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/token"
+  local url="http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/token?scopes=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcloud-platform"
   local token_json token
 
   # Check service account
@@ -63,7 +63,7 @@ get_metadata_token() {
     token_json=$(curl -fsS -H "Metadata-Flavor: Google" "$url" || true)
     token=$(echo "$token_json" | extract_json_field access_token || true)
     if [ -n "$token" ]; then
-      echo "$token"
+      echo -n "$token"
       return 0
     fi
     log "Token empty or invalid JSON, retrying ($i)..."
@@ -235,36 +235,112 @@ fi
 
 fetch_secret() {
   local secret_ref="$1" env_name="$2"
-  local sm_url
+  local sm_url status resp_file header_file data_b64 value token_len attempt
+  local TOKEN token_preview
 
   # Acquire token (for Secret Manager)
   TOKEN=$(get_metadata_token) || {
     log "ERROR: Failed to get token for Secret Manager"
     return 1
   }
-
-  if [[ "$secret_ref" == *"/"* ]]; then
-    sm_url="https://secretmanager.googleapis.com/v1/${secret_ref}/versions/latest:access"
-  else
-    sm_url="https://secretmanager.googleapis.com/v1/projects/${GOOGLE_CLOUD_PROJECT_ID}/secrets/${secret_ref}/versions/latest:access"
+  TOKEN=$(echo -n "$TOKEN" | tr -d '\n' | tr -d '\r')
+  token_len=${#TOKEN}
+  if [ "$token_len" -lt 10 ]; then
+    log "ERROR: Metadata token seems invalid (length=$token_len)"
+    return 1
   fi
+  token_preview=$(printf "%s" "$TOKEN" | cut -c1-12)"..."
 
-  log "Fetching secret $secret_ref"
-  local resp=$(curl -fsS -H "Authorization: Bearer ${TOKEN}" "$sm_url" || true)
+  # Determine base project candidates
+  local primary_project="${SECRET_PROJECT_ID:-${GOOGLE_CLOUD_PROJECT_ID}}"
+  local sa_email sa_project
+  sa_email=$(curl -fsS -H "Metadata-Flavor: Google" \
+    "http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/email" || echo "")
+  sa_project=$(echo "$sa_email" | sed -nE 's/^[^@]+@([^.]*)\.iam\.gserviceaccount\.com$/\1/p')
 
-  if [ -z "$resp" ]; then
-    log "ERROR: Empty response for secret $secret_ref"
+  # Build list of candidate projects (unique, non-empty)
+  local candidates=()
+  if [ -n "$primary_project" ]; then candidates+=("$primary_project"); fi
+  if [ -n "$sa_project" ] && [ "$sa_project" != "$primary_project" ]; then candidates+=("$sa_project"); fi
+
+  resp_file="/tmp/secret_${env_name}.json"
+  header_file="/tmp/secret_${env_name}.headers"
+  : >"$resp_file"
+  : >"$header_file"
+
+  status="000"
+
+  for project in "${candidates[@]}"; do
+    if [[ "$secret_ref" == *"/"* ]]; then
+      sm_url="https://secretmanager.googleapis.com/v1/${secret_ref}/versions/latest:access"
+    else
+      sm_url="https://secretmanager.googleapis.com/v1/projects/${project}/secrets/${secret_ref}/versions/latest:access"
+    fi
+
+    log "Fetching secret $secret_ref (project=$project; token=${token_preview})"
+
+    for attempt in 1 2 3; do
+      if [ -n "${BILLING_PROJECT_ID:-}" ]; then extra_header=(-H "x-goog-user-project: ${BILLING_PROJECT_ID}"); else extra_header=(); fi
+      status=$(curl -sS -D "$header_file" -o "$resp_file" -w "%{http_code}" \
+        -H "Authorization: Bearer ${TOKEN}" \
+        -H "Accept: application/json" \
+        "${extra_header[@]}" \
+        "$sm_url" || echo "000")
+      if [ "$status" = "200" ]; then
+        break
+      fi
+      log "Fetch attempt $attempt failed ($status); retrying..."
+      TOKEN=$(get_metadata_token || echo "")
+      TOKEN=$(echo -n "$TOKEN" | tr -d '\n' | tr -d '\r')
+      token_preview=$(printf "%s" "$TOKEN" | cut -c1-12)"..."
+      sleep 1
+    done
+
+    if [ "$status" = "200" ]; then
+      break
+    fi
+
+    log "Project $project failed with status $status; trying next candidate if any"
+  done
+
+  if [ "$status" != "200" ]; then
+    log "ERROR: Secret fetch failed ($status) for $secret_ref"
+    log "Response preview: $(head -c 300 \"$resp_file\" 2>/dev/null || true)"
+    log "Headers preview: $(grep -iE '^(www-authenticate|x-goog-)' \"$header_file\" 2>/dev/null | head -n 5 | tr '\n' ' ' || true)"
+    log "Debug SA: $(curl -sS -H 'Metadata-Flavor: Google' http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/email || true)"
+    log "Debug Scopes: $(curl -sS -H 'Metadata-Flavor: Google' http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/scopes || true)"
     return 1
   fi
 
-  local data_b64=$(echo "$resp" | extract_json_field data)
+  # Detect and handle gzip-encoded responses
+  body_file="$resp_file"
+  if command -v gzip >/dev/null 2>&1 && grep -qi '^Content-Encoding: gzip' "$header_file" 2>/dev/null; then
+    if gzip -dc "$resp_file" >"${resp_file}.dec" 2>/dev/null; then
+      body_file="${resp_file}.dec"
+    fi
+  fi
+
+  # Log basic diagnostics for successful response
+  ct=$(grep -i '^Content-Type:' "$header_file" 2>/dev/null | head -n1 | cut -d' ' -f2- | tr -d '\r')
+  ce=$(grep -i '^Content-Encoding:' "$header_file" 2>/dev/null | head -n1 | cut -d' ' -f2- | tr -d '\r')
+  sz=$(wc -c <"$body_file" | tr -d ' \n' 2>/dev/null || echo 0)
+  log "Secret response: size=${sz}B; content-type=${ct:-unknown}; encoding=${ce:-none}"
+
+  # Extract base64 data from JSON (robust to whitespace/newlines)
+  data_b64=$(tr -d '\r\n' <"$body_file" | sed -nE 's/.*"payload"\s*:\s*\{[^}]*"data"\s*:\s*"([^"]+)".*/\1/p')
+  if [ -z "$data_b64" ]; then
+    data_b64=$(tr -d '\r\n' <"$body_file" | sed -nE 's/.*"data"\s*:\s*"([^"]+)".*/\1/p')
+  fi
+
   if [ -z "$data_b64" ]; then
     log "ERROR: Secret $secret_ref missing data field"
-    log "Response preview: ${resp:0:200}"
+    # Print a sanitized preview to avoid binary/control chars flooding logs
+    preview=$(tr -dc '\n\r\t\040-\176' <"$body_file" 2>/dev/null | head -c 300)
+    log "Response preview: ${preview}"
     return 1
   fi
 
-  local value=$(echo "$data_b64" | b64_decode)
+  value=$(printf "%s" "$data_b64" | tr -d '\n' | tr -d '\r' | b64_decode)
   export "$env_name"="$value"
   log "Secret $secret_ref loaded into $env_name"
 }
