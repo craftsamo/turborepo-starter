@@ -211,7 +211,7 @@ jobs:
 
           ## Environment variables specific to `apps/discordbot`
           if [ "$APP_NAME" == "discordbot" ]; then
-            export CLOUD_RUN_API_SERVICE_URL="https://$PROJECT_NAME-api-$ENVIRONMENT-$GOOGLE_CLOUD_PROJECT_NUMBER-$REGION.run.app"
+            export CLOUD_RUN_API_SERVICE_URL="https://$PROJECT_NAME-api-$ENVIRONMENT-$GOOGLE_CLOUD_PROJECT_NUMBER.$REGION.run.app"
             export SECRET_NAMES="DISCORD_BOT_TOKEN"
           fi
 
