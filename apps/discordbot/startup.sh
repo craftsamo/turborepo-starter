@@ -22,6 +22,7 @@ ENVIRONMENT="${ENVIRONMENT}"
 GOOGLE_CLOUD_PROJECT_ID="${GOOGLE_CLOUD_PROJECT_ID}"
 CLOUD_RUN_API_SERVICE_URL="${CLOUD_RUN_API_SERVICE_URL}"
 LOG_FORMAT="${LOG_FORMAT}"
+SECRET_NAMES="${SECRET_NAMES}"
 
 : "${CONTAINER_NAME:?APP_NAME is required}"
 : "${IMAGE:?IMAGE is required}"
@@ -29,6 +30,7 @@ LOG_FORMAT="${LOG_FORMAT}"
 : "${ENVIRONMENT:?ENVIRONMENT is required}"
 : "${GOOGLE_CLOUD_PROJECT_ID:?GOOGLE_CLOUD_PROJECT_ID is required}"
 : "${CLOUD_RUN_API_SERVICE_URL:?CLOUD_RUN_API_SERVICE_URL is required}"
+: "${SECRET_NAMES:?SECRET_NAMES is required}"
 
 ###############################################################################
 # Helper functions
@@ -390,14 +392,17 @@ fetch_secret() {
 
 SECRET_ENVS=()
 
-if [ -n "${SECRET_NAMES:-}" ]; then
-  IFS=',' read -ra NAMES <<<"$SECRET_NAMES"
-  for name in "${NAMES[@]}"; do
-    name="${name//[[:space:]]/}"
-    [ -z "$name" ] && continue
-    fetch_secret "$name" "$name" || exit 1
-    SECRET_ENVS+=("$name")
-  done
+log "Secret Manager: loading secrets -> ${SECRET_NAMES}"
+IFS=',' read -ra NAMES <<<"$SECRET_NAMES"
+for name in "${NAMES[@]}"; do
+  name="${name//[[:space:]]/}"
+  [ -z "$name" ] && continue
+  fetch_secret "$name" "$name" || exit 1
+  SECRET_ENVS+=("$name")
+done
+
+if [ ${#SECRET_ENVS[@]} -eq 0 ]; then
+  log "WARNING: No secrets loaded from SECRET_NAMES"
 fi
 
 ###############################################################################
