@@ -5,6 +5,8 @@ services:
     build:
       context: .
       dockerfile: ./apps/web/Dockerfile
+      # args:
+      # CLOUD_RUN_API_SERVICE_URL: "http://host.docker.internal:5002"
     env_file:
       - ./apps/web/.env
     environment:

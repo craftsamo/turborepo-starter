@@ -19,11 +19,12 @@ const nextConfig: NextConfig = {
    *          An array of rewrite rules or an empty array if no rewrites are applied.
    */
   async rewrites() {
-    if (process.env.CLOUD_RUN_API_SERVICE_URL) {
+    const base = (process.env.CLOUD_RUN_API_SERVICE_URL || '').replace(/\/$/, '');
+    if (base) {
       return [
         {
           source: '/api/:path*',
-          destination: `${process.env.CLOUD_RUN_API_SERVICE_URL}/:path*`,
+          destination: `${base}/:path*`,
         },
       ];
     }
