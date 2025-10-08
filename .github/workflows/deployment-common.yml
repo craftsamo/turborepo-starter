@@ -217,31 +217,26 @@ jobs:
           export APP_NAME="${{ inputs.app_name }}"
           export ENVIRONMENT="${{ inputs.environment }}"
           SERVICE="$PROJECT_NAME-$APP_NAME-$ENVIRONMENT"
-
-          export GOOGLE_CLOUD_PROJECT_ID="${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}"
           GOOGLE_CLOUD_PROJECT_NUMBER="${{ secrets.GOOGLE_CLOUD_PROJECT_NUMBER }}"
           export REGION="${{ vars.GOOGLE_CLOUD_REGION }}"
-          SERVICE_ACCOUNT="$PROJECT_NAME-vm-sa@$GOOGLE_CLOUD_PROJECT_ID.iam.gserviceaccount.com"
           export IMAGE="${{ steps.generate_image.outputs.docker_image }}:${{ github.sha }}"
-
-          ZONE="${{ vars.GOOGLE_CLOUD_ZONE }}"
-          VM="$SERVICE"
-          MIG_NAME="$VM-mig"
 
           ## Environment variables specific to `apps/discordbot`
           if [ "$APP_NAME" == "discordbot" ]; then
             export CLOUD_RUN_API_SERVICE_URL="https://$SERVICE-$GOOGLE_CLOUD_PROJECT_NUMBER-$REGION.run.app"
-            # Make these Secret Manager secret names available to the startup script
-            # Comma-separated list; startup.sh supports SECRET_NAMES and SECRET_MAP
             export SECRET_NAMES="DISCORD_BOT_TOKEN"
           fi
 
           echo "Generating startup script from template"
+          export GOOGLE_CLOUD_PROJECT_ID="${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}"
           envsubst '${APP_NAME} ${IMAGE} ${REGION} ${ENVIRONMENT} ${GOOGLE_CLOUD_PROJECT_ID} ${CLOUD_RUN_API_SERVICE_URL} ${SECRET_NAMES} ${SECRET_MAP}' < ./apps/$APP_NAME/startup.sh > startup.sh
 
           # Compute a hash of the generated startup script and name templates by hash
+          ZONE="${{ vars.GOOGLE_CLOUD_ZONE }}"
+          VM="$SERVICE"
           STARTUP_HASH=$(sha256sum ./startup.sh | awk '{print $1}' | cut -c1-12)
           TEMPLATE_NAME="$VM-template-${STARTUP_HASH}"
+          SERVICE_ACCOUNT="$PROJECT_NAME-vm-sa@$GOOGLE_CLOUD_PROJECT_ID.iam.gserviceaccount.com"
 
           echo "Using template name: ${TEMPLATE_NAME}"
 
@@ -261,6 +256,7 @@ jobs:
           fi
 
           # Create MIG if it does not exist
+          MIG_NAME="$VM-mig"
           if gcloud compute instance-groups managed describe "${MIG_NAME}" --zone="${ZONE}" --project="${GOOGLE_CLOUD_PROJECT_ID}" >/dev/null 2>&1; then
             echo "MIG ${MIG_NAME} exists. Updating template..."
             gcloud compute instance-groups managed set-instance-template "${MIG_NAME}" \
