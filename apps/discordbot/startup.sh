@@ -345,20 +345,16 @@ fetch_secret() {
   log "Secret $secret_ref loaded into $env_name"
 }
 
-if [ -n "${SECRET_MAP:-}" ]; then
-  IFS=',' read -ra PAIRS <<<"$SECRET_MAP"
-  for pair in "${PAIRS[@]}"; do
-    secret_name="${pair%%:*}"
-    env_var="${pair#*:}"
-    fetch_secret "$secret_name" "$env_var" || exit 1
-  done
-elif [ -n "${SECRET_NAMES:-}" ]; then
+SECRET_ENVS=()
+
+if [ -n "${SECRET_NAMES:-}" ]; then
   IFS=',' read -ra NAMES <<<"$SECRET_NAMES"
   for name in "${NAMES[@]}"; do
+    name="${name//[[:space:]]/}"
+    [ -z "$name" ] && continue
     fetch_secret "$name" "$name" || exit 1
+    SECRET_ENVS+=("$name")
   done
-else
-  fetch_secret "DISCORD_BOT_TOKEN" "DISCORD_BOT_TOKEN" || exit 1
 fi
 
 ###############################################################################
@@ -369,13 +365,18 @@ fi
 DOCKER_CONFIG="$DOCKER_CONFIG" docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
 
 log "Starting container $CONTAINER_NAME"
-DOCKER_CONFIG="$DOCKER_CONFIG" docker run -d \
-  --name "$CONTAINER_NAME" \
-  --restart unless-stopped \
-  -e ENVIRONMENT="$ENVIRONMENT" \
-  -e CLOUD_RUN_API_SERVICE_URL="$CLOUD_RUN_API_SERVICE_URL" \
-  -e DISCORD_BOT_TOKEN="${DISCORD_BOT_TOKEN:-}" \
-  "$IMAGE"
+RUN_ARGS=(docker run -d
+  --name "$CONTAINER_NAME"
+  --restart unless-stopped
+  -e ENVIRONMENT="$ENVIRONMENT"
+  -e CLOUD_RUN_API_SERVICE_URL="$CLOUD_RUN_API_SERVICE_URL"
+)
+
+for v in "${SECRET_ENVS[@]}"; do
+  RUN_ARGS+=(-e "$v=${!v}")
+done
+
+DOCKER_CONFIG="$DOCKER_CONFIG" "${RUN_ARGS[@]}" "$IMAGE"
 
 trap 'log "Termination signal, stopping container"; DOCKER_CONFIG="$DOCKER_CONFIG" docker stop -t 30 "$CONTAINER_NAME" || true; exit 0' SIGTERM SIGINT
 
