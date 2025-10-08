@@ -11,8 +11,7 @@ import passport from 'passport';
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
 import MongoStore from 'connect-mongo';
-import { type LogFormat } from '@workspace/logger';
-import { StructuredLogger } from './utils/logger';
+import { NestStructuredLogger, type LogFormat } from '@workspace/logger';
 import { AllExceptionsFilter } from './filters';
 import { GlobalValidationException } from './exceptions';
 import { databaseConfig } from './config/database.config';
@@ -29,7 +28,7 @@ async function bootstrap() {
   /**
    * Use structured logging with specified options.
    */
-  app.useLogger(new StructuredLogger({ level: 'info', format: process.env.LOG_FORMAT as LogFormat }));
+  app.useLogger(new NestStructuredLogger({ level: 'info', format: process.env.LOG_FORMAT as LogFormat }));
 
   const logger = new Logger('EntryPoint');
 
