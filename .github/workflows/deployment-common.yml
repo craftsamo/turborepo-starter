@@ -227,9 +227,12 @@ jobs:
             export SECRET_NAMES="DISCORD_BOT_TOKEN"
           fi
 
+          ## NOTE: ...increase as `apps/**` is added
+
           echo "Generating startup script from template"
           export GOOGLE_CLOUD_PROJECT_ID="${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}"
-          envsubst '${APP_NAME} ${IMAGE} ${REGION} ${ENVIRONMENT} ${GOOGLE_CLOUD_PROJECT_ID} ${CLOUD_RUN_API_SERVICE_URL} ${SECRET_NAMES} ${SECRET_MAP}' < ./apps/$APP_NAME/startup.sh > startup.sh
+          export LOG_FORMAT="json"
+          envsubst '${APP_NAME} ${IMAGE} ${REGION} ${ENVIRONMENT} ${GOOGLE_CLOUD_PROJECT_ID} ${CLOUD_RUN_API_SERVICE_URL} ${LOG_FORMAT} ${SECRET_NAMES}' < ./apps/$APP_NAME/startup.sh > startup.sh
 
           # Compute a hash of the generated startup script and name templates by hash
           ZONE="${{ vars.GOOGLE_CLOUD_ZONE }}"
