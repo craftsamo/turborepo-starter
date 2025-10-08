@@ -77,6 +77,8 @@ jobs:
         with:
           context: .
           file: ./apps/${{ inputs.app_name }}/Dockerfile
+          build-args: |
+            CLOUD_RUN_API_SERVICE_URL=https://${{ inputs.project_name }}-api-${{ inputs.environment }}-${{ secrets.GOOGLE_CLOUD_PROJECT_NUMBER }}-${{ vars.GOOGLE_CLOUD_REGION }}.run.app
           push: true
           platforms: linux/amd64
           tags: |

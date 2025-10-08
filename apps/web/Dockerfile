@@ -1,7 +1,11 @@
 ###############################################################################
 # Builder stage: Install dependencies and prune unnecessary files             #
 ###############################################################################
+ARG CLOUD_RUN_API_SERVICE_URL
 FROM node:20-alpine AS builder
+
+# Propagate build arg early so pruning or other scripts could inspect it
+ARG CLOUD_RUN_API_SERVICE_URL
 
 # Update Alpine package manager and install libc6-compat for compatibility
 RUN apk update && apk add --no-cache libc6-compat
@@ -38,7 +42,12 @@ RUN yarn install --frozen-lockfile --production=false
 ###############################################################################
 # Sourcer stage: Build the application                                        #
 ###############################################################################
+ARG CLOUD_RUN_API_SERVICE_URL
 FROM node:20-alpine AS sourcer
+
+# Carry forward arg for build stage again (defensive)
+ARG CLOUD_RUN_API_SERVICE_URL
+ENV CLOUD_RUN_API_SERVICE_URL=${CLOUD_RUN_API_SERVICE_URL}
 
 # Set working directory in the container
 WORKDIR /app
@@ -47,13 +56,16 @@ WORKDIR /app
 COPY --from=installer /app/ .
 COPY --from=builder /app/out/full/ .
 
-# Build the application using turbo
+# Build the application (env var still available to Next.js via ARG -> ENV chain)
 RUN yarn turbo run build --filter=web...
 
 ###############################################################################
 # Runner stage: Prepare lightweight runtime for the application               #
 ###############################################################################
+ARG CLOUD_RUN_API_SERVICE_URL
 FROM node:20-alpine as runner
+
+ARG CLOUD_RUN_API_SERVICE_URL
 
 # Set working directory in the container
 WORKDIR /app
@@ -71,6 +83,9 @@ WORKDIR /app/apps/web/
 # Define environment variables for the application
 ENV PORT=8080
 ENV HOSTNAME="0.0.0.0"
+
+# Optional: pass through API service URL at runtime (set via Cloud Run env var)
+ENV CLOUD_RUN_API_SERVICE_URL="${CLOUD_RUN_API_SERVICE_URL:-}"
 
 # Start the web application
 CMD [ "npm", "start" ]
