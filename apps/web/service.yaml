@@ -36,6 +36,8 @@ spec:
               value: '${CLOUD_RUN_SERVICE_NAME}'
             - name: ENVIRONMENT
               value: '${ENVIRONMENT}'
+            - name: CLOUD_RUN_API_SERVICE_URL
+              value: '${CLOUD_RUN_API_SERVICE_URL}'
 
             ## Application
             - name: LOG_FORMAT
