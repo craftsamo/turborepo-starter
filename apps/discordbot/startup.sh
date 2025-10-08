@@ -8,6 +8,9 @@ log() {
 
 log "startup.sh: begin"
 
+ALWAYS_DOCKER_CLEANUP=false
+DOCKER_PRUNE_VOLUMES=false
+
 ###############################################################################
 # Required environment variables
 ###############################################################################
@@ -80,6 +83,20 @@ b64_decode() {
 ###############################################################################
 # Docker availability
 ###############################################################################
+
+# Disk cleanup helper for low-space recovery
+docker_cleanup() {
+  log "Starting docker cleanup (system prune + builder prune)"
+  DOCKER_CONFIG="$DOCKER_CONFIG" docker system df || true
+  if [ "${DOCKER_PRUNE_VOLUMES:-false}" = "true" ]; then
+    DOCKER_CONFIG="$DOCKER_CONFIG" docker system prune -af --volumes || true
+  else
+    DOCKER_CONFIG="$DOCKER_CONFIG" docker system prune -af || true
+  fi
+  DOCKER_CONFIG="$DOCKER_CONFIG" docker builder prune -af || true
+  DOCKER_CONFIG="$DOCKER_CONFIG" docker system df || true
+  log "Docker cleanup completed"
+}
 
 log "Checking docker availability..."
 command -v docker >/dev/null 2>&1 || {
@@ -170,6 +187,12 @@ login_success=false
 if setup_docker_gcr_auth; then
   log "Testing Docker pull with credential helper..."
 
+  # Optional pre-cleanup to always free space before pull
+  if [ "${ALWAYS_DOCKER_CLEANUP:-false}" = "true" ]; then
+    log "ALWAYS_DOCKER_CLEANUP=true, running pre-cleanup"
+    docker_cleanup || true
+  fi
+
   # Attempt pull (credential helper handles authentication automatically)
   for i in $(seq 1 3); do
     log "Attempt $i/3: Pulling image with credential helper..."
@@ -178,8 +201,14 @@ if setup_docker_gcr_auth; then
       login_success=true
       break
     else
-      log "Pull failed, retrying..."
-      tail -n 5 /tmp/docker_pull.log || true
+      # Check for no space left error and try cleanup once per attempt
+      if grep -qi "no space left on device" /tmp/docker_pull.log 2>/dev/null; then
+        log "Detected low disk space during pull; performing cleanup and retrying"
+        docker_cleanup || true
+      else
+        log "Pull failed (non-space error), will retry"
+      fi
+      tail -n 10 /tmp/docker_pull.log || true
     fi
     sleep 2
   done
@@ -188,6 +217,12 @@ fi
 # Method 2: Direct authentication with metadata token (fallback)
 if [ "$login_success" != "true" ]; then
   log "Falling back to oauth2accesstoken authentication..."
+
+  # Optional pre-cleanup here as well
+  if [ "${ALWAYS_DOCKER_CLEANUP:-false}" = "true" ]; then
+    log "ALWAYS_DOCKER_CLEANUP=true, running pre-cleanup"
+    docker_cleanup || true
+  fi
 
   TOKEN=$(get_metadata_token) || {
     log "ERROR: Failed to get metadata token"
@@ -205,6 +240,13 @@ if [ "$login_success" != "true" ]; then
       if DOCKER_CONFIG="$DOCKER_CONFIG" docker pull "$IMAGE" 2>&1 | tee /tmp/docker_pull_fallback.log; then
         login_success=true
         break
+      else
+        if grep -qi "no space left on device" /tmp/docker_pull_fallback.log 2>/dev/null; then
+          log "Detected low disk space during fallback pull; performing cleanup and retrying"
+          docker_cleanup || true
+        else
+          log "Pull failed (non-space error), will retry"
+        fi
       fi
     else
       log "Docker login failed"
