@@ -20,7 +20,7 @@ IMAGE="${IMAGE}"
 REGION="${REGION}"
 ENVIRONMENT="${ENVIRONMENT}"
 GOOGLE_CLOUD_PROJECT_ID="${GOOGLE_CLOUD_PROJECT_ID}"
-CLOUD_RUN_API_SERVICE_URL="${CLOUD_RUN_API_SERVICE_URL}"
+BASE_URL="${BASE_URL}"
 LOG_FORMAT="${LOG_FORMAT}"
 SECRET_NAMES="${SECRET_NAMES}"
 
@@ -29,7 +29,7 @@ SECRET_NAMES="${SECRET_NAMES}"
 : "${REGION:?REGION is required}"
 : "${ENVIRONMENT:?ENVIRONMENT is required}"
 : "${GOOGLE_CLOUD_PROJECT_ID:?GOOGLE_CLOUD_PROJECT_ID is required}"
-: "${CLOUD_RUN_API_SERVICE_URL:?CLOUD_RUN_API_SERVICE_URL is required}"
+: "${BASE_URL:?BASE_URL is required}"
 : "${SECRET_NAMES:?SECRET_NAMES is required}"
 
 ###############################################################################
@@ -417,7 +417,7 @@ RUN_ARGS=(docker run -d
   --name "$CONTAINER_NAME"
   --restart unless-stopped
   -e ENVIRONMENT="$ENVIRONMENT"
-  -e CLOUD_RUN_API_SERVICE_URL="$CLOUD_RUN_API_SERVICE_URL"
+  -e BASE_URL="$BASE_URL"
   -e LOG_FORMAT="$LOG_FORMAT"
 )
 

@@ -211,8 +211,16 @@ jobs:
 
           ## Environment variables specific to `apps/discordbot`
           if [ "$APP_NAME" == "discordbot" ]; then
-            export CLOUD_RUN_API_SERVICE_URL="https://$PROJECT_NAME-api-$ENVIRONMENT-$GOOGLE_CLOUD_PROJECT_NUMBER.$REGION.run.app"
             export SECRET_NAMES="DISCORD_BOT_TOKEN"
+          fi
+
+          ## Common environment variables by mode
+          DOMAIN="${{ vars.DOMAIN }}"
+          if [ "$ENVIRONMENT" == "production" ]; then
+            export BASE_URL="https://${DOMAIN:-"$PROJECT_NAME-$APP_NAME-$ENVIRONMENT-$GOOGLE_CLOUD_PROJECT_NUMBER.$GOOGLE_CLOUD_REGION.run.app"}"
+          else
+            HOST=${DOMAIN:+dev.$DOMAIN}
+            export BASE_URL="https://${HOST:-$PROJECT_NAME-web-$ENVIRONMENT-$GOOGLE_CLOUD_PROJECT_NUMBER.$GOOGLE_CLOUD_REGION.run.app}"
           fi
 
           ## NOTE: ...increase as `apps/**` is added
@@ -220,7 +228,7 @@ jobs:
           echo "Generating startup script from template"
           export GOOGLE_CLOUD_PROJECT_ID="${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}"
           export LOG_FORMAT="json"
-          envsubst '${APP_NAME} ${IMAGE} ${REGION} ${ENVIRONMENT} ${GOOGLE_CLOUD_PROJECT_ID} ${CLOUD_RUN_API_SERVICE_URL} ${LOG_FORMAT} ${SECRET_NAMES}' < ./apps/$APP_NAME/startup.sh > startup.sh
+          envsubst '${APP_NAME} ${IMAGE} ${REGION} ${ENVIRONMENT} ${GOOGLE_CLOUD_PROJECT_ID} ${BASE_URL} ${LOG_FORMAT} ${SECRET_NAMES}' < ./apps/$APP_NAME/startup.sh > startup.sh
 
           # Compute a hash of the generated startup script and name templates by hash
           ZONE="${{ vars.GOOGLE_CLOUD_ZONE }}"
