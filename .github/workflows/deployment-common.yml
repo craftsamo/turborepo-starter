@@ -170,3 +170,22 @@ jobs:
           region: ${{ vars.GOOGLE_CLOUD_REGION }}
           metadata: service-${{ inputs.environment }}.yaml
           project_id: ${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}
+
+      - name: Grant SA invoker on API service
+        run: |
+          set -euo pipefail
+          SERVICE="${{ inputs.project_name }}-api-${{ inputs.environment }}"
+          REGION="${{ vars.GOOGLE_CLOUD_REGION }}"
+          PROJECT="${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}"
+          MEMBER="serviceAccount:${{ inputs.project_name }}-cloudrun-sa@${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}.iam.gserviceaccount.com"
+
+          if gcloud run services describe "$SERVICE" --region="$REGION" --project="$PROJECT" >/dev/null 2>&1; then
+            echo "API service found; binding invoker for $MEMBER"
+            gcloud run services add-iam-policy-binding "$SERVICE" \
+              --member="$MEMBER" \
+              --role="roles/run.invoker" \
+              --region="$REGION" \
+              --project="$PROJECT"
+          else
+            echo "API service '$SERVICE' not found; skipping invoker binding."
+          fi
