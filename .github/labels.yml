@@ -82,3 +82,6 @@
 - name: "🔄workflow: tests"
   description: "Test apps built in `apps/**`."
   color: "5319E7"
+- name: "🔄workflow: cleanup-deployment-cache"
+  description: "Clears cached deployment artifacts used by deployment workflows to force fresh deployments."
+  color: "5319E7"
