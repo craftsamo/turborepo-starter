@@ -1,5 +1,5 @@
 import { type NextMiddleware, NextResponse } from 'next/server';
-import { ratelimit, auth } from './middlewares';
+import { gcpApiProxy, ratelimit, auth } from './middlewares';
 
 //#############################################################################
 // Middleware Configuration                                                   #
@@ -11,18 +11,7 @@ import { ratelimit, auth } from './middlewares';
  * - `purpose`: Specifies the purpose of the request, e.g., prefetch.
  */
 export const config = {
-  matcher: [
-    {
-      source: '/((?!api|_next/static|_next/image|image|sitemap.xml|favicon.ico|robots.txt).*)',
-    },
-    {
-      source: '/:path*',
-      missing: [
-        { type: 'header', key: 'next-router-prefetch' },
-        { type: 'header', key: 'purpose', value: 'prefetch' },
-      ],
-    },
-  ],
+  matcher: ['/api/:path*', '/((?!_next/static|_next/image|image|sitemap.xml|favicon.ico|robots.txt).*)'],
 };
 
 //#############################################################################
@@ -47,6 +36,7 @@ export function chain(functions: MiddlewareFactory[], index = 0): NextMiddleware
 }
 
 export default chain([
+  gcpApiProxy,
   ratelimit,
   auth,
   // ...Add middleware here (executed in order from top to bottom)

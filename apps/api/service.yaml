@@ -5,8 +5,8 @@ kind: Service
 metadata:
   name: ${CLOUD_RUN_SERVICE_NAME}
   annotations:
-    run.googleapis.com/ingress: 'internal-and-cloud-load-balancing'
-    run.googleapis.com/ingress-status: 'internal-and-cloud-load-balancing'
+    run.googleapis.com/ingress: all
+    run.googleapis.com/ingress-status: all
 spec:
   template:
     metadata:
