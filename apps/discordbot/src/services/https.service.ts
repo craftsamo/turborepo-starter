@@ -16,6 +16,16 @@ export class HttpsService {
   constructor() {}
 
   //###########################################################################
+  //# Check health to `apps/api`
+  //###########################################################################
+  async health() {
+    const url = process.env.BASE_URL + `/api`;
+    const response = await fetcher.get<{ message: 'OK' }>(url);
+    if (response.ok) return response.data;
+    throw new ApiError(response);
+  }
+
+  //###########################################################################
   //# API Users Operations
   //###########################################################################
 

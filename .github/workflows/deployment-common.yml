@@ -217,10 +217,10 @@ jobs:
           ## Common environment variables by mode
           DOMAIN="${{ vars.DOMAIN }}"
           if [ "$ENVIRONMENT" == "production" ]; then
-            export BASE_URL="https://${DOMAIN:-"$PROJECT_NAME-$APP_NAME-$ENVIRONMENT-$GOOGLE_CLOUD_PROJECT_NUMBER.$GOOGLE_CLOUD_REGION.run.app"}"
+            export BASE_URL="https://${DOMAIN:-"$PROJECT_NAME-$APP_NAME-$ENVIRONMENT-$GOOGLE_CLOUD_PROJECT_NUMBER.$REGION.run.app"}"
           else
             HOST=${DOMAIN:+dev.$DOMAIN}
-            export BASE_URL="https://${HOST:-$PROJECT_NAME-web-$ENVIRONMENT-$GOOGLE_CLOUD_PROJECT_NUMBER.$GOOGLE_CLOUD_REGION.run.app}"
+            export BASE_URL="https://${HOST:-$PROJECT_NAME-web-$ENVIRONMENT-$GOOGLE_CLOUD_PROJECT_NUMBER.$REGION.run.app}"
           fi
 
           ## NOTE: ...increase as `apps/**` is added
