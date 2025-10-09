@@ -136,6 +136,7 @@ cloudrun_roles=(
   "roles/monitoring.metricWriter"
   "roles/run.admin"                    ## Excute Cloud Run
   "roles/secretmanager.secretAccessor" ## Runtime read access to Secret Manager
+  "roles/run.invoker"
 )
 
 # Bind roles to GitHub workflows service account

@@ -1,5 +1,5 @@
 import { type NextProxy, NextResponse } from 'next/server';
-import { ratelimit, auth } from './middlewares';
+import { gcpApiProxy, ratelimit, auth } from './middlewares';
 
 //#############################################################################
 // Middleware Configuration                                                   #
@@ -16,11 +16,7 @@ export const config = {
       source: '/((?!api||trpc|_next/static|_next/image|image|sitemap.xml|favicon.ico|robots.txt.*\\..*).*)',
     },
     {
-      source: '/:path*',
-      missing: [
-        { type: 'header', key: 'next-router-prefetch' },
-        { type: 'header', key: 'purpose', value: 'prefetch' },
-      ],
+      sources: '/api/:path*',
     },
   ],
 };
@@ -47,6 +43,7 @@ export function chain(functions: NextProxyFactory[], index = 0): NextProxy {
 }
 
 export default chain([
+  gcpApiProxy,
   ratelimit,
   auth,
   // ...Add middleware here (executed in order from top to bottom)
