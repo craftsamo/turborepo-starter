@@ -13,7 +13,7 @@ export async function getSession(): Promise<DiscordAuthProfile | null> {
 
   const headerStore = await headers();
   const userAgent = headerStore.get('user-agent');
-  const path = `/api/auth/discord/me`;
+  const path = process.env.BASE_URL + `/api/auth/discord/me`;
   const logDetails = { method: 'GET', url: path, agent: userAgent };
 
   try {
