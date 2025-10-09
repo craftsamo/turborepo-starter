@@ -8,7 +8,7 @@ export interface EnvironmentVariables {
   /**
    * The base URL of the application.
    */
-  CLOUD_RUN_API_SERVICE_URL?: string;
+  BASE_URL: string;
 
   /**
    * The format of the logs.
@@ -28,11 +28,10 @@ export interface EnvironmentVariables {
  */
 export class EnvironmentVariablesDto {
   @IsString()
-  @IsOptional()
   /**
    * The base URL of the application.
    */
-  CLOUD_RUN_API_SERVICE_URL?: string;
+  BASE_URL!: string;
 
   @IsString()
   @IsOptional()
@@ -57,7 +56,7 @@ export const validationSchemaForEnv = Joi.object<EnvironmentVariables, true>({
   /**
    * System
    */
-  CLOUD_RUN_API_SERVICE_URL: Joi.string().default('http://localhost:8080'),
+  BASE_URL: Joi.string().default('http://localhost:8080'),
   LOG_FORMAT: Joi.string().default('text'),
 
   /**
