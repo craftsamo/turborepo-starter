@@ -13,11 +13,11 @@ export async function getSession(): Promise<LocalAuthProfile | null> {
 
   const headerStore = await headers();
   const userAgent = headerStore.get('user-agent');
-  const path = `/api/auth/local/me`;
-  const logDetails = { method: 'GET', url: path, agent: userAgent };
+  const url = process.env.BASE_URL + `/api/auth/local/me`;
+  const logDetails = { method: 'GET', url, agent: userAgent };
 
   try {
-    const response = await fetcher.get<LocalAuthProfile>(path, {
+    const response = await fetcher.get<LocalAuthProfile>(url, {
       headers: {
         Cookie: `connect.sid=${token.value}`,
       },
