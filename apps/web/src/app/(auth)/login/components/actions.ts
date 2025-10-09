@@ -6,7 +6,8 @@ import { fetcher } from '@workspace/http';
 import { setCookie } from '@/lib/setCookie';
 
 async function loginLocalAuth(email: string, password: string) {
-  const result = await fetcher.post<RESTPostAPILocalAuthLoginJSON>('/api/auth/local/login', {
+  const url = process.env.BASE_URL + '/api/auth/local/login';
+  const result = await fetcher.post<RESTPostAPILocalAuthLoginJSON>(url, {
     email,
     password,
   });
