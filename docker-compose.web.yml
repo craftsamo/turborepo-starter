@@ -1,6 +1,6 @@
 services:
   web:
-    container_name: torborepo-starter-web
+    container_name: turborepo-starter-web
     image: web:latest
     build:
       context: .
