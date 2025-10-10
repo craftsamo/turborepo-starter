@@ -1,6 +1,7 @@
 ---
 description: Create a pull request ($ARGUMENTS is base branch name)
 agent: build
+model: github-copilot/gpt-5-mini
 ---
 
 Pay close attention to the following points, and use the `gh pr create *`
@@ -11,7 +12,9 @@ target/base branch) in the repository shown by
 
 **Rules**:
 
-1. Run `git log -n 5` to understand the language used in recent commits.
+1. Run `git log -n 5` to understand the language (e.g., Japanese, English) and
+   style used in recent commits. Identify which language is used for commit
+   messages and follow it for consistency.
 2. If the base branch is not specified, reply with "$ARGUMENTS must be
    specified." and abort.
 
@@ -25,14 +28,14 @@ target/base branch) in the repository shown by
 
 **Title**:
 
-1. Must summarize the result of `git diff $ARGUMENTS` `
+1. Must summarize the result of `git diff {base_branch}`
 2. Must begin with a verb (e.g., Add xx, Fix xx, Enable xx), be within 50
    characters.
 
 **Body**:
 
 1. The body of the Pull Request should be carefully analyzed based on the
-   content of `git diff $ARGUMENTS ` and written accordingly.
+   content of `git diff {base_branch}` and written accordingly.
 2. If including any of the following content, enclose it within a <details>
    block and set an appropriate <summary> label:
    - Build results

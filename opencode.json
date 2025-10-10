@@ -1,5 +1,6 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "theme": "system",
   "instructions": ["apps/*/AGENTS.md", "docs/guildelines/*.md"],
   "permission": {
     "edit": "ask",
