@@ -1,6 +1,6 @@
 services:
   api:
-    container_name: torborepo-starter-api
+    container_name: turborepo-starter-api
     image: api:latest
     build:
       context: .
