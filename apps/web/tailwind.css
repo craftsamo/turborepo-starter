@@ -1,0 +1,6 @@
+/*  
+* This file exists solely to enable TailwindCSS autocompletion in Neovim.
+* WARN: Never import within the app!
+*/
+
+@import 'tailwindcss';
