@@ -1,6 +1,6 @@
 services:
   nginx:
-    container_name: torborepo-starter-reverse-proxy
+    container_name: turborepo-starter-reverse-proxy
     image: nginx:latest
     ports:
       - 80:80
