@@ -34,14 +34,14 @@ configurations.
 1. **Clone the repository**
 
 ```sh
-git clone https://github.com/itou-rui/turborepo-starter.git
+git clone https://github.com/craftsamo/turborepo-starter.git
 
 ```
 
 To clone a specific branch, use:
 
 ```sh
-git clone -b with-cloudrun https://github.com/itou-rui/turborepo-starter.git
+git clone -b with-cloudrun https://github.com/craftsamo/turborepo-starter.git
 ```
 
 2. **Install Dependencies**
