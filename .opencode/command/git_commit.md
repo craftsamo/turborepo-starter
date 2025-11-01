@@ -1,57 +1,82 @@
 ---
 description: Commit the currently staged files
 agent: build
-model: github-copilot/gpt-4.1
 ---
 
-Commit the **currently staged files**, paying attention to the following points:
+## Goal
 
-**Rules**:
+Analyze the changes of the currently staged files and perform the commit.
 
-1. Run `git log -n 5` to understand the language (e.g., Japanese, English) and
-   style used in recent commits. Identify which language is used for commit
-   messages and follow it for consistency.
-2. **DO NOT** ever stage files using `git add *`.
-   - If there are no staged files, reply with "Please stage files." and abort.
-3. Keep the Subject under 50 characters.
-4. Wrap the Body at 72 characters per line.
-5. Be sure to check @.cz-config.js if it exists.
-6. Be sure to check @commitlint.config.js if it exists.
+## Workflow
 
-**Subject**:
+### STEP 1: Verify files to be committed
 
-The subject of the commit should summarize the changes by running
-`git diff --staged`.
+**Staged Files**:
 
-- Good examples:
+```txt
+!`git diff --name-status --staged`
+```
 
-  ```gitcommit
-  docs: add a document describing instructions for AI agents
-  ```
+**Check List**:
 
-- Bad examples:
-  ```gitcommit
-  docs: add AGENTS.md
-  ```
+- Files currently staged
 
-**Body (optional)**:
+**Note**:
 
-The body of the commit should describe the details of the changes. If you can
-describe what you did and what the result will be, it will be even better.
+If the command returns no output, run `git status --short` to group changes
+logically, then prompt the user to stage files and terminate the process.
 
-- Good examples:
+### STEP 2: Identify the natural language and style to use
 
-  ```gitcommit
-  docs: add a document describing instructions for AI agents
+**Commit Logs**:
 
-  Added AGENTS.md to provide high-level instructions to each AI Agent.
-  This will make it easier to maintain consistency with other team members.
-  ```
+```txt
+!`git log -n 5 --oneline`
+```
 
-- Bad examples:
+**Check List**:
 
-  ```gitcommit
-  docs: add AGENTS.md
+- The language most frequently used in commits (e.g., English or Japanese)
+- Commit style (format, context, tone, etc.)
 
-  Added AGENTS.md to the root directory.
-  ```
+### STEP 3: Review the changes to be committed
+
+**Command**:
+
+```sh
+git diff --staged
+```
+
+**Check List**:
+
+- Restrict the review to changes of the files currently staged
+
+### STEP 4: Confirm commit rules
+
+**Check List**:
+
+- Presence of `@.cz-config.js` and its contents
+- Presence of `@commitlint.config.js` and its contents
+
+**Note**:
+
+If neither file is found, follow the format below.
+
+```gitcommit
+<type>(<scope?>): <subject>
+
+<body?>
+```
+
+### STEP 5: Execute the commit
+
+**Command**:
+
+```sh
+git commit -m "<type>(<scope?>): <subject>" -m "<body1?>" -m "<body2?>"
+```
+
+**Check List**:
+
+- Keep the `subject` within 50 characters.
+- Wrap the `body` at 72 characters.
