@@ -1,4 +1,4 @@
-import { type NextFetchEvent, type NextMiddleware, type NextRequest, NextResponse } from 'next/server';
+import { type NextFetchEvent, type NextProxy, type NextRequest, NextResponse } from 'next/server';
 import type { NextMiddlewareResult } from 'next/dist/server/web/types';
 import { rateLimitConfigs, type RateLimitConfig } from '@workspace/constants';
 
@@ -122,15 +122,15 @@ function createRateLimitResponse(record: RequestRecord, config: RateLimitConfig)
  * It tracks the number of requests made by each client (identified by IP address) within a specified time window
  * and limits the number of allowable requests. If the limit is exceeded, a 429 response is returned.
  *
- * @param {NextMiddleware} middleware - The middleware to wrap with rate limiting.
+ * @param {NextProxy} proxy - The middleware to wrap with rate limiting.
  * @param {Partial<RateLimitConfig>} config - Optional rate limit configuration to customize behavior.
  *   - windowMs: Time window for rate limiting (in milliseconds).
  *   - maxRequests: Maximum number of requests allowed within the time window.
  *   - skipSuccessfulRequests: Whether to skip counting successful requests (default: false).
  *   - skipFailedRequests: Whether to skip counting failed requests (default: false).
- * @returns {NextMiddleware} - A new middleware function that enforces rate limiting.
+ * @returns {NextProxy} - A new middleware function that enforces rate limiting.
  */
-export function ratelimit(middleware: NextMiddleware, config: Partial<RateLimitConfig> = {}): NextMiddleware {
+export function ratelimit(proxy: NextProxy, config: Partial<RateLimitConfig> = {}): NextProxy {
   const mergedConfig = { ...DEFAULT_CONFIG, ...config };
 
   return async (request: NextRequest, event: NextFetchEvent) => {
@@ -163,7 +163,7 @@ export function ratelimit(middleware: NextMiddleware, config: Partial<RateLimitC
     }
 
     // Execute the next middleware or response processing
-    const response = await middleware(request, event);
+    const response = await proxy(request, event);
 
     // If a response exists, add rate limit information
     if (response) {

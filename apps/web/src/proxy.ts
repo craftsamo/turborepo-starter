@@ -1,4 +1,4 @@
-import { type NextMiddleware, NextResponse } from 'next/server';
+import { type NextProxy, NextResponse } from 'next/server';
 import { ratelimit } from './middlewares';
 
 //#############################################################################
@@ -13,7 +13,7 @@ import { ratelimit } from './middlewares';
 export const config = {
   matcher: [
     {
-      source: '/((?!api|_next/static|_next/image|image|sitemap.xml|favicon.ico|robots.txt).*)',
+      source: '/((?!api||trpc|_next/static|_next/image|image|sitemap.xml|favicon.ico|robots.txt.*\\..*).*)',
     },
     {
       source: '/:path*',
@@ -29,7 +29,7 @@ export const config = {
 // Middleware execution order control settings                                #
 //#############################################################################
 
-export type MiddlewareFactory = (middleware: NextMiddleware) => NextMiddleware;
+export type NextProxyFactory = (proxy: NextProxy) => NextProxy;
 
 /**
  * Chains multiple middleware functions together, ensuring they are executed
@@ -40,7 +40,7 @@ export type MiddlewareFactory = (middleware: NextMiddleware) => NextMiddleware;
  * @param index - The current index of the middleware being executed (default is 0).
  * @returns A NextMiddleware function to handle the request/response.
  */
-export function chain(functions: MiddlewareFactory[], index = 0): NextMiddleware {
+export function chain(functions: NextProxyFactory[], index = 0): NextProxy {
   if (!functions[index]) return () => NextResponse.next();
   const next = chain(functions, index + 1);
   return functions[index](next);
