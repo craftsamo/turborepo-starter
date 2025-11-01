@@ -1,6 +1,6 @@
 services:
   discordbot:
-    container_name: torborepo-starter-discordbot
+    container_name: turborepo-starter-discordbot
     image: discordbot:latest
     build:
       context: .

@@ -44,7 +44,7 @@ module.exports = {
       ci: {
         web: "cd out && npm run build",
         api: "cd out && npm run build",
-        api: "cd out && npm run build",
+        discordbot: "cd out && npm run build",
       },
     },
     docker: {
