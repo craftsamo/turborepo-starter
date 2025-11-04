@@ -4,7 +4,7 @@ export default async function RootLayout(props: LayoutProps) {
   return (
     <main
       className={` 
-          h-[calc(100svh-4rem)] 
+          h-[calc(100svh-4rem)] px-2 
           snap-y overflow-y-auto snap-mandatory no-scrollbar
         `}
     >

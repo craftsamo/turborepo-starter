@@ -11,11 +11,9 @@ export interface SectionProps {
 }
 
 export const Section = async ({ id, className = '', title, description, children }: SectionProps) => (
-  <section id={id} className={`flex flex-col items-center min-h-[calc(100svh-4rem)] snap-start snap-always ${className}`}>
-    {title && <h1 className='text-[clamp(1.5rem,6vw,2.25rem)] font-semibold text-center sm:text-left'>{title}</h1>}
-    {description && (
-      <p className='mt-4 max-w-xl text-[clamp(1rem,2.8vw,1.125rem)] text-foreground text-center sm:text-left'>{description}</p>
-    )}
+  <section id={id} className={`flex flex-col min-h-[calc(100svh-4rem)] items-start snap-start snap-always ${className}`}>
+    {title && <h1 className='text-[clamp(1.5rem,6vw,2.25rem)] font-semibold'>{title}</h1>}
+    {description && <p className='mt-4 max-w-sm md:max-w-xl text-[clamp(1rem,2.8vw,1.125rem)] text-foreground'>{description}</p>}
     {children}
   </section>
 );
