@@ -5,6 +5,7 @@ import { Toaster } from '@workspace/ui/components/sonner';
 import '@workspace/ui/globals.css';
 import Favicon from '../../public/image/logo.svg';
 import { ReduxToolProvider, ThemeProvider } from '@/components/Providers';
+import { Header } from './components';
 
 const fontSans = Geist({
   subsets: ['latin'],
@@ -35,7 +36,10 @@ export default async function RootLayout(props: LayoutProps) {
       <body className={`${fontSans.variable} ${fontMono.variable} font-mono antialiased`}>
         <ReduxToolProvider>
           <ThemeProvider attribute='class' defaultTheme='system' enableSystem>
-            {props.children}
+            <div className='px-6 sm:px-12'>
+              <Header />
+              {props.children}
+            </div>
             <Toaster />
           </ThemeProvider>
         </ReduxToolProvider>
