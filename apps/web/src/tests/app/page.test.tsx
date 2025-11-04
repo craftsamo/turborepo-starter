@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react';
 import '@testing-library/dom';
-import LandingPage from '../../app/(lp)/page';
+import LandingPage from '../../app/(root)/page';
 import { render, screen, act, waitFor } from '../testUtils';
 
 describe('LandingPage', () => {
