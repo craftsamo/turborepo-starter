@@ -121,7 +121,26 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html,
+  body {
+    height: 100%;
+  }
+  /* Make the document body the scroll container and enable snap */
   body {
     @apply bg-background text-foreground;
+    overflow: hidden;
   }
+  /* Each direct section inside the main should snap to start */
+  main > section {
+    scroll-snap-align: start;
+  }
+}
+
+/* Utility: hide scrollbars across browsers */
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
 }
