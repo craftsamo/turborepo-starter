@@ -1,12 +1,20 @@
-import type { ReactElement } from 'react';
 import '@testing-library/dom';
-import LandingPage from '../../app/(root)/page';
-import { render, screen, act, waitFor } from '../testUtils';
+import { vi } from 'vitest';
+import { render, act, waitFor, screen } from '../testUtils';
+import RootPage from '../../app/(root)/page';
 
-describe('LandingPage', () => {
-  it('renders the LandingPage correctly', async function () {
+vi.mock('../../app/(root)/sections', () => ({
+  HeroSection: () => <div>Turborepo Starter</div>,
+}));
+
+describe('RootPage', async () => {
+  it('renders the RootPage correctly', async function () {
     await act(async () => {
-      render(await LandingPage());
+      render(await RootPage());
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/Turborepo Starter/i)).toBeInTheDocument();
     });
   });
 });
