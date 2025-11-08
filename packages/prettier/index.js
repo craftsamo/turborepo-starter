@@ -5,5 +5,5 @@ module.exports = {
   jsxSingleQuote: true,
   semi: true,
   insertFinalNewline: true,
-  printWidth: 130,
+  printWidth: 100,
 };
