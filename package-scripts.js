@@ -13,6 +13,16 @@ module.exports = {
         web: `npx turbo prune --scope=web && cd out && yarn install --frozen-lockfile`,
       },
     },
+    lint: {
+      default: `npx turbo run lint`,
+      web: `npx turbo run lint --filter=web`,
+      packages: {
+        default: `npx turbo run lint --filter=@workspace/ui --filter=@workspace/constants --filter=@workspace/types`,
+        ui: `npx turbo run lint --filter=@workspace/ui`,
+        constants: `npx turbo run lint --filter=@workspace/constants`,
+        types: `npx turbo run lint --filter=@workspace/types`,
+      },
+    },
     test: {
       default: `nps test.web`,
       web: `cd ${webPath} && yarn test`,
