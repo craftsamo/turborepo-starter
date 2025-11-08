@@ -22,7 +22,8 @@ const InvalidParameter = {
 
 const MaximumRetryAttemptsExceeded = {
   log: 'The maximum number of retry attempts has been exceeded. Please review the implementation.',
-  notice: 'The maximum number of operation attempts has been exceeded. Please try again after some time.',
+  notice:
+    'The maximum number of operation attempts has been exceeded. Please try again after some time.',
 } as const;
 
 export const ErrorMessage: Record<ErrorCode, ErrorMessage> = {
