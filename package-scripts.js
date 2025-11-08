@@ -47,6 +47,12 @@ module.exports = {
     },
     build: {
       default: "npx turbo run build",
+      web: "npx turbo run build --filter=web",
+      packages: {
+        default: `npx turbo run build --filter=@workspace/constants --filter=@workspace/types`,
+        constants: `npx turbo run build --filter=@workspace/constants`,
+        types: `npx turbo run build --filter=@workspace/types`,
+      },
       ci: {
         web: "cd out && npm run build",
       },
