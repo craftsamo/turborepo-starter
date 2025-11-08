@@ -14,7 +14,11 @@ export const HeroSection = async () => {
     >
       <div className='flex flex-col sm:flex-row mt-6 gap-6 sm:gap-3'>
         <Button asChild className='w-full sm:w-auto h-10 sm:h-9'>
-          <Link href='https://github.com/craftsamo/turborepo-starter' target='_blank' rel='noopener noreferrer'>
+          <Link
+            href='https://github.com/craftsamo/turborepo-starter'
+            target='_blank'
+            rel='noopener noreferrer'
+          >
             Getting Start
           </Link>
         </Button>

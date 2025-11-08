@@ -22,7 +22,12 @@ export const metadata: Metadata = {
   description: 'This is the Turborepo Starter web application.',
   icons: [
     { rel: 'icon', type: 'image/png', sizes: '64x64', url: Favicon.src },
-    { rel: 'apple-touch-icon', type: 'image/png', sizes: '64x64', url: Favicon.src },
+    {
+      rel: 'apple-touch-icon',
+      type: 'image/png',
+      sizes: '64x64',
+      url: Favicon.src,
+    },
   ],
 };
 

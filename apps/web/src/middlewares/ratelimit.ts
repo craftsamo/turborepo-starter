@@ -76,7 +76,11 @@ function getClientIP(request: NextRequest): string {
  * @param {RequestRecord} record - The request record containing the current request count and reset time.
  * @param {RateLimitConfig} config - The rate limit configuration including maxRequests and windowMs.
  */
-function addRateLimitHeaders(response: NextMiddlewareResult, record: RequestRecord, config: RateLimitConfig): void {
+function addRateLimitHeaders(
+  response: NextMiddlewareResult,
+  record: RequestRecord,
+  config: RateLimitConfig,
+): void {
   const remaining = Math.max(0, config.maxRequests - record.count);
   const resetTime = Math.ceil(record.resetTime / 1000);
 

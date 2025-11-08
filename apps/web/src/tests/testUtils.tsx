@@ -29,7 +29,10 @@ const mockRouter: NextRouter = {
   isPreview: false,
 };
 
-export function customRender(ui: ReactElement<any, string | JSXElementConstructor<any>>, { router = {}, ...renderOptions } = {}) {
+export function customRender(
+  ui: ReactElement<any, string | JSXElementConstructor<any>>,
+  { router = {}, ...renderOptions } = {},
+) {
   const Wrapper = ({ children }: { children: ReactNode }) => (
     <RouterContext.Provider value={{ ...mockRouter, ...router }}>
       <ReduxToolProvider>

@@ -36,7 +36,9 @@ export const ToggleIcon: FC<ToggleIconProps> = ({
       <path
         className={cn(
           'transition-all ease-in-out',
-          open ? '[stroke-dasharray:20_300] [stroke-dashoffset:-32.42px]' : '[stroke-dasharray:12_63]',
+          open
+            ? '[stroke-dasharray:20_300] [stroke-dashoffset:-32.42px]'
+            : '[stroke-dasharray:12_63]',
         )}
         style={{
           transitionDuration: `${duration}ms`,

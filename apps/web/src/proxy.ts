@@ -13,7 +13,8 @@ import { type NextProxy, NextResponse } from 'next/server';
 export const config = {
   matcher: [
     {
-      source: '/((?!api||trpc|_next/static|_next/image|image|sitemap.xml|favicon.ico|robots.txt.*\\..*).*)',
+      source:
+        '/((?!api||trpc|_next/static|_next/image|image|sitemap.xml|favicon.ico|robots.txt.*\\..*).*)',
     },
     {
       source: '/:path*',

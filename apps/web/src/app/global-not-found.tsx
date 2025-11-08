@@ -18,7 +18,12 @@ export async function generateMetadata(): Promise<Metadata> {
     description: 'The page you are looking for does not exist.',
     icons: [
       { rel: 'icon', type: 'image/png', sizes: '64x64', url: Favicon.src },
-      { rel: 'apple-touch-icon', type: 'image/png', sizes: '64x64', url: Favicon.src },
+      {
+        rel: 'apple-touch-icon',
+        type: 'image/png',
+        sizes: '64x64',
+        url: Favicon.src,
+      },
     ],
   };
 }

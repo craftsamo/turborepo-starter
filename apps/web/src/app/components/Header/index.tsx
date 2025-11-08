@@ -26,7 +26,12 @@ export const Header: FC = () => {
 
         {/* Right: Login button */}
         <div className='flex items-center gap-2 px-2'>
-          <Button size='icon' variant='outline' className='md:hidden' onClick={() => setOpen((prev) => !prev)}>
+          <Button
+            size='icon'
+            variant='outline'
+            className='md:hidden'
+            onClick={() => setOpen((prev) => !prev)}
+          >
             <ToggleIcon className='size-5' open={open} />
           </Button>
         </div>
