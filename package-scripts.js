@@ -54,7 +54,7 @@ module.exports = {
         types: `npx turbo run build --filter=@workspace/types`,
       },
       ci: {
-        web: "cd out && npm run build",
+        web: "cd out && yarn build",
       },
     },
     docker: {
