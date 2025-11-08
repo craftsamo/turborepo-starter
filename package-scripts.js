@@ -23,6 +23,16 @@ module.exports = {
         types: `npx turbo run lint --filter=@workspace/types`,
       },
     },
+    format: {
+      default: `npx turbo run format`,
+      web: `npx turbo run format --filter=web`,
+      packages: {
+        default: `npx turbo run format --filter=@workspace/ui --filter=@workspace/constants --filter=@workspace/types`,
+        ui: `npx turbo run format --filter=@workspace/ui`,
+        constants: `npx turbo run format --filter=@workspace/constants`,
+        types: `npx turbo run format --filter=@workspace/types`,
+      },
+    },
     test: {
       default: `nps test.web`,
       web: `cd ${webPath} && yarn test`,

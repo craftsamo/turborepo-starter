@@ -8,6 +8,7 @@
     "analyze-bundle": "ANALYZE=true next build",
     "start": "next start",
     "lint": "eslint . --max-warnings 0",
+    "format": "prettier --write \"src/**/*.{ts,tsx,md,css,json}\"",
     "test": "vitest run",
     "test:watch": "vitest --watch",
     "test:ci": "vitest run"
