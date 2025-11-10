@@ -11,6 +11,7 @@ configurations.
 - [Project Structure](#-project-structure)
 - [Getting Started](#-getting-started)
 - [Available Commands](#-available-commands)
+- [GitHub Actions Workflows](#-github-actions-workflows)
 
 ## ✨ Features
 
@@ -90,3 +91,22 @@ nps dev
 ## 📦 Available Commands
 
 For all available commands, refer to [package-scripts.js](package-scripts.js)
+
+## 🔄 GitHub Actions Workflows
+
+This project includes automated workflows for code quality, testing, and release
+management. Each workflow is triggered by specific events and helps maintain
+project standards.
+
+### Available Workflows
+
+| Workflow            | Trigger                 | Purpose                                                                |
+| ------------------- | ----------------------- | ---------------------------------------------------------------------- |
+| **Assign Labels**   | PR opened               | Automatically assigns labels based on branch naming convention         |
+
+### Documentation
+
+For detailed information about each workflow, including prerequisites,
+configuration, and usage, see:
+
+- [assign-labels.md](docs/github-actions/assign-labels.md)
