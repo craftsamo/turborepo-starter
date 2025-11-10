@@ -1,0 +1,43 @@
+name: opencode
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  opencode:
+    if: |
+      contains(github.event.comment.body, ' /oc') ||
+      startsWith(github.event.comment.body, '/oc') ||
+      contains(github.event.comment.body, ' /opencode') ||
+      startsWith(github.event.comment.body, '/opencode')
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: read
+      issues: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+        ## Only github copilot model
+        ## Copy the entire contents of `~/.local/share/opencode/auth.json`
+        ## and set it up.
+      - name: Write opencode Github Copilot auth
+        if: env.GITHUB_COPILOT_AUTH != ''
+        env:
+          GITHUB_COPILOT_AUTH: ${{ secrets.GITHUB_COPILOT_AUTH }}
+        run: |
+          mkdir -p ~/.local/share/opencode
+          cat << 'EOF' > ~/.local/share/opencode/auth.json
+          $GITHUB_COPILOT_AUTH
+          EOF
+          chmod 600 ~/.local/share/opencode/auth.json
+
+      - name: Run opencode
+        uses: sst/opencode/github@latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          model: github-copilot/gpt-5-mini
