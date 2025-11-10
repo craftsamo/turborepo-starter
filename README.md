@@ -10,6 +10,7 @@ configurations.
 - [Tech Stack](#-tech-stack)
 - [Project Structure](#-project-structure)
 - [Getting Started](#-getting-started)
+- [Available Commands](#-available-commands)
 
 ## ✨ Features
 
@@ -86,3 +87,6 @@ yarn add -g nps
 nps dev
 ```
 
+## 📦 Available Commands
+
+For all available commands, refer to [package-scripts.js](package-scripts.js)
