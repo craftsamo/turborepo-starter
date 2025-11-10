@@ -1,80 +1,74 @@
 # Web Application
 
-## Contents
+## Overview
 
-- [Structure](#structure)
+A modern web application built with Next.js. Features state management with
+Redux, styling with Tailwind CSS, and comprehensive testing framework to
+ensure code quality.
 
-## Structure
+## 📁 Project Structure
 
-This table shows the structure of the application and its roles.
-
-| Package name | Description                                                           |
-| ------------ | --------------------------------------------------------------------- |
-| app          | Manages the overall UI and route structure of the application.        |
-| components   | Contains a collection of components shared across the application.    |
-| lib          | A directory for common utility functions and libraries.               |
-| middleware   | Stores middleware used in the application.                            |
-| store        | Includes configuration and logic for state management.                |
-| tests        | Contains test-related configurations and scripts, e.g., jest.setup.js |
-| types        | Manages TypeScript type definitions.                                  |
-
-## Advanced State Management
-
-By using `useAppSelector` and `useAppDispatch`, you can prevent the need for
-prop drilling and manage state in a more advanced way.
-
-For details, refer to the implementation of [ReduxStore](./src/store/index.ts) and [Slices](./src/store/slices/counter.ts).
-
-Example:
-
-```tsx
-'use client';
-
-import { Button } from '@workspace/ui/components/button';
-import { useAppDispatch, useAppSelector } from '@/store';
-import { decrement, increment } from '@/store/slices/counter';
-
-export const Counter = () => {
-  const counter = useAppSelector((state) => state.counter);
-  const dispatch = useAppDispatch();
-
-  const handleClick = {
-    increment: () => dispatch(increment()),
-    decrement: () => dispatch(decrement()),
-  };
-
-  return (
-    <>
-      <p>{counter.value}</p>
-      <Button onClick={handleClick.increment}>+</Button>
-      <Button onClick={handleClick.decrement}>-</Button>
-    </>
-  );
-};
+```
+src/
+├── app/                     # Next.js App Router (pages and layouts)
+│   ├── (root)/              # Root group
+│   ├── (global-not-found)/  # 404 page group
+│   ├── layout.tsx           # Root layout
+│   └── page.tsx             # Home page
+├── components/              # Reusable components
+│   └── Providers/           # State management & theme providers
+├── lib/                     # Utility functions
+├── middlewares/             # Next.js middleware
+├── store/                   # Redux store configuration
+├── tests/                   # Test files
+├── types/                   # TypeScript type definitions
+└── proxy.ts                 # Proxy configuration
 ```
 
-## Middleware
+## 🚀 Getting Started
 
-The `chain` function, which fixes the execution order of middleware, is provided.
+### Prerequisites
 
-By using this mechanism, it is possible to divide the processing of middleware
-that should be exported as a single file.
+- **Node.js**: v18 or higher
+- **Yarn**: v1.22 or higher (package manager)
+- **Git**: For version control
 
-**Example**:
+### Installation
 
-```ts
-export default chain([
-  // 1
-  ratelimit,
+1. **Install dependencies**
 
-  // 2
-  (middleware: NextMiddleware) => {
-    return async (request: NextRequest, event: NextFetchEvent) => {
-      // ...processing
-      return await middleware(request, event);
-    };
-  },
-
-  // ...Add middleware here (executed in order from top to bottom)
-]);
+```bash
+yarn
 ```
+
+2. **Set up environment file**
+
+Copy `.env.example` to `.env` and configure the required environment variables:
+
+```bash
+cp .env.example .env
+```
+
+3. **Start the development server**
+
+```bash
+nps dev.web
+```
+
+The server will start at `http://localhost:3000`.
+
+## 🔧 Environment Variables
+
+| Variable   | Default               | Description  |
+| ---------- | --------------------- | ------------ |
+| `BASE_URL` | http://localhost:3000 | API base URL |
+
+## 📚 Available Commands
+
+For more details, see [package-scripts](../../package-scripts.js).
+
+## 📖 Code Style & Guidelines
+
+For detailed code style guidelines, naming conventions, and component architecture, see:
+
+- [CODE_STYLE.md](../../docs/instructions/CODE_STYLE.md)
