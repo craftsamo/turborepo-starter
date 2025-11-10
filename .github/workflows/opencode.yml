@@ -24,11 +24,11 @@ jobs:
       - name: Write opencode Github Copilot auth
         if: env.GITHUB_COPILOT_AUTH != ''
         env:
-          GITHUB_COPILOT_AUTH: ${{ secrets.GITHUB_COPILOT_AUTH }}
+          GITHUB_COPILOT_AUTH: ${{ secrets.COPILOT_AUTH }}
         run: |
           mkdir -p ~/.local/share/opencode
           cat << 'EOF' > ~/.local/share/opencode/auth.json
-          $GITHUB_COPILOT_AUTH
+          $COPILOT_AUTH
           EOF
           chmod 600 ~/.local/share/opencode/auth.json
 

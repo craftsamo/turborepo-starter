@@ -60,14 +60,14 @@ settings.
 The "Write opencode Github Copilot auth" step is **only required** when using
 the `github-copilot` model:
 
-- **Secret**: `GITHUB_COPILOT_AUTH`
+- **Secret**: `COPILOT_AUTH`
 - **Location**: `~/.local/share/opencode/auth.json` (in workflow environment)
 - **Content**: Full contents of Copilot auth configuration
-- **Conditional**: Only runs when `GITHUB_COPILOT_AUTH` secret is not empty
+- **Conditional**: Only runs when `COPILOT_AUTH` secret is not empty
 
-To use GitHub Copilot model, store the auth configuration in the
-`GITHUB_COPILOT_AUTH` repository secret. This should contain the entire contents
-of `~/.local/share/opencode/auth.json` from your local OpenCode setup.
+To use GitHub Copilot model, store the auth configuration in the `COPILOT_AUTH`
+repository secret. This should contain the entire contents of
+`~/.local/share/opencode/auth.json` from your local OpenCode setup.
 
 If using other models, this step is skipped and the workflow runs without GitHub
 Copilot authentication.
