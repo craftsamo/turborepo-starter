@@ -8,19 +8,9 @@ workspaces for package management.
 1. The session title must begin with a verb (e.g., `Add ...`, `Fix ...`,
    `Enable ...`) and be within 30 characters.
 
-## Language Localization
 
-1. You must always respond to the user in the language that the user used.
 
-2. For all non-user-facing language, use the language that fits the overall
-   context of the document.
 
-3. When localizing content, preserve proper nouns and technical identifiers
-   exactly as they appear. This includes file names, company or product names,
-   function and variable names, API names, and technology names (e.g.,
-   `README.md`, `AcmeCorp`, `calculateTotal()`, `React`, `PostgreSQL`). Do not
-   translate, transliterate, or modify these items; retain original casing,
-   punctuation, and formatting.
 
 ## Response Formatting
 
