@@ -28,8 +28,12 @@ handling) and three-tier component architecture, see
 ## Language Localization
 
 For language localization guidelines and how to preserve proper nouns and
-technical identifiers, see
 technical identifiers, see @docs/instructions/LANGUAGE_LOCALIZATION.md
+
+## Git Workflow
+
+For Git workflow guidelines, branching strategy, commit conventions, and pull
+request guidelines, see @docs/instructions/GIT.md
 
 ## App-specific Guidelines
 
