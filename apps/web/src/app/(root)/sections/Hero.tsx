@@ -1,5 +1,3 @@
-'use server';
-
 import Link from 'next/link';
 import { Button } from '@workspace/ui/components/button';
 import { Section } from '../components';

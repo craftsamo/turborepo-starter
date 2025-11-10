@@ -1,5 +1,3 @@
-'use server';
-
 import type { JSX } from 'react';
 
 export interface SectionProps {
