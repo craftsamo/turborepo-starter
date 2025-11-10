@@ -105,6 +105,7 @@ project standards.
 | **Assign Labels**   | PR opened               | Automatically assigns labels based on branch naming convention         |
 | **Sync Labels**     | Manual dispatch         | Synchronizes repository labels with `.github/labels.yml` configuration |
 | **Display Details** | Manual dispatch         | Displays project, apps, and repository information                     |
+| **Release Drafter** | Push/PR to main         | Creates and updates draft releases with categorized changes            |
 
 ### Documentation
 
@@ -114,3 +115,4 @@ configuration, and usage, see:
 - [assign-labels.md](docs/github-actions/assign-labels.md)
 - [sync-labels.md](docs/github-actions/sync-labels.md)
 - [display-details.md](docs/github-actions/display-details.md)
+- [release-drafter.md](docs/github-actions/release-drafter.md)
