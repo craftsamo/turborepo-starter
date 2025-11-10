@@ -107,6 +107,7 @@ project standards.
 | **Display Details** | Manual dispatch         | Displays project, apps, and repository information                     |
 | **Release Drafter** | Push/PR to main         | Creates and updates draft releases with categorized changes            |
 | **Tests**           | Push/PR to main/develop | Runs tests for affected apps and packages                              |
+| **Run AI Agent**    | Issue/PR comment        | Executes AI-powered code tasks via `/oc` or `/opencode` commands       |
 
 ### Documentation
 
@@ -118,3 +119,4 @@ configuration, and usage, see:
 - [display-details.md](docs/github-actions/display-details.md)
 - [release-drafter.md](docs/github-actions/release-drafter.md)
 - [tests.md](docs/github-actions/tests.md)
+- [run-ai-agent.md](docs/github-actions/run-ai-agent.md)

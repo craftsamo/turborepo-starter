@@ -21,9 +21,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-        ## Only github copilot model
-        ## Copy the entire contents of `~/.local/share/opencode/auth.json`
-        ## and set it up.
       - name: Write opencode Github Copilot auth
         if: env.GITHUB_COPILOT_AUTH != ''
         env:
@@ -40,4 +37,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          model: github-copilot/gpt-5-mini
+          model: ${{ vars.AI_PROVIDER_ID || 'github-copilot' }}/${{ vars.AI_MODEL_ID || 'gpt-5-mini' }}
