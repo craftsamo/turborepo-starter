@@ -145,3 +145,8 @@ configuration, and usage, see:
 - [release-drafter.md](docs/github-actions/release-drafter.md)
 - [tests.md](docs/github-actions/tests.md)
 - [run-ai-agent.md](docs/github-actions/run-ai-agent.md)
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
+for details.
