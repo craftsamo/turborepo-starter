@@ -23,15 +23,14 @@ full options.
 
 For detailed code style guidelines (TypeScript/React, naming conventions, error
 handling) and three-tier component architecture, see
-[docs/instructions/CODE_STYLE.md](docs/instructions/CODE_STYLE.md).
+@docs/instructions/CODE_STYLE.md
 
 ## Language Localization
 
 For language localization guidelines and how to preserve proper nouns and
 technical identifiers, see
-[docs/instructions/LANGUAGE_LOCALIZATION.md](docs/instructions/LANGUAGE_LOCALIZATION.md).
+technical identifiers, see @docs/instructions/LANGUAGE_LOCALIZATION.md
 
 ## App-specific Guidelines
 
-For Web app specific guidelines and testing locations, see
-[apps/web/AGENTS.md](apps/web/AGENTS.md).
+For Web app specific guidelines and testing locations, see @apps/web/AGENTS.md

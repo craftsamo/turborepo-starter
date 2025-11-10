@@ -1,6 +1,6 @@
 ## Web App Guidelines
 
-For general rules and code style guidelines, see [AGENTS.md](../../AGENTS.md).
+For general rules and code style guidelines, see @AGENTS.md.
 
 ### Testing
 
