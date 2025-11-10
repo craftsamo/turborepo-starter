@@ -106,6 +106,7 @@ project standards.
 | **Sync Labels**     | Manual dispatch         | Synchronizes repository labels with `.github/labels.yml` configuration |
 | **Display Details** | Manual dispatch         | Displays project, apps, and repository information                     |
 | **Release Drafter** | Push/PR to main         | Creates and updates draft releases with categorized changes            |
+| **Tests**           | Push/PR to main/develop | Runs tests for affected apps and packages                              |
 
 ### Documentation
 
@@ -116,3 +117,4 @@ configuration, and usage, see:
 - [sync-labels.md](docs/github-actions/sync-labels.md)
 - [display-details.md](docs/github-actions/display-details.md)
 - [release-drafter.md](docs/github-actions/release-drafter.md)
+- [tests.md](docs/github-actions/tests.md)
