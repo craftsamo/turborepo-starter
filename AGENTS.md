@@ -7,6 +7,13 @@ This is a monorepo with TypeScript, Turbo, and Yarn workspaces.
 1. **Session title**: begin with verb (e.g., `Add ...`, `Fix ...`), max 30 chars
 2. **Language**: respond in user's language
 
+## Response
+
+For detailed guidelines on AI response content, including tone and style, emoji
+usage policy, markdown usage, tool operation references, code references,
+prohibited practices, and multilingual support, see
+@docs/instructions/RESPONSE.md
+
 ## Build, Lint, Test Commands
 
 Use `nps` (npm-script-runner) for all commands. See `package-scripts.js` for
