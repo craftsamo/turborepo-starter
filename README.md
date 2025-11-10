@@ -103,6 +103,7 @@ project standards.
 | Workflow            | Trigger                 | Purpose                                                                |
 | ------------------- | ----------------------- | ---------------------------------------------------------------------- |
 | **Assign Labels**   | PR opened               | Automatically assigns labels based on branch naming convention         |
+| **Sync Labels**     | Manual dispatch         | Synchronizes repository labels with `.github/labels.yml` configuration |
 
 ### Documentation
 
@@ -110,3 +111,4 @@ For detailed information about each workflow, including prerequisites,
 configuration, and usage, see:
 
 - [assign-labels.md](docs/github-actions/assign-labels.md)
+- [sync-labels.md](docs/github-actions/sync-labels.md)
