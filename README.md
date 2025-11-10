@@ -10,6 +10,7 @@ configurations.
 - [Tech Stack](#-tech-stack)
 - [Project Structure](#-project-structure)
 - [Getting Started](#-getting-started)
+- [Set Environment variables](#set-environment-variables)
 - [Available Commands](#-available-commands)
 - [GitHub Actions Workflows](#-github-actions-workflows)
 
@@ -87,6 +88,30 @@ yarn add -g nps
 ```sh
 nps dev
 ```
+
+## Set Environment variables
+
+### GitHub Actions Variables
+
+Set the following variables in your GitHub repository settings under
+**Settings > Secrets and variables > Variables**:
+
+| Variable         | Default        |
+| ---------------- | -------------- |
+| `AI_PROVIDER_ID` | github-copilot |
+| `AI_MODEL_ID`    | gpt-5-mini     |
+
+### GitHub Actions Secrets
+
+For GitHub Copilot authentication, add the following secret under **Settings >
+Secrets and variables > Secrets**:
+
+| Secret                | Default   |
+| --------------------- | --------- |
+| `GITHUB_COPILOT_AUTH` | undefined |
+
+For details on how to set up GitHub Copilot authentication, see
+[Run AI Agent Workflow](docs/github-actions/run-ai-agent.md).
 
 ## 📦 Available Commands
 
