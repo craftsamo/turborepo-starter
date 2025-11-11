@@ -27,9 +27,7 @@ jobs:
           GITHUB_COPILOT_AUTH: ${{ secrets.COPILOT_AUTH }}
         run: |
           mkdir -p ~/.local/share/opencode
-          cat << 'EOF' > ~/.local/share/opencode/auth.json
-          $COPILOT_AUTH
-          EOF
+          echo "$COPILOT_AUTH" > ~/.local/share/opencode/auth.json
           chmod 600 ~/.local/share/opencode/auth.json
 
       - name: Run opencode
