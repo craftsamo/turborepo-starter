@@ -1,170 +1,109 @@
 ---
 description: Update a pull request
 agent: build
+subtask: true
 ---
 
-## Goal
+Update the title and body of pull request
+#!`gh pr view --json number --jq '.number'` in the
+!`gh repo view -q ".owner.login + \"/\" + .name" --json name,owner` repository
+to reflect the latest changes.
 
-Update an existing Pull Request so its title, body, and branch reflect the
-current changes and repository conventions. Use `gh pr edit` and `git push` when
-necessary.
+First, verify that the pull request exists. If not, respond with "❌ Pull
+request does not exist." and stop the task.
 
-## Workflow
+Next, verify that all local commits are pushed to the remote branch. If there
+are unpushed commits, push them first.
 
-### STEP 1: Identify the current Pull Request and context
+Then, analyze the changes between the base branch and the current branch: git
+diff !`gh pr view --json baseRefName --jq '.baseRefName'`...HEAD
 
-**Current PR**:
+If no code or documentation changes exist, respond with "Pull request reflects
+the latest and most accurate content!" and stop the task.
 
-```txt
-!`gh pr view --json number,url,baseRefName,headRefName --jq '.number, .url, .baseRefName, .headRefName'`
-```
+Based on this analysis, determine which sections are relevant to the actual
+changes (UI changes, database changes, breaking changes, etc.) and update the PR
+title and body to include only the necessary sections.
 
-**Check List**:
+The title should be written in the imperative or present tense, without a
+trailing period or exclamation mark, and must be no longer than **50 Unicode
+codepoints**.
 
-- Confirm there is an open PR for the current branch; if none, instruct to
-  create one instead.
-- Note `base_branch` and `head_branch` from the PR metadata.
-- Ensure local branch matches `headRefName`.
+Use the natural language (e.g., English or Japanese) that appears in the output
+of `git log -n 1 --oneline`.
 
-### STEP 2: Determine whether an update is needed
+The pull request body must fully comply with the structure defined in
+@.github/PULL_REQUEST_TEMPLATE.md (@.github/pull_request_template.md) if it
+exists.
 
-**Commit Logs**:
+If the template file does not exist, use the following structure as a guide, but
+include ONLY the sections relevant to the actual changes:
 
-```txt
-!`git log -n 5 --oneline`
-```
+```markdown
+## Overview
 
-**Latest PR List**:
+<!-- Briefly describe the changes -->
 
-```txt
-!`gh pr list --state=closed --limit=3 --json number,title,body`
-```
+## Changes
 
-**Diff Check**:
+<!--
+Describe the changes in the following format:
 
-```sh
-git fetch origin <base_branch>
-git diff --name-status origin/<base_branch>...HEAD
-git diff --stat origin/<base_branch>...HEAD
-```
+- ### Addition of XX feature
+  - Detailed change 1
+  - Detailed change 2
 
-**Check List**:
+- ### Fix of YY feature
+  - Explanation of the fix
+  - Effect of the fix
+-->
 
-- If no code or doc changes relative to base, reply: "Pull Request reflects the
-  latest and most accurate content!" and abort.
-- Identify files that changed and any large/test/migration outputs that must be
-  documented.
+## Breaking Changes
 
-### STEP 3: Review current title and body for consistency
+- [ ] Yes
+- [ ] No
 
-**Title**:
+## Impact Scope
 
-- Retrieve current title: `gh pr view --json title`.
-- Title must begin with a verb and be <=50 characters; update if it doesn't
-  summarize `git diff origin/<base_branch>...HEAD`.
+- [ ] UI changes
+- [ ] Database changes
+- [ ] API changes
+- [ ] Configuration changes
+- [ ] Environment variable changes
+- [ ] None (Code cleanup)
 
-**Body**:
+## Testing
 
-- Retrieve current body: `gh pr view --json body`.
-- Ensure the body accurately describes the changes, testing, and any migration
-  steps.
-- For long logs or verbose outputs (>20 lines), wrap them in a `<details>` block
-  with a clear `<summary>` label.
+<details>
+  <summary>build</summary>
+  <!-- 
+    ... Build log 
+  -->
+</details>
 
-### STEP 4: Prepare updated title and body
+<details>
+  <summary>test</summary>
+  <!-- 
+    ... Test log 
+  -->
+</details>
 
-**Guidelines**:
+## Screenshots
 
-- Follow repository PR template if present
-  (`@.github/PULL_REQUEST_TEMPLATE.md`).
-- Use the suggested structure when no template exists:
+<!--
+  If there are UI changes, share before/after using one of the following methods:
 
-```text
-<Short title (<=50 chars)>
+  1. Screenshots
+  2. GIF, MP4
+-->
 
-Background:
-- Why this change was needed.
+## Notes
 
-Change:
-- Summary of key changes and files affected.
-
-Testing:
-- How this was tested locally or in CI.
-
-Migration / Notes:
-- Any manual steps or backward-incompatible changes.
-
-How to review:
-- Areas reviewers should focus on.
-```
-
-- Wrap lines at ~72 characters and mention related issues (e.g., `Closes #123`).
-
-### STEP 5: Push branch updates if necessary
-
-**Commands**:
-
-```sh
-# If local commits need to be pushed
-git push --set-upstream origin $(git rev-parse --abbrev-ref HEAD)
-```
-
-**Check List**:
-
-- Ensure branch includes latest commits and is pushed to remote before editing
-  PR metadata.
-
-### STEP 6: Update the Pull Request
-
-**Non-interactive**:
-
-```sh
-# Update title and body explicitly
-gh pr edit <PR_NUMBER> --title "<NEW TITLE>" --body "<NEW BODY>"
-```
-
-**Interactive**:
-
-- Use `gh pr edit <PR_NUMBER> --web` to open the PR edit form in the browser for
-  manual adjustments when unsure.
-
-**Additional flags**:
-
-- Add reviewers/assignees/labels: `--add-reviewer user`, `--add-assignee user`,
-  `--add-label "type: bug"`.
-
-### STEP 7: Post-update verification
-
-**Commands**:
-
-```sh
-gh pr view <PR_NUMBER> --json url,number,title,body,updatedAt --jq '.url, .number, .title, .updatedAt'
-```
-
-**Check List**:
-
-- Return the updated PR URL and number to the user.
-- Confirm title and body were updated as requested.
-- Suggest next steps if CI fails (fix, rebase, or open follow-up PR).
-
-## Quick Rules (Summary)
-
-- If no update needed, reply: "Pull Request reflects the latest and most
-  accurate content!" and abort.
-- Title: verb-led, <=50 chars.
-- Body: use PR template or the suggested structure; wrap at ~72 chars.
-- Push branch before editing PR metadata.
-- Use `gh pr edit` non-interactively for reproducibility; `--web` when manual
-  edits are preferred.
-
-## Example
-
-```sh
-# fetch base and inspect diff
-git fetch origin main
-git diff --stat origin/main...HEAD
-
-# push commits, then update PR #42
-git push origin feature-branch
-gh pr edit 42 --title "Fix user auth timeout" --body "Background:\n- Fixes...\nTesting:\n- Ran unit tests...\n"
+<!--
+  - Points to note for reviewers
+  - Concerns in implementation
+  - Additional tasks needed
+  - Future issues
+  etc., if any, please describe
+-->
 ```
