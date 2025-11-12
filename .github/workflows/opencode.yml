@@ -35,5 +35,6 @@ jobs:
         uses: sst/opencode/github@latest
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENCODE_PERMISSION: '{ "edit": "allow",  "bash": { "gh*": "allow", "gh pr review*": "deny", "*": "deny" } }'
         with:
           model: ${{ vars.AI_PROVIDER_ID || 'github-copilot' }}/${{ vars.AI_MODEL_ID || 'gpt-5-mini' }}
