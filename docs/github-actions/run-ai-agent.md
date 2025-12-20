@@ -26,31 +26,65 @@ tasks.
 5. **Execute**: Run OpenCode agent with specified model
 6. **Report**: Post results as comment on the issue/PR
 
-### Command Formats
+### Available Commands
 
-The workflow recognizes the following command patterns:
+| Command                  | Description                                   | PR Conversation | PR File Review | Issue |
+| ------------------------ | --------------------------------------------- | :-------------: | :------------: | :---: |
+| `/oc review`             | Review the PR for code style, typos, and bugs |       ✅        |       ❌       |  ❌   |
+| `/oc issue`              | Analyze issue and create implementation plan  |       ❌        |       ❌       |  ✅   |
+| `/oc task <instruction>` | Execute a task with commits                   |       ✅        |       ❌       |  ✅   |
 
-- `/oc` - Shorthand command trigger
-- `/opencode` - Full command trigger
+#### Command Details
 
-Both formats can appear anywhere in the comment:
+**`/oc review`**
+
+- Reviews the PR for compliance with project guidelines
+- Creates review comments on specific lines
+- Read-only operation (no file modifications)
+- Only available in PR conversation tab
+- Any arguments after `review` are ignored
+
+**`/oc issue`**
+
+- Analyzes issue content and creates implementation plan
+- Explores codebase to understand relevant code
+- Posts analysis as a comment on the issue
+- Read-only operation (no file modifications)
+- Only available on issues
+- Any arguments after `issue` are ignored
+
+**`/oc task <instruction>`**
+
+- Executes the specified task and commits changes
+- On PR: Commits directly to the PR branch
+- On Issue: Creates a new branch and PR with `Closes #<issue_number>`
+
+#### Usage Examples
 
 ```
-Comment can have text before /oc and text after
-/opencode can appear at the start
-Text /oc text in the middle
+/oc review
+/oc issue
+/oc task Add unit tests for the login function
+/oc task Fix the typo in README.md
 ```
+
+Both `/oc` and `/opencode` prefixes are supported.
 
 ### AI Model
 
 The workflow uses dynamic model configuration based on repository variables:
 
-| Variable         | Default Value    | Description                       |
-| ---------------- | ---------------- | --------------------------------- |
-| `AI_PROVIDER_ID` | `github-copilot` | AI model provider                 |
-| `AI_MODEL_ID`    | `gpt-5-mini`     | Specific model for GitHub Copilot |
+| Variable             | Default Value       | Description                    |
+| -------------------- | ------------------- | ------------------------------ |
+| `AI_PROVIDER_ID`     | `github-copilot`    | AI model provider              |
+| `AI_MODEL_ID`        | `gpt-5-mini`        | Default model for all commands |
+| `AI_REVIEW_MODEL_ID` | `AI_MODEL_ID` value | Model for `/oc review`         |
+| `AI_ISSUE_MODEL_ID`  | `AI_MODEL_ID` value | Model for `/oc issue`          |
+| `AI_TASK_MODEL_ID`   | `AI_MODEL_ID` value | Model for `/oc task`           |
 
 **Default Model**: `github-copilot/gpt-5-mini`
+
+**Fallback Order**: Command-specific model → `AI_MODEL_ID` → `gpt-5-mini`
 
 The model can be customized by setting repository variables in GitHub repository
 settings.
@@ -74,11 +108,21 @@ Copilot authentication.
 
 ### Permissions
 
-The workflow operates with limited permissions for security:
+The workflow operates with different permissions based on the command:
 
-| Permission      | Level | Purpose                         |
-| --------------- | ----- | ------------------------------- |
-| `id-token`      | write | OIDC token for authentication   |
-| `contents`      | read  | Read repository code and files  |
-| `pull-requests` | read  | Read PR details and comments    |
-| `issues`        | read  | Read issue details and comments |
+**Base Permissions:**
+
+| Permission      | Level | Purpose                               |
+| --------------- | ----- | ------------------------------------- |
+| `id-token`      | write | OIDC token for authentication         |
+| `contents`      | read  | Read repository code and files        |
+| `pull-requests` | write | Read/write PR details and comments    |
+| `issues`        | write | Read/write issue details and comments |
+
+**Command-specific Restrictions:**
+
+| Command      | File Edit | File Write | Bash Commands            |
+| ------------ | :-------: | :--------: | ------------------------ |
+| `/oc review` |    ❌     |     ❌     | `gh api*`, `gh pr diff*` |
+| `/oc issue`  |    ❌     |     ❌     | `gh api*`                |
+| `/oc task`   |    ✅     |     ✅     | `gh*`, `git*`            |

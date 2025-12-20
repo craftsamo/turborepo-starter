@@ -96,10 +96,13 @@ nps dev
 Set the following variables in your GitHub repository settings under
 **Settings > Secrets and variables > Variables**:
 
-| Variable         | Default        |
-| ---------------- | -------------- |
-| `AI_PROVIDER_ID` | github-copilot |
-| `AI_MODEL_ID`    | gpt-5-mini     |
+| Variable             | Default                    |
+| -------------------- | -------------------------- |
+| `AI_PROVIDER_ID`     | github-copilot             |
+| `AI_MODEL_ID`        | gpt-5-mini                 |
+| `AI_REVIEW_MODEL_ID` | `AI_MODEL_ID` → gpt-5-mini |
+| `AI_ISSUE_MODEL_ID`  | `AI_MODEL_ID` → gpt-5-mini |
+| `AI_TASK_MODEL_ID`   | `AI_MODEL_ID` → gpt-5-mini |
 
 ### GitHub Actions Secrets
 
