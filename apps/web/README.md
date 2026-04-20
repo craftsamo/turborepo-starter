@@ -11,7 +11,6 @@ ensure code quality.
 ```
 src/
 ├── app/                     # Next.js App Router (pages and layouts)
-│   ├── (root)/              # Root group
 │   ├── (global-not-found)/  # 404 page group
 │   ├── layout.tsx           # Root layout
 │   └── page.tsx             # Home page
