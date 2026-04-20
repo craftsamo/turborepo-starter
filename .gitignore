@@ -12,8 +12,7 @@ coverage
 .next/
 out/
 build
-apps/web/critters
-apps/web/next-env.d.ts
+apps/**/next-env.d.ts
 
 **/dist
 **/.env
