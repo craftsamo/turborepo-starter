@@ -7,13 +7,6 @@ This is a monorepo with TypeScript, Turbo, and Yarn workspaces.
 1. **Session title**: begin with verb (e.g., `Add ...`, `Fix ...`), max 30 chars
 2. **Language**: respond in user's language
 
-## Response
-
-For detailed guidelines on AI response content, including tone and style, emoji
-usage policy, markdown usage, tool operation references, code references,
-prohibited practices, and multilingual support, see
-@docs/instructions/RESPONSE.md
-
 ## Build, Lint, Test Commands
 
 Use `nps` (npm-script-runner) for all commands. See `package-scripts.js` for
@@ -25,22 +18,6 @@ full options.
 - **Format**: `nps format` (all), `nps format.web`, `nps format.packages`
 - **Test**: `nps test` (all), `nps test.web` (web app tests), `nps test.watch`
 - **Single test**: `cd apps/web && yarn test -- path/to/test.test.tsx`
-
-## Code Style
-
-For detailed code style guidelines (TypeScript/React, naming conventions, error
-handling) and three-tier component architecture, see
-@docs/instructions/CODE_STYLE.md
-
-## Language Localization
-
-For language localization guidelines and how to preserve proper nouns and
-technical identifiers, see @docs/instructions/LANGUAGE_LOCALIZATION.md
-
-## Git Workflow
-
-For Git workflow guidelines, branching strategy, commit conventions, and pull
-request guidelines, see @docs/instructions/GIT.md
 
 ## App-specific Guidelines
 

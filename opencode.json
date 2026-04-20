@@ -1,7 +1,6 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "theme": "system",
-  "instructions": ["docs/instructions/*.md", "apps/**/AGENTS.md"],
+  "instructions": ["docs/instructions/*.txt", "apps/**/AGENTS.md"],
   "permission": {
     "edit": "ask",
     "bash": {
@@ -15,6 +14,5 @@
       "git log *": "allow",
       "*": "ask"
     }
-  },
-  "autoupdate": true
+  }
 }

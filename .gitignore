@@ -13,6 +13,7 @@ coverage
 out/
 build
 apps/web/critters
+apps/web/next-env.d.ts
 
 **/dist
 **/.env
@@ -41,3 +42,4 @@ yarn-error.log*
 
 # act
 .variables
+.opencode/package-lock.json
