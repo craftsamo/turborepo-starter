@@ -109,9 +109,10 @@ Set the following variables in your GitHub repository settings under
 For GitHub Copilot authentication, add the following secret under **Settings >
 Secrets and variables > Secrets**:
 
-| Secret         | Default |
-| -------------- | ------- |
-| `COPILOT_AUTH` | ""      |
+| Secret                  | Default |
+| ----------------------- | ------- |
+| `COPILOT_ACCESS_TOKEN`  | ""      |
+| `COPILOT_REFRESH_TOKEN` | ""      |
 
 For details on how to set up GitHub Copilot authentication, see
 [Run AI Agent Workflow](docs/github-actions/run-ai-agent.md).

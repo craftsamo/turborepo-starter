@@ -16,6 +16,8 @@ jobs:
        startsWith(github.event.comment.body, '/opencode'))
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      XDG_DATA_HOME: /tmp/xdg-data
     permissions:
       id-token: write
       contents: read
@@ -25,14 +27,25 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Write opencode Github Copilot auth
-        if: env.COPILOT_AUTH != ''
+      - name: Write opencode GitHub Copilot auth
+        if: env.COPILOT_ACCESS_TOKEN != '' && env.COPILOT_REFRESH_TOKEN != ''
         env:
-          COPILOT_AUTH: ${{ secrets.COPILOT_AUTH }}
+          COPILOT_ACCESS_TOKEN: ${{ secrets.COPILOT_ACCESS_TOKEN }}
+          COPILOT_REFRESH_TOKEN: ${{ secrets.COPILOT_REFRESH_TOKEN }}
         run: |
-          mkdir -p ~/.local/share/opencode
-          echo "$COPILOT_AUTH" > ~/.local/share/opencode/auth.json
-          chmod 600 ~/.local/share/opencode/auth.json
+          mkdir -p "$XDG_DATA_HOME/opencode"
+          jq -n \
+            --arg access "$COPILOT_ACCESS_TOKEN" \
+            --arg refresh "$COPILOT_REFRESH_TOKEN" \
+            '{
+              "github-copilot": {
+                "type": "oauth",
+                "access": $access,
+                "refresh": $refresh,
+                "expires": 0
+              }
+            }' > "$XDG_DATA_HOME/opencode/auth.json"
+          chmod 600 "$XDG_DATA_HOME/opencode/auth.json"
 
       - name: Read system prompt files
         id: system-prompt
@@ -233,12 +246,12 @@ jobs:
               # Read-only: edit disabled, only gh api and specific gh commands allowed
               PERMISSION='{
                 "edit": "deny",
-                "write": "deny",
+                "task": "allow",
                 "bash": {
-                  "gh api*": "allow",
-                  "gh pr diff*": "allow",
-                  "gh issue view*": "allow",
-                  "*": "deny"
+                  "*": "deny",
+                  "gh api *": "allow",
+                  "gh pr diff *": "allow",
+                  "gh issue view *": "allow"
                 }
               }'
               ;;
@@ -246,11 +259,11 @@ jobs:
               # Default: edit enabled, gh/git commands allowed
               PERMISSION='{
                 "edit": "allow",
-                "write": "allow",
+                "task": "allow",
                 "bash": {
-                  "gh*": "allow",
-                  "git*": "allow",
-                  "*": "deny"
+                  "*": "deny",
+                  "gh *": "allow",
+                  "git *": "allow"
                 }
               }'
               ;;

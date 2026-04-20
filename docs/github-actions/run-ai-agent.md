@@ -8,7 +8,7 @@
   command
 - GitHub Copilot authentication configured (optional, for Copilot model)
 - Repository must have `id-token: write`, `contents: read`,
-  `pull-requests: read`, and `issues: read` permissions
+  `pull-requests: write`, and `issues: write` permissions
 
 ## How It Works
 
@@ -32,7 +32,7 @@ tasks.
 | ------------------------ | --------------------------------------------- | :-------------: | :------------: | :---: |
 | `/oc review`             | Review the PR for code style, typos, and bugs |       ✅        |       ❌       |  ❌   |
 | `/oc issue`              | Analyze issue and create implementation plan  |       ❌        |       ❌       |  ✅   |
-| `/oc task <instruction>` | Execute a task with commits                   |       ✅        |       ❌       |  ✅   |
+| `/oc task <instruction>` | Execute a task with commits                   |       ✅        |       ✅       |  ✅   |
 
 #### Command Details
 
@@ -91,17 +91,40 @@ settings.
 
 ### Authentication
 
-The "Write opencode Github Copilot auth" step is **only required** when using
+The "Write opencode GitHub Copilot auth" step is **only required** when using
 the `github-copilot` model:
 
-- **Secret**: `COPILOT_AUTH`
-- **Location**: `~/.local/share/opencode/auth.json` (in workflow environment)
-- **Content**: Full contents of Copilot auth configuration
-- **Conditional**: Only runs when `COPILOT_AUTH` secret is not empty
+- **Secrets**: `COPILOT_ACCESS_TOKEN`, `COPILOT_REFRESH_TOKEN`
+- **Location**: `$XDG_DATA_HOME/opencode/auth.json` (generated in the workflow)
+- **Workflow env**: `XDG_DATA_HOME=/tmp/xdg-data`
+- **Content**: Runtime-generated OAuth entry for `github-copilot`
+- **Conditional**: Only runs when both secrets are not empty
 
-To use GitHub Copilot model, store the auth configuration in the `COPILOT_AUTH`
-repository secret. This should contain the entire contents of
-`~/.local/share/opencode/auth.json` from your local OpenCode setup.
+To use GitHub Copilot model:
+
+1. Run `/connect` locally and authenticate GitHub Copilot in OpenCode.
+2. Open your local `~/.local/share/opencode/auth.json`.
+3. Copy `github-copilot.access` into the `COPILOT_ACCESS_TOKEN` repository
+   secret.
+4. Copy `github-copilot.refresh` into the `COPILOT_REFRESH_TOKEN` repository
+   secret.
+
+The workflow generates `$XDG_DATA_HOME/opencode/auth.json` before running the
+action with the following structure:
+
+```json
+{
+  "github-copilot": {
+    "type": "oauth",
+    "access": "<COPILOT_ACCESS_TOKEN>",
+    "refresh": "<COPILOT_REFRESH_TOKEN>",
+    "expires": 0
+  }
+}
+```
+
+`GITHUB_TOKEN` is still passed to the action for GitHub API operations. GitHub
+Copilot model authentication comes from the generated `auth.json` file.
 
 If using other models, this step is skipped and the workflow runs without GitHub
 Copilot authentication.
