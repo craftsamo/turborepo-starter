@@ -1,7 +1,7 @@
 ###############################################################################
 # Builder stage: Install dependencies and prune unnecessary files             #
 ###############################################################################
-FROM node:20-alpine AS builder
+FROM node:24-alpine AS builder
 
 # Update Alpine package manager and install libc6-compat for compatibility
 RUN apk update && apk add --no-cache libc6-compat
@@ -21,7 +21,7 @@ RUN turbo prune --scope=web --docker
 ###############################################################################
 # Installer stage: Add lockfile and package.json's of isolated subworkspace   #
 ###############################################################################
-FROM node:20-alpine AS installer
+FROM node:24-alpine AS installer
 
 # Set working directory in the container
 WORKDIR /app
@@ -38,7 +38,7 @@ RUN yarn install --frozen-lockfile --production=false
 ###############################################################################
 # Sourcer stage: Build the application                                        #
 ###############################################################################
-FROM node:20-alpine AS sourcer
+FROM node:24-alpine AS sourcer
 
 # Set working directory in the container
 WORKDIR /app
@@ -53,7 +53,7 @@ RUN yarn turbo run build --filter=web...
 ###############################################################################
 # Runner stage: Prepare lightweight runtime for the application               #
 ###############################################################################
-FROM node:20-alpine as runner
+FROM node:24-alpine as runner
 
 # Set working directory in the container
 WORKDIR /app
