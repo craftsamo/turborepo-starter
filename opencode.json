@@ -4,11 +4,12 @@
   "permission": {
     "edit": "ask",
     "bash": {
+      "*": "ask",
       "sudo *": "deny",
       "wget *": "deny",
       "dd *": "deny",
       ":(){ :|:& }; *": "deny",
-      "*": "ask"
+      "nps *": "allow"
     }
   }
 }
