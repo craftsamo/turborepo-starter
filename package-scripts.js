@@ -72,9 +72,13 @@ module.exports = {
         default: "nps docker.build.web",
         web: `docker build -t web . -f ${webPath}/Dockerfile`,
       },
+      start: {
+        web: "docker compose -f docker-compose.web.yml up --build",
+      },
     },
     start: {
-      web: "docker compose -f docker-compose.web.yml up --build",
+      default: `npx turbo run start`,
+      web: "npx turbo run start --filter=web",
     },
     dev: {
       default: "npx turbo run dev",
