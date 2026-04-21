@@ -8,13 +8,7 @@ export interface SectionProps {
   children: JSX.Element | JSX.Element[];
 }
 
-export const Section = async ({
-  id,
-  className = '',
-  title,
-  description,
-  children,
-}: SectionProps) => (
+export const Section = ({ id, className = '', title, description, children }: SectionProps) => (
   <section
     id={id}
     className={`flex flex-col min-h-[calc(100svh-4rem)] items-start snap-start snap-always ${className}`}
