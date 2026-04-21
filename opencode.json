@@ -8,10 +8,6 @@
       "wget *": "deny",
       "dd *": "deny",
       ":(){ :|:& }; *": "deny",
-      "git add *": "deny",
-      "git diff *": "allow",
-      "git status *": "allow",
-      "git log *": "allow",
       "*": "ask"
     }
   }
