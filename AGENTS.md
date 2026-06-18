@@ -1,6 +1,6 @@
 # AGENTS
 
-This is a monorepo with TypeScript, Turbo, and Yarn workspaces.
+This is a monorepo with TypeScript, Turbo, and pnpm workspaces.
 
 ## General Rules
 
