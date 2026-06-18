@@ -1,0 +1,377 @@
+name: opencode
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+
+jobs:
+  opencode:
+    if: |
+      github.event.comment.user.type != 'Bot' &&
+      (contains(github.event.comment.body, ' /oc') ||
+       startsWith(github.event.comment.body, '/oc') ||
+       contains(github.event.comment.body, ' /opencode') ||
+       startsWith(github.event.comment.body, '/opencode'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      XDG_DATA_HOME: /tmp/xdg-data
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Write opencode GitHub Copilot auth
+        if: env.COPILOT_ACCESS_TOKEN != '' && env.COPILOT_REFRESH_TOKEN != ''
+        env:
+          COPILOT_ACCESS_TOKEN: ${{ secrets.COPILOT_ACCESS_TOKEN }}
+          COPILOT_REFRESH_TOKEN: ${{ secrets.COPILOT_REFRESH_TOKEN }}
+        run: |
+          mkdir -p "$XDG_DATA_HOME/opencode"
+          jq -n \
+            --arg access "$COPILOT_ACCESS_TOKEN" \
+            --arg refresh "$COPILOT_REFRESH_TOKEN" \
+            '{
+              "github-copilot": {
+                "type": "oauth",
+                "access": $access,
+                "refresh": $refresh,
+                "expires": 0
+              }
+            }' > "$XDG_DATA_HOME/opencode/auth.json"
+          chmod 600 "$XDG_DATA_HOME/opencode/auth.json"
+
+      - name: Read system prompt files
+        id: system-prompt
+        run: |
+          {
+            echo "content<<EOF"
+            cat docs/instructions/github-workflows/GENERAL.md
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
+
+      - name: Detect comment context
+        id: context
+        run: |
+          # PR conversation tab comment
+          if [[ -n "${{ github.event.issue.pull_request }}" ]]; then
+            echo "comment_context=pull_request" >> $GITHUB_OUTPUT
+            echo "target_number=${{ github.event.issue.number }}" >> $GITHUB_OUTPUT
+          # Issue comment
+          elif [[ -n "${{ github.event.issue.number }}" ]]; then
+            echo "comment_context=issue" >> $GITHUB_OUTPUT
+            echo "target_number=${{ github.event.issue.number }}" >> $GITHUB_OUTPUT
+          # PR file review comment
+          elif [[ -n "${{ github.event.pull_request.number }}" ]]; then
+            echo "comment_context=pull_request_review" >> $GITHUB_OUTPUT
+            echo "target_number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Get PR details
+        id: pr-details
+        if: steps.context.outputs.comment_context == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ steps.context.outputs.target_number }}
+        run: |
+          PR_DATA=$(gh api /repos/${{ github.repository }}/pulls/$PR_NUMBER)
+          echo "sha=$(echo "$PR_DATA" | jq -r .head.sha)" >> $GITHUB_OUTPUT
+
+      - name: Parse command and build prompt
+        id: prompt
+        env:
+          COMMENT_BODY: ${{ github.event.comment.body }}
+          SYSTEM_PROMPT: ${{ steps.system-prompt.outputs.content }}
+          COMMENT_CONTEXT: ${{ steps.context.outputs.comment_context }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          DEFAULT_SHA: ${{ github.sha }}
+          PR_NUMBER: ${{ steps.context.outputs.target_number }}
+          PR_SHA: ${{ steps.pr-details.outputs.sha }}
+          ISSUE_NUMBER: ${{ steps.context.outputs.target_number }}
+          AI_MODEL_ID: ${{ vars.AI_MODEL_ID }}
+          AI_REVIEW_MODEL_ID: ${{ vars.AI_REVIEW_MODEL_ID }}
+          AI_ISSUE_MODEL_ID: ${{ vars.AI_ISSUE_MODEL_ID }}
+          AI_TASK_MODEL_ID: ${{ vars.AI_TASK_MODEL_ID }}
+        run: |
+          COMMAND_TYPE=""
+          USER_INSTRUCTION=""
+          COMMAND_PROMPT=""
+          VALID_COMMANDS="review task issue"
+
+          # Parse command
+          if [[ "$COMMENT_BODY" =~ ^(/oc|/opencode)[[:space:]]+([a-z]+)([[:space:]]+(.*))?$ ]]; then
+            POTENTIAL_COMMAND="${BASH_REMATCH[2]}"
+            POTENTIAL_INSTRUCTION="${BASH_REMATCH[4]}"
+
+            # Validate command (this overwrites BASH_REMATCH, so we saved values above)
+            if [[ " $VALID_COMMANDS " =~ " $POTENTIAL_COMMAND " ]]; then
+              COMMAND_TYPE="$POTENTIAL_COMMAND"
+              USER_INSTRUCTION="$POTENTIAL_INSTRUCTION"
+            else
+              # Invalid command - output error and exit
+              echo "invalid_command=$POTENTIAL_COMMAND" >> $GITHUB_OUTPUT
+              echo "valid_commands=$VALID_COMMANDS" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+          fi
+
+          # Determine SHA for permalink based on command type
+          # review: use PR HEAD SHA, task: use workflow trigger SHA
+          if [[ "$COMMAND_TYPE" == "review" && -n "$PR_SHA" ]]; then
+            PERMALINK_SHA="$PR_SHA"
+          else
+            PERMALINK_SHA="$DEFAULT_SHA"
+          fi
+
+          # Build permalink base and substitute in system prompt
+          PERMALINK_BASE="https://github.com/$GITHUB_REPOSITORY/blob/$PERMALINK_SHA"
+          SYSTEM_PROMPT_RESOLVED="${SYSTEM_PROMPT//\$PERMALINK_BASE/$PERMALINK_BASE}"
+
+          # Read command-specific prompt
+          case "$COMMAND_TYPE" in
+            "review")
+              # Ignore arguments for review command (read-only operation)
+              if [[ -n "$USER_INSTRUCTION" ]]; then
+                echo "::notice::Arguments after 'review' command ignored: $USER_INSTRUCTION"
+                USER_INSTRUCTION=""
+              fi
+              COMMAND_PROMPT=$(cat docs/instructions/github-workflows/REVIEW.md)
+              # Build review context (separate from instructions)
+              COMMAND_CONTEXT=$(printf "<review-context>\nRepository=%s\nPR_Number=%s\nCommit_SHA=%s\n</review-context>" "$GITHUB_REPOSITORY" "$PR_NUMBER" "$PR_SHA")
+              ;;
+            "issue")
+              # Ignore arguments for issue command (read-only operation)
+              if [[ -n "$USER_INSTRUCTION" ]]; then
+                echo "::notice::Arguments after 'issue' command ignored: $USER_INSTRUCTION"
+                USER_INSTRUCTION=""
+              fi
+              COMMAND_PROMPT=$(cat docs/instructions/github-workflows/ISSUE.md)
+              # Build issue context (separate from instructions)
+              COMMAND_CONTEXT=$(printf "<issue-context>\nRepository=%s\nIssue_Number=%s\n</issue-context>" "$GITHUB_REPOSITORY" "$ISSUE_NUMBER")
+              ;;
+            "task")
+              COMMAND_PROMPT=$(cat docs/instructions/github-workflows/TASK.md)
+              COMMAND_CONTEXT=""
+              ;;
+          esac
+
+          # Validate command context
+          case "$COMMAND_TYPE" in
+            "review")
+              # review: only allowed in PR conversation tab
+              if [[ "$COMMENT_CONTEXT" != "pull_request" ]]; then
+                echo "invalid_context=true" >> $GITHUB_OUTPUT
+                echo "command_type=$COMMAND_TYPE" >> $GITHUB_OUTPUT
+                exit 0
+              fi
+              ;;
+            "issue")
+              # issue: only allowed in Issue comments
+              if [[ "$COMMENT_CONTEXT" != "issue" ]]; then
+                echo "invalid_context=true" >> $GITHUB_OUTPUT
+                echo "command_type=$COMMAND_TYPE" >> $GITHUB_OUTPUT
+                exit 0
+              fi
+              ;;
+          esac
+
+          # Check if task command has instruction
+          if [[ "$COMMAND_TYPE" == "task" && -z "$USER_INSTRUCTION" ]]; then
+            echo "missing_instruction=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Build final prompt with XML-style tags
+          {
+            echo "prompt<<EOF"
+            echo "<system-instructions>"
+            echo "$SYSTEM_PROMPT_RESOLVED"
+            echo "</system-instructions>"
+            if [[ -n "$COMMAND_PROMPT" ]]; then
+              echo ""
+              echo "<${COMMAND_TYPE}-instructions>"
+              echo "$COMMAND_PROMPT"
+              echo "</${COMMAND_TYPE}-instructions>"
+            fi
+            if [[ -n "$COMMAND_CONTEXT" ]]; then
+              echo ""
+              echo "$COMMAND_CONTEXT"
+            fi
+            if [[ -n "$USER_INSTRUCTION" ]]; then
+              echo ""
+              echo "<user-request>"
+              echo "$USER_INSTRUCTION"
+              echo "</user-request>"
+            fi
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
+
+          # Determine model ID based on command type
+          # Fallback: command-specific → common → default (gpt-5-mini)
+          case "$COMMAND_TYPE" in
+            "review")
+              MODEL_ID="${AI_REVIEW_MODEL_ID:-${AI_MODEL_ID:-gpt-5-mini}}"
+              ;;
+            "issue")
+              MODEL_ID="${AI_ISSUE_MODEL_ID:-${AI_MODEL_ID:-gpt-5-mini}}"
+              ;;
+            "task")
+              MODEL_ID="${AI_TASK_MODEL_ID:-${AI_MODEL_ID:-gpt-5-mini}}"
+              ;;
+            *)
+              MODEL_ID="${AI_MODEL_ID:-gpt-5-mini}"
+              ;;
+          esac
+          echo "model_id=$MODEL_ID" >> $GITHUB_OUTPUT
+
+          echo "command_type=$COMMAND_TYPE" >> $GITHUB_OUTPUT
+
+      - name: Build permissions
+        id: permissions
+        if: |
+          steps.prompt.outputs.invalid_command == '' &&
+          steps.prompt.outputs.missing_instruction == '' &&
+          steps.prompt.outputs.invalid_context == ''
+        env:
+          COMMAND_TYPE: ${{ steps.prompt.outputs.command_type }}
+        run: |
+          case "$COMMAND_TYPE" in
+            "review"|"issue")
+              # Read-only: edit disabled, only gh api and specific gh commands allowed
+              PERMISSION='{
+                "edit": "deny",
+                "task": "allow",
+                "bash": {
+                  "*": "deny",
+                  "gh api *": "allow",
+                  "gh pr diff *": "allow",
+                  "gh issue view *": "allow"
+                }
+              }'
+              ;;
+            *)
+              # Default: edit enabled, gh/git commands allowed
+              PERMISSION='{
+                "edit": "allow",
+                "task": "allow",
+                "bash": {
+                  "*": "deny",
+                  "gh *": "allow",
+                  "git *": "allow"
+                }
+              }'
+              ;;
+          esac
+
+          echo "value=$(echo "$PERMISSION" | jq -c .)" >> $GITHUB_OUTPUT
+
+      - name: Reply invalid command
+        if: steps.prompt.outputs.invalid_command != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INVALID_CMD: ${{ steps.prompt.outputs.invalid_command }}
+          COMMENT_CONTEXT: ${{ steps.context.outputs.comment_context }}
+          TARGET_NUMBER: ${{ steps.context.outputs.target_number }}
+        run: |
+          if [[ "$COMMENT_CONTEXT" == "issue" ]]; then
+            API_ENDPOINT="/repos/${{ github.repository }}/issues/$TARGET_NUMBER/comments"
+          else
+            API_ENDPOINT="/repos/${{ github.repository }}/pulls/$TARGET_NUMBER/comments"
+          fi
+
+          # Build available commands based on context
+          case "$COMMENT_CONTEXT" in
+            "issue")
+              AVAILABLE_COMMANDS=$(printf '%s\n%s' \
+                "- \`/oc issue\` - Analyze this issue and propose solutions" \
+                "- \`/oc task <instruction>\` - Execute a task (creates branch and PR)")
+              ;;
+            "pull_request")
+              AVAILABLE_COMMANDS=$(printf '%s\n%s' \
+                "- \`/oc review\` - Review this PR" \
+                "- \`/oc task <instruction>\` - Execute a task (commits to PR branch)")
+              ;;
+            "pull_request_review")
+              AVAILABLE_COMMANDS="- \`/oc task <instruction>\` - Execute a task (commits to PR branch)"
+              ;;
+          esac
+
+          gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            "$API_ENDPOINT" \
+            -f body="Unknown command: \`$INVALID_CMD\`
+
+          Available commands:
+          $AVAILABLE_COMMANDS"
+
+      - name: Reply missing instruction
+        if: steps.prompt.outputs.missing_instruction == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COMMENT_CONTEXT: ${{ steps.context.outputs.comment_context }}
+          TARGET_NUMBER: ${{ steps.context.outputs.target_number }}
+        run: |
+          if [[ "$COMMENT_CONTEXT" == "issue" ]]; then
+            API_ENDPOINT="/repos/${{ github.repository }}/issues/$TARGET_NUMBER/comments"
+          else
+            API_ENDPOINT="/repos/${{ github.repository }}/pulls/$TARGET_NUMBER/comments"
+          fi
+
+          gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            "$API_ENDPOINT" \
+            -f body="The \`task\` command requires an instruction.
+
+          Usage: \`/oc task <instruction>\`
+
+          Example: \`/oc task Add unit tests for the login function\`"
+
+      - name: Reply invalid context
+        if: steps.prompt.outputs.invalid_context == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COMMAND_TYPE: ${{ steps.prompt.outputs.command_type }}
+          COMMENT_CONTEXT: ${{ steps.context.outputs.comment_context }}
+          TARGET_NUMBER: ${{ steps.context.outputs.target_number }}
+        run: |
+          if [[ "$COMMENT_CONTEXT" == "issue" ]]; then
+            API_ENDPOINT="/repos/${{ github.repository }}/issues/$TARGET_NUMBER/comments"
+            CONTEXT_NAME="Issues"
+            AVAILABLE_COMMANDS=$(printf '%s\n%s' \
+              "- \`/oc issue\` - Analyze this issue and propose solutions" \
+              "- \`/oc task <instruction>\` - Execute a task (creates branch and PR)")
+          else
+            API_ENDPOINT="/repos/${{ github.repository }}/pulls/$TARGET_NUMBER/comments"
+            CONTEXT_NAME="Pull Request file reviews"
+            AVAILABLE_COMMANDS="- \`/oc task <instruction>\` - Execute a task (commits to PR branch)"
+          fi
+
+          gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            "$API_ENDPOINT" \
+            -f body="The \`$COMMAND_TYPE\` command is not available in this context.
+
+          Available commands for $CONTEXT_NAME:
+          $AVAILABLE_COMMANDS"
+
+      - name: Run opencode
+        if: |
+          steps.prompt.outputs.invalid_command == '' &&
+          steps.prompt.outputs.missing_instruction == '' &&
+          steps.prompt.outputs.invalid_context == ''
+        uses: sst/opencode/github@latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENCODE_PERMISSION: ${{ steps.permissions.outputs.value }}
+        with:
+          model: ${{ vars.AI_PROVIDER_ID || 'github-copilot' }}/${{ steps.prompt.outputs.model_id }}
+          prompt: ${{ steps.prompt.outputs.prompt }}

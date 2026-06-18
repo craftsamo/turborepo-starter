@@ -1,0 +1,105 @@
+name: Tests
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "apps/**"
+      - "packages/**"
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "apps/**"
+      - "packages/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+env:
+  # Let Corepack download the pinned pnpm without an interactive prompt in CI.
+  COREPACK_ENABLE_DOWNLOAD_PROMPT: 0
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      web: ${{ steps.filter.outputs.web }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            web:
+              - 'apps/web/**'
+              - 'packages/**'
+
+  setup:
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
+    outputs:
+      pnpm-store-dir: ${{ steps.pnpm-store.outputs.dir }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Use Node.js 24.x
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24.x
+          # setup-node@v5 enables package-manager caching by default and probes
+          # pnpm (from the packageManager field) before Corepack runs. Disable it;
+          # Corepack is enabled below and the pnpm store is cached manually.
+          package-manager-cache: false
+      - name: Enable Corepack
+        run: corepack enable
+      - name: Get pnpm store directory
+        id: pnpm-store
+        run: echo "dir=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-store.outputs.dir }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+      - run: pnpm install --frozen-lockfile
+
+  test:
+    needs: [setup, changes]
+    runs-on: ubuntu-latest
+    if: needs.setup.result == 'success'
+    strategy:
+      matrix:
+        include:
+          - target: web
+            run: ${{ needs.changes.outputs.web }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Use Node.js 24.x
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24.x
+          # setup-node@v5 enables package-manager caching by default and probes
+          # pnpm (from the packageManager field) before Corepack runs. Disable it;
+          # Corepack is enabled below and the pnpm store is cached manually.
+          package-manager-cache: false
+      - name: Enable Corepack
+        run: corepack enable
+      - name: Restore pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ needs.setup.outputs.pnpm-store-dir }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+      - name: Prepare
+        if: matrix.run == 'true'
+        run: npx nps prepare.ci.${{ matrix.target }}
+      - name: Build
+        if: matrix.run == 'true'
+        run: npx nps build.ci.${{ matrix.target }}
+      - name: Test
+        if: matrix.run == 'true'
+        run: npx nps test.ci.${{ matrix.target }}

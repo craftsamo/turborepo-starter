@@ -1,0 +1,131 @@
+name: Get details
+
+on:
+  workflow_call:
+    inputs:
+      event_name:
+        type: string
+        required: false
+    outputs:
+      project_name:
+        value: ${{ jobs.get-project.outputs.name }}
+      apps:
+        value: ${{ jobs.get-apps.outputs.details }}
+      apps_by_name:
+        value: ${{ jobs.get-apps.outputs.details_by_name }}
+      repository:
+        value: ${{ jobs.get-repository-details.outputs.details }}
+
+jobs:
+  #############################################################################
+  #  Retrieve the `name` of the project (package.json)                        #
+  #############################################################################
+  get-project:
+    name: Get project name
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    outputs:
+      name: ${{ steps.project-name.outputs.name }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Get project name from package.json
+        id: project-name
+        run: echo "name=$(jq -r .name < package.json)" >> $GITHUB_OUTPUT
+
+  #############################################################################
+  #  Retrieve the name and version from `apps/**/package.json`                #
+  #############################################################################
+  get-apps:
+    name: Get apps details
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    outputs:
+      details: ${{ steps.name-and-version.outputs.details }}
+      details_by_name: ${{ steps.name-and-version.outputs.details_by_name }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Get app details from apps/**/package.json
+        id: name-and-version
+        run: |
+          app_details=$(find apps -name "package.json" | while read -r file; do
+            jq --arg file "$file" '{
+              "name": .name, 
+              "version": .version, 
+              "lowercase_version": (.version | gsub("\\."; "-")),
+              "file_path": $file
+            }' "$file"
+            done | jq -s .)
+          echo "details=$(echo "$app_details" | jq -c .)" >> $GITHUB_OUTPUT
+          echo $app_details
+
+          # Create a lookup object with app name as key
+          app_details_by_name=$(echo "$app_details" | jq 'reduce .[] as $item ({}; .[$item.name] = $item)')
+          echo "details_by_name=$(echo "$app_details_by_name" | jq -c .)" >> $GITHUB_OUTPUT
+          echo "Apps by name: $app_details_by_name"
+
+  #############################################################################
+  #  Get repository details                                                   #
+  #############################################################################
+  get-repository-details:
+    name: Get Repository details
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    outputs:
+      details: ${{ steps.generate-repo-details.outputs.details }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Get repository name and owner
+        id: name-and-owner
+        run: |
+          repo_name=$(basename $GITHUB_REPOSITORY)
+          repo_name_lowercase=$(echo "$repo_name" | tr '[:upper:]' '[:lower:]')
+          repo_owner=$(dirname $GITHUB_REPOSITORY)
+          repo_owner_lowercase=$(echo "$repo_owner" | tr '[:upper:]' '[:lower:]')
+
+          echo "repo_name=$repo_name" >> $GITHUB_OUTPUT
+          echo "repo_name_lowercase=$repo_name_lowercase" >> $GITHUB_OUTPUT
+          echo "repo_owner=$repo_owner" >> $GITHUB_OUTPUT
+          echo "repo_owner_lowercase=$repo_owner_lowercase" >> $GITHUB_OUTPUT
+
+      - name: Get ref name
+        id: ref
+        run: |
+          ## If the trigger is a pull request, the method of obtaining the branch name is different
+          if [ "${{ github.event_name }}" == 'pull_request' ]; then
+            ref_name=$(echo '${{ github.event.pull_request.head.ref }}' | tr '[:upper:]' '[:lower:]')
+            ref_name_lowercase=$(echo "$ref_name" | tr '/' '-')
+
+            echo "ref_name=$ref_name" >> $GITHUB_OUTPUT
+            echo "ref_name_lowercase=$ref_name_lowercase" >> $GITHUB_OUTPUT
+          else
+            ref_name=$(echo '${{ github.ref_name }}' | tr '[:upper:]' '[:lower:]')
+            ref_name_lowercase=$(echo "$ref_name" | tr '/' '-')
+
+            echo "ref_name=$ref_name" >> $GITHUB_OUTPUT
+            echo "ref_name_lowercase=$ref_name_lowercase" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate repository details
+        id: generate-repo-details
+        run: |
+          repo_details=$(jq -n \
+            --arg repo_name "${{ steps.name-and-owner.outputs.repo_name }}" \
+            --arg repo_name_lowercase "${{ steps.name-and-owner.outputs.repo_name_lowercase }}" \
+            --arg repo_owner "${{ steps.name-and-owner.outputs.repo_owner }}" \
+            --arg repo_owner_lowercase "${{ steps.name-and-owner.outputs.repo_owner_lowercase }}" \
+            --arg ref_name "${{ steps.ref.outputs.ref_name }}" \
+            --arg ref_name_lowercase "${{ steps.ref.outputs.ref_name_lowercase }}" \
+            '{ 
+                "repo_name": $repo_name, 
+                "repo_name_lowercase": $repo_name_lowercase, 
+                "repo_owner": $repo_owner, 
+                "repo_owner_lowercase": $repo_owner_lowercase,
+                "ref_name": $ref_name,
+                "ref_name_lowercase": $ref_name_lowercase
+            }' | jq -c .
+          )
+          echo "details=$repo_details" >> $GITHUB_OUTPUT
+          echo $repo_details

@@ -1,0 +1,107 @@
+name: Task
+description: Record a task
+type: task
+body:
+  - type: textarea
+    id: overview
+    attributes:
+      label: Overview
+      description: Please describe an overview of this task.
+      placeholder: |
+        - What needs to be done
+        - Scope / non-scope (optional)
+    validations:
+      required: true
+
+  - type: textarea
+    id: purpose
+    attributes:
+      label: Purpose
+      description: Please explain why this task is needed, the background, and the business context.
+      placeholder: |
+        What problem does this solve, and why is it important now?
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: Please list the conditions that determine this task is complete.
+      placeholder: |
+        - [ ] Criterion 1
+        - [ ] Criterion 2
+        - [ ] Criterion 3
+    validations:
+      required: true
+
+  - type: textarea
+    id: api-spec
+    attributes:
+      label: API Design
+      description: Please describe API design such as Endpoint, Request, and Response.
+      placeholder: |
+        - Endpoint(s):
+        - Request:
+        - Response:
+        - Auth / errors (optional):
+    validations:
+      required: false
+
+  - type: textarea
+    id: database-schema
+    attributes:
+      label: Database Design
+      description: Please describe DB design such as Schema and Columns.
+      placeholder: |
+        - Tables/collections:
+        - Columns/fields:
+        - Relations/indexes (optional):
+    validations:
+      required: false
+
+  - type: textarea
+    id: ui-flow
+    attributes:
+      label: UI Flow
+      description: Please describe page transitions, user flow, and interaction flow.
+      placeholder: |
+        Screen A → Screen B → Screen C
+        (Include key user actions and system responses if needed.)
+    validations:
+      required: false
+
+  - type: textarea
+    id: component-design
+    attributes:
+      label: Component Design
+      description: Please describe component structure, state management, Props, etc.
+      placeholder: |
+        - Components involved:
+        - Key props/state:
+        - State management approach (optional):
+    validations:
+      required: false
+
+  - type: textarea
+    id: page-layout
+    attributes:
+      label: Page Layout
+      description: Page layout, placement, and design specs.
+      placeholder: |
+        - Layout notes / wireframe link (optional)
+        - Responsive behavior (optional)
+    validations:
+      required: false
+
+  - type: textarea
+    id: implementation-notes
+    attributes:
+      label: Notes
+      description: Please write any implementation notes, compatibility concerns, or recommended technologies.
+      placeholder: |
+        - Dependencies / risks:
+        - Rollout plan (optional):
+        - Testing notes (optional):
+    validations:
+      required: false

@@ -1,0 +1,66 @@
+# name-template: Specifies the naming convention for the release version.
+name-template: "v$RESOLVED_VERSION 🚀"
+
+# tag-template: Specifies the tagging convention for the release version.
+tag-template: "v$RESOLVED_VERSION"
+
+categories:
+  - title: 🚀 New Features
+    labels:
+      - "🌱feature"
+  - title: ⚒️ Enhancement
+    labels:
+      - "⚒️enhancement"
+  - title: 🐛 Bug Fixes
+    labels:
+      - "🐛bug"
+      - "🐞hotfix"
+  - title: 📄 Documentation
+    labels:
+      - "📝documentation"
+
+# change-template: Defines the format for individual change log entries in the release notes.
+# - `$TITLE`: Represents the title of the change.
+# - `$AUTHOR`: Represents the author of the change.
+# - `#$NUMBER`: Represents the pull request or issue number.
+change-template: "- $TITLE @$AUTHOR (#$NUMBER)"
+
+# You can add # and @ to disable mentions, and add ` to disable code blocks.
+change-title-escapes: '\<*_&'
+
+version-resolver:
+  # Specifies labels that trigger a major version bump.
+  major:
+    labels:
+      - "🌟major"
+  # Specifies labels that trigger a minor version bump.
+  minor:
+    labels:
+      - "🌱feature"
+      - "🐞hotfix"
+  # Specifies labels that trigger a patch version bump.
+  patch:
+    labels:
+      - "📝documentation"
+      - "⚒️enhancement"
+      - "🐛bug"
+  # Specifies the default version bump when no labels match.
+  default: patch
+
+template: |
+  ## Changes
+
+  $CHANGES
+
+autolabeler:
+  # Automatically applies the "⚒️enhancement" label based on branch naming patterns.
+  - label: "⚒️enhancement"
+    branch:
+      - "/(improve|refactor|enhancement)[/-].+/"
+
+  # Automatically applies the "📝documentation" label based on branch naming patterns or file changes.
+  - label: "📝documentation"
+    branch:
+      - "/(doc|document|documentation)[/-].+/"
+    files:
+      - "*.md"
