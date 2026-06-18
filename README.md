@@ -25,6 +25,8 @@ configurations.
 - **Code Quality**: ESLint, Prettier, and Husky for consistent code standards
 - **Testing**: Vitest setup for unit and integration tests
 - **Git Workflow**: Commitizen and Commitlint for conventional commits
+- **AI Agent Skills**: opencode on-demand skills (`.opencode/skills/`) with
+  per-package `AGENTS.md` auto-loaded as instructions
 - **Best Practices**: Optimized configurations and development guidelines
 
 ## 🛠 Tech Stack
@@ -32,8 +34,11 @@ configurations.
 - **Monorepo**: [Turborepo](https://turbo.build) with pnpm Workspaces
 - **Runtime**: Node.js 24+
 - **Language**: TypeScript 5+
-- **Framework**: Next.js with App Router
+- **Framework**: [Next.js 16](https://nextjs.org) (App Router) + [React 19](https://react.dev)
 - **UI Library**: React with Shadcn/ui components
+- **State**: Redux Toolkit + react-redux
+- **Theming**: next-themes
+- **Toasts**: sonner (via `@workspace/ui`)
 - **Styling**: Tailwind CSS and PostCSS
 - **Testing**: Vitest
 - **Code Quality**: ESLint, Prettier
@@ -54,8 +59,9 @@ turborepo-starter/
 │   ├── ui/                # Shared UI components (Shadcn/ui)
 │   └── vitest/            # Shared Vitest configuration
 ├── docs/
-│   ├── github-actions/    #
-│   └── instructions/      # Development guidelines for AI agents
+│   ├── github-actions/    # GitHub Actions workflow documentation
+│   └── instructions/      # GitHub-workflow guidelines for AI agents (GENERAL/ISSUE/TASK/REVIEW)
+├── .opencode/             # opencode skills and agent config
 ├── .github/               # GitHub Actions workflows
 └── .husky/                # Git hooks configuration
 ```
