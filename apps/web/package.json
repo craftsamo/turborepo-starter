@@ -1,0 +1,45 @@
+{
+  "name": "web",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "analyze-bundle": "ANALYZE=true next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --max-warnings 0",
+    "format": "prettier --write \"src/**/*.{ts,tsx,md,css,json}\"",
+    "test": "vitest run",
+    "test:watch": "vitest --watch",
+    "test:ci": "vitest run"
+  },
+  "dependencies": {
+    "@reduxjs/toolkit": "^2.4.0",
+    "@workspace/ui": "workspace:*",
+    "@workspace/constants": "workspace:*",
+    "next": "^16.2.3",
+    "next-themes": "^0.4.4",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1",
+    "react-redux": "^9.1.2"
+  },
+  "devDependencies": {
+    "@next/bundle-analyzer": "^15.1.5",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.2.0",
+    "@testing-library/user-event": "^14.6.0",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@workspace/eslint": "workspace:*",
+    "@workspace/prettier": "workspace:*",
+    "@workspace/tsconfig": "workspace:*",
+    "@workspace/vitest": "workspace:*",
+    "@workspace/types": "workspace:*",
+    "copy-webpack-plugin": "^14.0.0",
+    "next-transpile-modules": "10.0.1",
+    "whatwg-fetch": "^3.6.20"
+  }
+}
