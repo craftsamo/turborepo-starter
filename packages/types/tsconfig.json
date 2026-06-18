@@ -1,0 +1,12 @@
+{
+  "extends": "@workspace/tsconfig/base.json",
+  "compilerOptions": {
+    "baseUrl": "./src",
+    "outDir": "./dist",
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "target": "es2022"
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"]
+}

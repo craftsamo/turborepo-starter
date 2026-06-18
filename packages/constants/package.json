@@ -1,0 +1,28 @@
+{
+  "name": "@workspace/constants",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --ext .ts --max-warnings 0",
+    "format": "prettier --write \"src/**/*.{ts,tsx,md,css,json}\""
+  },
+  "devDependencies": {
+    "@workspace/eslint": "workspace:*",
+    "@workspace/prettier": "workspace:*",
+    "@workspace/tsconfig": "workspace:*",
+    "tsup": "^8.3.6"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  }
+}
