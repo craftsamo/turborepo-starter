@@ -16,9 +16,13 @@ full options.
 - **Lint**: `nps lint` (all), `nps lint.web`, `nps lint.packages` (or
   `nps lint.packages.ui`)
 - **Format**: `nps format` (all), `nps format.web`, `nps format.packages`
+- **Typecheck**: `nps typecheck` (all), `nps typecheck.web`,
+  `nps typecheck.packages` (or `nps typecheck.packages.ui`)
 - **Test**: `nps test` (all), `nps test.web` (web app tests), `nps test.watch`
+- **Dev**: `nps dev` (all), `nps dev.web`
 - **Single test**: `cd apps/web && pnpm test -- path/to/test.test.tsx`
 
-## App-specific Guidelines
+## App- and Package-specific Guidelines
 
-For Web app specific guidelines and testing locations, see @apps/web/AGENTS.md
+For app- and package-specific guidelines, see @apps/web/AGENTS.md and
+@packages/*/AGENTS.md.
