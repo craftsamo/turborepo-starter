@@ -10,7 +10,7 @@ configurations.
 - [Tech Stack](#-tech-stack)
 - [Project Structure](#-project-structure)
 - [Getting Started](#-getting-started)
-- [Set Environment variables](#set-environment-variables)
+- [Set Environment Variables](#-set-environment-variables)
 - [Available Commands](#-available-commands)
 - [GitHub Actions Workflows](#-github-actions-workflows)
 
@@ -90,13 +90,32 @@ pnpm install
 pnpm add -g nps
 ```
 
-3. **Run Development Server**
+3. **Configure local environment**
+
+Copy the example env file and fill in the values you need for local
+development:
+
+```sh
+cp apps/web/.env.example apps/web/.env   # BASE_URL, LOG_LEVEL (optional)
+```
+
+4. **Run Development Server**
 
 ```sh
 nps dev
 ```
 
-## Set Environment variables
+## ⚙️ Set Environment Variables
+
+### Local Development
+
+The web app reads runtime configuration from `apps/web/.env`. See
+`apps/web/.env.example` for the full list:
+
+| Variable     | Purpose                                                        |
+| ------------ | -------------------------------------------------------------- |
+| `BASE_URL`   | Base URL used for absolute links, sitemap, robots, and API calls |
+| `LOG_LEVEL`  | Logger verbosity: `verbose` / `debug` / `info` / `log` / `warn` / `error` / `fatal` (default: `info`) |
 
 ### GitHub Actions Variables
 
@@ -126,7 +145,27 @@ For details on how to set up GitHub Copilot authentication, see
 
 ## 📦 Available Commands
 
-For all available commands, refer to [package-scripts.js](package-scripts.js)
+Commands are run with [`nps`](https://github.com/seblepouls/nps)
+(npm-script-runner). See [package-scripts.js](package-scripts.js) for the full
+list.
+
+| Command              | Description                                  |
+| -------------------- | -------------------------------------------- |
+| `nps dev`            | Start the web dev server (Turborepo dev)     |
+| `nps build`          | Build all apps and packages                  |
+| `nps build.web`      | Build only the web app                       |
+| `nps build.packages` | Build shared packages (constants, types)     |
+| `nps lint`           | Lint all apps and packages                   |
+| `nps lint.web`       | Lint only the web app                        |
+| `nps format`         | Format all apps and packages                 |
+| `nps typecheck`      | Type-check all apps and packages             |
+| `nps test`           | Run web app tests                            |
+| `nps test.watch`     | Run web app tests in watch mode              |
+| `nps docker.build.web` | Build the web Docker image                  |
+| `nps docker.start.web` | Start the web container via docker-compose  |
+| `nps start`          | Start the built web app in production mode   |
+
+> Single test file: `cd apps/web && pnpm test -- path/to/test.test.tsx`
 
 ## 🔄 GitHub Actions Workflows
 
