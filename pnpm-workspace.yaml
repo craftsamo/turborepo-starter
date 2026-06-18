@@ -1,0 +1,49 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# Keep a flat node_modules layout (parity with the previous Yarn Classic setup).
+# Avoids pnpm's default isolated/symlink store so transitive deps resolve as
+# before and Docker stage-to-stage `COPY node_modules` stays safe.
+# NOTE: pnpm 11 only reads auth/registry settings from .npmrc; every other
+# setting (nodeLinker, peers, etc.) must live here.
+nodeLinker: hoisted
+autoInstallPeers: true
+strictPeerDependencies: false
+
+# pnpm 11 defaults `verifyDepsBeforeRun` to `install`, which makes `pnpm exec`
+# silently re-install (and prune) node_modules before running a command. In the
+# Docker sourcer stages this mutated the node_modules copied from the installer
+# stage and wedged the build. node_modules is always built explicitly via
+# `pnpm install --frozen-lockfile`, so never auto-install.
+verifyDepsBeforeRun: false
+
+# Migrated from the former Yarn `resolutions` field.
+# The previous resolutions were flat (no parent>child scoping), so they map
+# directly to global pnpm `overrides`.
+overrides:
+  "flatted": "^3.4.2"
+  "handlebars": "^4.7.9"
+  "brace-expansion": "^2.0.3"
+  "vite": "^7.3.2"
+  "lodash": "^4.18.1"
+  "tmp": "^0.2.4"
+  "js-yaml": "^4.1.1"
+  "qs": "^6.14.2"
+  "tar": "^7.5.11"
+  "rollup": "^4.59.0"
+  "glob": "^10.5.0"
+  "minimatch": "^9.0.7"
+
+# pnpm 10+ blocks dependency lifecycle scripts by default. pnpm 11 reviews them
+# via `allowBuilds` (the old `onlyBuiltDependencies` was removed). Every package
+# that ships a build script must be listed or install fails with
+# ERR_PNPM_IGNORED_BUILDS. The list below is a starting point; add packages as
+# install warnings surface.
+allowBuilds:
+  esbuild: true
+  "@swc/core": true
+  "@parcel/watcher": true
+  sharp: true
+  # msw ships an `msw-cli` postinstall used by the Vitest test suite.
+  msw: true
