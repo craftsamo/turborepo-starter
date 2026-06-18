@@ -1,0 +1,56 @@
+name: Bug Report
+description: Report an issue that should be fixed
+type: bug
+labels: ["🐛bug"]
+body:
+  - type: input
+    id: overview
+    attributes:
+      label: Overview
+      description: Please describe a brief summary of the bug you encountered.
+      placeholder: e.g., The app crashes when clicking the Save button.
+    validations:
+      required: false
+
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: Please describe the issue in detail.
+      placeholder: |
+        - Expected behavior:
+        - Actual behavior:
+        - Error message / logs (if any):
+        - Related links (if any):
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to Reproduce
+      description: Please describe the steps to reproduce the issue.
+      placeholder: |
+        1. Go to ...
+        2. Click ...
+        3. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: Screenshots
+      description: Please attach screenshots related to the issue.
+      placeholder: Paste images here or drag & drop (optional).
+    validations:
+      required: false
+
+  - type: textarea
+    id: share-link
+    attributes:
+      label: Share Link
+      description: Please share the AI agent session link.
+      placeholder: Paste the share link here (optional).
+    validations:
+      required: false
