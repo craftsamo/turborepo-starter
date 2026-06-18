@@ -1,6 +1,15 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Button } from '@workspace/ui/components/button';
 import { Section } from './components';
+
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: 'Home',
+    description:
+      'Boilerplate for streamlined development of Turborepo applications with best practices and curated configurations.',
+  };
+}
 
 export default async function RootPage() {
   return (
