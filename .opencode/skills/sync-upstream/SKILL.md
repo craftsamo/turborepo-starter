@@ -13,7 +13,8 @@ metadata:
 
 Replay this fork's commits on top of the latest `upstream/main`, classify what
 the sync touched (textual conflict vs. ripple vs. silent drift), resolve/land it
-on the correct path, and keep a linear, recoverable history.
+on the correct path, and preserve a faithful, recoverable history — keep
+upstream's merge topology intact rather than flattening it.
 
 </Goal>
 
@@ -56,9 +57,12 @@ Undo anytime with `git reset --hard <tag>`.
 
 ### 3. Rebase
 
-- `git rebase upstream/main`
-- To preserve PR merge commits: `git rebase --rebase-merges upstream/main`
-  (default flattens them — usually fine for a fork).
+Preserve history by default — keep upstream's PR merge topology intact:
+- `git rebase --rebase-merges upstream/main`   ← default; recreates merge commits
+
+Flatten ONLY when you have a deliberate, stated reason:
+- `git rebase upstream/main`   (plain rebase flattens PR merge commits into a
+  linear sequence and discards the original merge topology — avoid unless intended).
 
 ### 4. Resolve conflicts — mind the ours/theirs SWAP
 
@@ -117,8 +121,9 @@ origin moved; the backup tag is your undo.)
   `sync/upstream-<date>`, get it green, push the branch, open a PR for review/CI,
   then land with
   `git switch main && git reset --hard sync/upstream-<date> && git push --force-with-lease`
-  (keeps linear history; the PR is the review gate). Avoid GitHub squash-merge here
-  — it pushes main off the "upstream + patches" line and complicates the next rebase.
+  (preserves the rebased topology and adds no extra merge commit; the PR is the
+  review gate). Avoid GitHub squash-merge here — it pushes main off the
+  "upstream + patches" line, discards history, and complicates the next rebase.
 
 </Steps>
 
@@ -132,6 +137,8 @@ origin moved; the backup tag is your undo.)
 <AntiPatterns>
 
 - Do NOT `git pull` on main — it creates a merge; this flow is rebase-only.
+- Do NOT flatten upstream's merge commits by default — default to `--rebase-merges`
+  to preserve the real topology; plain `git rebase` flattens, so flatten only on purpose.
 - Do NOT confuse the rebase swap: `--ours` = upstream, `--theirs` = your fork commit.
 - Do NOT blanket `-X ours` / `-X theirs` an entire rebase.
 - Do NOT rebase a dirty tree, and do NOT skip the backup tag.
