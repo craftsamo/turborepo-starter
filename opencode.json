@@ -146,6 +146,20 @@
       "head *.env": "deny",
       "tail *.env": "deny",
       "cat *.env.*": "deny"
+    },
+    "skill": {
+      "*": "ask",
+      "add-error-code": "allow",
+      "add-next-route": "allow",
+      "add-redux-slice": "allow",
+      "add-shared-type": "allow",
+      "add-ui-component": "allow",
+      "add-web-test": "allow",
+      "edit-middleware": "allow",
+      "fork-layer-placement": "allow",
+      "nextjs-rsc-streaming": "allow",
+      "nextjs-server-action": "allow",
+      "sync-upstream": "allow"
     }
   }
 }
