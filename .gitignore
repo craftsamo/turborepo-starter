@@ -43,3 +43,7 @@ yarn-error.log*
 # act
 .variables
 .opencode/package-lock.json
+
+# generated agent-skill links (created by scripts/link-agent-skills.mjs on install)
+/.agents/skills
+/.claude/skills
