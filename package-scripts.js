@@ -6,6 +6,7 @@ const ciWebPath = path.resolve(__dirname, "out/apps/web");
 
 module.exports = {
   scripts: {
+    link: `node scripts/link-agent-skills.mjs`,
     prepare: {
       default: `nps prepare.web`,
       web: `pnpm install`,

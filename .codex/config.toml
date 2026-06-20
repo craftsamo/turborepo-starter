@@ -1,0 +1,17 @@
+# Codex project configuration.
+# Approximates the safety posture of opencode.jsonc. Project-scoped config is
+# only applied when you trust this repository (Codex prompts on first run).
+# Reference: https://developers.openai.com/codex/config-reference
+
+# Only known-safe read-only commands auto-run; everything else (edits, other
+# commands) prompts for approval. (~ opencode: bash "*" = ask, safe reads = allow.)
+approval_policy = "untrusted"
+
+# Codex may read/write inside the workspace but must escalate to leave it.
+# (~ opencode: edit = ask, scoped to the repo.)
+sandbox_mode = "workspace-write"
+
+# Keep network access off by default inside the sandbox.
+# (~ opencode: deny wget and other network fetches.)
+[sandbox_workspace_write]
+network_access = false
