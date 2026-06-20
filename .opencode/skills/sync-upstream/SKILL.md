@@ -19,9 +19,9 @@ on the correct path, and keep a linear, recoverable history.
 
 <Scope>
 
-- Remotes: `origin` = this fork, `upstream` = the repo this fork tracks. This is
-  the git `upstream` remote (`git remote get-url upstream`), NOT the opencode
-  `references.upstream` read-only clone (that one is only for comparison).
+- Remotes: `origin` = this fork, `upstream` = the repo this fork tracks
+  (`git remote get-url upstream`). Rebase always uses this git remote — not any
+  read-only mirror your tooling may keep for browsing the upstream.
 - Layer-agnostic: this fork may itself be the upstream of another fork. "upstream"
   always = whatever the git `upstream` remote points to. Each layer derives its
   own surfaces — do not hardcode app/package names.
