@@ -34,6 +34,9 @@ overrides:
   "rollup": "^4.59.0"
   "glob": "^10.5.0"
   "minimatch": "^9.0.7"
+  # Dependabot #3 (GHSA-qx2v-qp2m-jg93 / CVE-2026-41305): force next's bundled
+  # postcss 8.4.31 up to a patched 8.5.x. Other consumers already use >=8.5.10.
+  "postcss": "^8.5.10"
 
 # pnpm 10+ blocks dependency lifecycle scripts by default. pnpm 11 reviews them
 # via `allowBuilds` (the old `onlyBuiltDependencies` was removed). Every package
