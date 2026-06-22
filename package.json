@@ -8,7 +8,7 @@
   "scripts": {
     "build": "turbo run build",
     "commit": "cz",
-    "postinstall": "node scripts/link-agent-skills.mjs"
+    "postinstall": "node -e \"const f='scripts/link-agent-skills.mjs';if(require('fs').existsSync(f))require('child_process').execFileSync(process.execPath,[f],{stdio:'inherit'})\""
   },
   "devDependencies": {
     "@commitlint/cli": "^19.6.1",
