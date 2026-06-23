@@ -16,7 +16,7 @@ RUN corepack enable
 COPY . .
 
 # Prune unnecessary files and isolate the web subworkspace
-RUN pnpm dlx turbo@2.3.3 prune --scope=web --docker
+RUN pnpm dlx turbo@2.9.14 prune --scope=web --docker
 
 ###############################################################################
 # Installer stage: Add lockfile and package.json's of isolated subworkspace   #
