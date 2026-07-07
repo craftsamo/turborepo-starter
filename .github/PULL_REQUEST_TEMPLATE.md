@@ -11,9 +11,9 @@ Describe the changes in the following format:
   - Detailed change 1
   - Detailed change 2
 
-- ### Fix of YY feature
-  - Explanation of the fix
-  - Effect of the fix
+- ### Improvement or bugfix of YY feature
+  - Explanation of the change
+  - Effect of the change
 -->
 
 ## Breaking Changes

@@ -37,13 +37,13 @@ version-resolver:
   minor:
     labels:
       - "🌱feature"
-      - "🐞hotfix"
   # Specifies labels that trigger a patch version bump.
   patch:
     labels:
       - "📝documentation"
       - "⚒️enhancement"
       - "🐛bug"
+      - "🐞hotfix"
   # Specifies the default version bump when no labels match.
   default: patch
 
@@ -56,11 +56,16 @@ autolabeler:
   # Automatically applies the "⚒️enhancement" label based on branch naming patterns.
   - label: "⚒️enhancement"
     branch:
-      - "/(improve|refactor|enhancement)[/-].+/"
+      - "/^(fix|enhance|improve|refactor|enhancement)[/-].+/"
+
+  # Automatically applies the "🐛bug" label based on branch naming patterns.
+  - label: "🐛bug"
+    branch:
+      - "/^bugfix[/-].+/"
 
   # Automatically applies the "📝documentation" label based on branch naming patterns or file changes.
   - label: "📝documentation"
     branch:
-      - "/(doc|document|documentation)[/-].+/"
+      - "/^(doc|document|documentation)[/-].+/"
     files:
       - "*.md"

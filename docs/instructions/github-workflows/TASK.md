@@ -15,7 +15,7 @@ On Issue:
 - Create PR with "Closes #{issue_number}"
 
 **BRANCH NAMING**: Use format: <type>/<description> Valid types: feat, fix,
-hotfix, docs, enhance, improve, refactor
+bugfix, hotfix, docs, enhance, improve, refactor
 
 **COMMIT MESSAGES**: Follow Conventional Commits:
 
@@ -27,7 +27,8 @@ hotfix, docs, enhance, improve, refactor
 <footer>
 ```
 
-- Types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert
+- Types: feat, fix, bugfix, docs, style, refactor, perf, test, build, ci,
+  chore, revert
 - Subject: Use imperative mood (add, fix, refactor), keep concise
 - Body: Explain why and what changed
 - Footer: Reference issues (Closes #123, Fixes #456)
@@ -41,7 +42,7 @@ hotfix, docs, enhance, improve, refactor
 **PR DESCRIPTION**: Include:
 
 - Overview: What this PR does
-- Changes: Detailed changes organized by feature/fix
+- Changes: Detailed changes organized by feature/improvement/bugfix
 - Impact Scope: UI, Database, API, Configuration, Environment variables, Code
   cleanup
 - Notes: Implementation concerns or additional tasks
@@ -63,7 +64,7 @@ For feature implementation:
 
 For bug fixes:
 
-- `fix: resolve navigation router issue` (core fix)
+- `bugfix: resolve navigation router issue` (core bug fix)
 - `test: add navigation regression tests` (prevention)
 
 **GUIDELINES**:

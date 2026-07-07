@@ -53,15 +53,16 @@ Version bumps are determined by labels on pull requests:
 | Version Type | Trigger Labels                                        |
 | ------------ | ----------------------------------------------------- |
 | Major        | `🌟major`                                             |
-| Minor        | `🌱feature`, `🐞hotfix`                               |
-| Patch        | `📝documentation`, `⚒️enhancement`, `🐛bug` (default) |
+| Minor        | `🌱feature`                                           |
+| Patch        | `📝documentation`, `⚒️enhancement`, `🐛bug`, `🐞hotfix` (default) |
 
 ### Auto-labeling Rules
 
 Labels are automatically applied based on branch naming patterns or file
 changes:
 
-1. **Enhancement**: Branch name matches `/improve/`, `/refactor/`, or
-   `/enhancement/`
-2. **Documentation**: Branch name matches `/doc/`, `/document/`, or
-   `/documentation/` OR changes `.md` files
+1. **Enhancement**: Branch name starts with `fix/`, `enhance/`, `improve/`,
+   `refactor/`, or `enhancement/`
+2. **Bug Fix**: Branch name starts with `bugfix/`
+3. **Documentation**: Branch name starts with `doc/`, `document/`, or
+   `documentation/` OR changes `.md` files
