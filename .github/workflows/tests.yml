@@ -4,13 +4,25 @@ on:
   push:
     branches: [main, develop]
     paths:
+      - ".github/workflows/tests.yml"
       - "apps/**"
+      - "package.json"
+      - "package-scripts.js"
       - "packages/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "turbo.json"
   pull_request:
     branches: [main, develop]
     paths:
+      - ".github/workflows/tests.yml"
       - "apps/**"
+      - "package.json"
+      - "package-scripts.js"
       - "packages/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "turbo.json"
   workflow_dispatch:
 
 permissions:
@@ -33,8 +45,14 @@ jobs:
         with:
           filters: |
             web:
+              - '.github/workflows/tests.yml'
               - 'apps/web/**'
+              - 'package.json'
+              - 'package-scripts.js'
               - 'packages/**'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - 'turbo.json'
 
   setup:
     runs-on: ubuntu-latest
@@ -65,6 +83,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-
       - run: pnpm install --frozen-lockfile
+      - name: TypeScript versions
+        run: |
+          pnpm exec tsc --version
+          pnpm exec tsc6 --version
+          node -e "console.log('Compiler API ' + require('typescript').version)"
+      - name: Lint
+        run: npx nps lint
+      - name: Typecheck
+        run: npx nps typecheck
 
   test:
     needs: [setup, changes]
