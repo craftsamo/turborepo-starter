@@ -1,9 +1,10 @@
 {
   "extends": "@workspace/tsconfig/base.json",
   "compilerOptions": {
-    "baseUrl": "./src",
     "outDir": "./dist",
-    "module": "commonjs",
+    "rootDir": "./src",
+    "module": "preserve",
+    "moduleResolution": "bundler",
     "target": "es2022"
   },
   "include": ["src"],

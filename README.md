@@ -18,7 +18,8 @@ configurations.
 
 - **Monorepo Setup**: Turborepo with pnpm workspaces for scalable project
   organization
-- **TypeScript**: Strict type checking with TypeScript 5+
+- **TypeScript**: Native TypeScript 7 type checking with a TypeScript 6 API
+  compatibility layer for ecosystem tooling
 - **Next.js Integration**: Ready-to-use web app with App Router
 - **Component Library**: Shared UI components built with Shadcn/ui and Tailwind
   CSS
@@ -36,7 +37,7 @@ configurations.
 
 - **Monorepo**: [Turborepo](https://turbo.build) with pnpm Workspaces
 - **Runtime**: Node.js 24+
-- **Language**: TypeScript 5+
+- **Language**: TypeScript 7
 - **Framework**: [Next.js 16](https://nextjs.org) (App Router) + [React 19](https://react.dev)
 - **UI Library**: React with Shadcn/ui components
 - **State**: Redux Toolkit + react-redux
