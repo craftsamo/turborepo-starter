@@ -4,13 +4,13 @@
 
 ## Prerequisites
 
-- Push to `main` or `develop` branches with changes in `apps/**` or
-  `packages/**`
-- Pull request against `main` or `develop` branches with changes in `apps/**` or
-  `packages/**`
+- Push to `main` or `develop` branches with application, package, workflow, or
+  root toolchain changes
+- Pull request against `main` or `develop` branches with the same relevant
+  changes
 - Or manual trigger via GitHub Actions UI (`workflow_dispatch`)
-- Node.js 20.x compatible environment
-- Yarn package manager with lock file present
+- Node.js 24.x compatible environment
+- pnpm 11.5.3 managed by Corepack with a lockfile present
 
 ## How It Works
 
@@ -21,8 +21,8 @@ by only running tests when specific directories change.
 ### Process
 
 1. **Trigger**: Push/PR to `main`/`develop` or manual dispatch
-2. **Filter**: Detect changes in `apps/**` and `packages/**` directories
-3. **Setup**: Install Node.js 20.x, cache dependencies
+2. **Filter**: Detect application, package, workflow, and root toolchain changes
+3. **Setup**: Install Node.js 24.x, cache dependencies, lint, and typecheck
 4. **Prepare**: Prune monorepo and install dependencies (CI mode)
 5. **Build**: Build the application
 6. **Test**: Run test suite
@@ -32,7 +32,7 @@ by only running tests when specific directories change.
 | Job     | Purpose                               | Conditions               |
 | ------- | ------------------------------------- | ------------------------ |
 | changes | Detect file changes in relevant paths | Always runs              |
-| setup   | Install dependencies and cache them   | Runs if changes detected |
+| setup   | Install, lint, and typecheck           | Runs if changes detected |
 | test    | Build and test the application        | Runs if setup succeeds   |
 
 ### Change Detection
@@ -40,15 +40,16 @@ by only running tests when specific directories change.
 The workflow uses [dorny/paths-filter](https://github.com/dorny/paths-filter) to
 detect changes:
 
-| Target | Paths Monitored              |
-| ------ | ---------------------------- |
-| web    | `apps/web/**`, `packages/**` |
+| Target | Paths Monitored                                                         |
+| ------ | ----------------------------------------------------------------------- |
+| web    | `apps/web/**`, `packages/**`, the tests workflow, and root toolchain files |
 
 Tests only run for a target if changes are detected in its monitored paths.
 
 ### Commands Executed
 
-For each affected application/package:
+The setup job runs `nps lint` and `nps typecheck` for the complete workspace.
+For each affected application/package, the test job then runs:
 
 1. **Prepare (CI)**: `nps prepare.ci.{target}`
    - Prunes monorepo to specific scope
