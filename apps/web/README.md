@@ -11,7 +11,8 @@ ensure code quality.
 ```
 src/
 ├── app/                     # Next.js App Router (pages and layouts)
-│   ├── (global-not-found)/  # 404 page group
+│   ├── _components/         # Route-local components (private folder)
+│   ├── global-not-found.tsx # 404 document (composes _components/NotFound)
 │   ├── layout.tsx           # Root layout
 │   └── page.tsx             # Home page
 ├── components/              # Reusable components
