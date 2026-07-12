@@ -11,10 +11,12 @@ ensure code quality.
 ```
 src/
 ├── app/                     # Next.js App Router (pages and layouts)
-│   ├── _components/         # Route-local components (private folder)
-│   ├── global-not-found.tsx # 404 document (composes _components/NotFound)
-│   ├── layout.tsx           # Root layout
-│   └── page.tsx             # Home page
+│   ├── (app)/               # Main route group — owns page chrome
+│   │   ├── _components/     # Route-local components (private folder)
+│   │   ├── layout.tsx       # Screen + Header + Footer chrome
+│   │   └── page.tsx         # Home page
+│   ├── global-not-found.tsx # 404 document (self-contained)
+│   └── layout.tsx           # Root layout (slim: Providers + Toaster)
 ├── components/              # Reusable components
 │   └── Providers/           # State management & theme providers
 ├── lib/                     # Utility functions

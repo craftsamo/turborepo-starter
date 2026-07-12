@@ -15,9 +15,7 @@ For general rules and code style guidelines, see @AGENTS.md.
 src/
   app/
     layout.tsx              # root layout — slim: Providers + Toaster + body lock only
-    global-not-found.tsx    # 404 document (composes _components/NotFound)
-    _components/            # root-level route-local pieces (private folder)
-      NotFound/             # 404 pieces (BackHomeButton) + index.ts
+    global-not-found.tsx    # 404 document (self-contained: Container + Heading + Text + inline back link)
     (app)/                  # main route group — owns page chrome
       layout.tsx            # Screen + Header + Footer; sets --header-height
       page.tsx              # home page (async server component)
@@ -85,12 +83,11 @@ src/
   available but commented out by default.
 - **404**: `global-not-found.tsx` renders its own HTML document and composes its
   layout inline (`<main>` + `Container`) with the shared `Heading` / `Text`
-  primitives from `@/components` and the `BackHomeButton` from
-  `app/_components/NotFound`. Do not add a top-level `not-found.tsx`; extend the
-  404 document or the `NotFound` pieces instead.
+  primitives from `@/components` and an inline back-home `Button` + `Link`. Do
+  not add a top-level `not-found.tsx`; extend the 404 document itself instead.
 - **Route-local colocation**: keep route-specific pieces in `_components/`
   (Next.js private folder — the underscore excludes it from routing) next to the
-  route that uses them: `app/_components/` for root-level pieces,
+  route that uses them: `app/(app)/_components/` for the main group,
   `app/<route>/_components/` for nested routes. Export them through an
   `index.ts` barrel. Promote to `@workspace/ui` only when a second consumer
   appears.

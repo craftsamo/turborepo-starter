@@ -1,9 +1,11 @@
 import { Geist, Geist_Mono } from 'next/font/google';
 import type { Metadata } from 'next';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
 import '@workspace/ui/globals.css';
-import { Container, Heading, Text } from '@/components';
+import { Button } from '@workspace/ui/components/button';
 import { ThemeProvider } from '@/components/Providers';
-import { BackHomeButton } from './_components/NotFound';
+import { Container, Heading, Text } from '@/components';
 
 const baseUrl = process.env.BASE_URL ?? 'http://localhost';
 
@@ -39,7 +41,12 @@ export default async function GlobalNotFound() {
                   Sorry, the page you are looking for could not be found or has been removed.
                 </Text>
                 <div className='flex flex-wrap items-center justify-center gap-3'>
-                  <BackHomeButton />
+                  <Button asChild>
+                    <Link href='/' aria-label='Back to home'>
+                      <ArrowLeft className='size-4' />
+                      Back To Home
+                    </Link>
+                  </Button>
                 </div>
               </div>
             </Container>
