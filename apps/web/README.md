@@ -12,12 +12,14 @@ ensure code quality.
 src/
 ├── app/                     # Next.js App Router (pages and layouts)
 │   ├── (app)/               # Main route group — owns page chrome
-│   │   ├── _components/     # Route-local components (private folder)
 │   │   ├── layout.tsx       # Screen + Header + Footer chrome
 │   │   └── page.tsx         # Home page
 │   ├── global-not-found.tsx # 404 document (self-contained)
 │   └── layout.tsx           # Root layout (slim: Providers + Toaster)
-├── components/              # Reusable components
+├── components/              # Shared server-safe primitives + chrome
+│   ├── Center / Stack       # Layout primitives (VStack/HStack presets)
+│   ├── Container / Screen   # Page width + scroll region
+│   ├── Header / Footer      # App chrome
 │   └── Providers/           # State management & theme providers
 ├── lib/                     # Utility functions
 ├── middlewares/             # Next.js middleware

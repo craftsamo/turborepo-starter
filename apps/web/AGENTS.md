@@ -18,15 +18,15 @@ src/
     global-not-found.tsx    # 404 document (self-contained: Container + Heading + Text + inline back link)
     (app)/                  # main route group — owns page chrome
       layout.tsx            # Screen + Header + Footer; sets --header-height
-      page.tsx              # home page (async server component)
-      _components/          # route-local pieces + index.ts barrel
-        Section.tsx         # full-height snap section (Container + Heading + Text)
+      page.tsx              # home page (async server component) — composes layout primitives
   components/               # app-wide shared components (server-safe primitives + chrome)
-    index.ts                # barrel: Container, Heading, Text, Screen (server-safe only)
+    index.ts                # barrel: Center, Container, Heading, Screen, Stack, Text (server-safe only)
     Container.tsx           # page width + horizontal padding (single source)
     Heading.tsx             # canonical heading scale (as prop for semantics)
     Text.tsx                # body text tone variants (body/muted/lead)
     Screen.tsx              # full-height scroll region (scroll/smooth/hideScrollbar props)
+    Center.tsx              # centering frame (axis + min: none/screen/section); asChild
+    Stack.tsx               # flex stack primitive + VStack/HStack presets (gap/align/justify/wrap/collapse); asChild
     Header/                 # app header ('use client'): index.tsx + parts (ThemeToggle, MobileMenu, ...)
     Footer/                 # app footer (minimal)
     Providers/              # client providers (ReduxTool, NextTheme) — 'use client'
@@ -60,22 +60,31 @@ src/
 - **Providers**: wrap the app in `ReduxToolProvider` then `ThemeProvider`
   (see `app/layout.tsx`). `ThemeProvider` dynamically imports
   `next-themes`' `ThemeProvider` with `ssr: true`.
-- **Shared primitives**: import `Container` / `Heading` / `Text` / `Screen`
-  from `@/components` (the root barrel is server-safe — never add a
-  `'use client'` component to it; client providers stay under
-  `@/components/Providers`, and `Header` / `Footer` are imported via
+- **Shared primitives**: import `Center` / `Container` / `Heading` / `Screen` /
+  `Stack` (+ `VStack` / `HStack`) / `Text` from `@/components` (the root barrel
+  is server-safe — never add a `'use client'` component to it; client providers
+  stay under `@/components/Providers`, and `Header` / `Footer` are imported via
   `@/components/Header` / `@/components/Footer` by route-group layouts). These
-  own width, type scale, body tone, scrolling, and page chrome so routes
+  own width, type scale, body tone, scrolling, centering, and stacking so routes
   compose them instead of re-deriving Tailwind classes.
+- **Layout primitives**: reach for `VStack` / `HStack` (the `Stack` presets) for
+  gapped columns/rows and `Center` for centering (`min='section'` fills the
+  viewport below the header). Drop to `Stack` directly only to drive `direction`
+  yourself. They are cva wrappers with `asChild` (Radix `Slot`) — project the
+  layout onto a semantic element (`<Center asChild min='section'><section>`,
+  `<HStack asChild><footer>`) instead of adding a wrapper. Compose these instead
+  of hand-writing `flex … gap-*`; `Container` still owns width and `Screen`
+  scrolling.
 - **Page chrome & scrolling**: page chrome lives in a route-group layout, not
   the root layout. The `(app)` group's `layout.tsx` composes a `Screen`
   (`<main>`) with the `Header` and `Footer` and sets `--header-height` so
   full-height sections subtract the header; groups without chrome (e.g. auth)
   simply omit it. The root layout locks `<body>` (`overflow-hidden`), so
   `Screen` is the scroll container — pick the mode with `scroll`
-  (`auto` default / `none` / `snap`) and add `smooth` / `hideScrollbar`.
-  Sections carry their own `snap-start`. The shared `globals.css` intentionally
-  does not own app-level scroll/snap rules.
+  (`auto` default / `none` / `snap`) and add `smooth` / `hideScrollbar`. The
+  `snap` mode is available as foresight; if you build snap sections, give each
+  its own `snap-start`. The shared `globals.css` intentionally does not own
+  app-level scroll/snap rules.
 - **Middleware**: compose with `chain([...factories])` in `proxy.ts`. Each
   factory is `(proxy: NextProxy) => NextProxy`. Add new middleware in
   `middlewares/`, export from `middlewares/index.ts`, then register in the

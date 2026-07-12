@@ -90,16 +90,17 @@ co-locating route-specific components.
 5. **Co-locate route-specific pieces** in a private `_components/` folder (the
    underscore opts the folder out of routing), exported via an `index.ts`
    barrel:
-   - `src/app/_components/` for root-level pieces (e.g. the `NotFound` 404
-     pieces), OR
-   - `src/app/<route>/_components/` for route-local pieces (e.g. the `(app)`
-     group's `Section`).
+   - `src/app/(app)/_components/` for pieces local to the main route group, OR
+   - `src/app/<route>/_components/` for pieces local to a nested route.
    A component with parts becomes a folder (`index.tsx` + its parts, as in
    `components/Header/`); colocate `Skeleton.tsx`, a `'use server'`
    `actions.ts`, and `types.ts` in the same folder when needed. Non-component
    helpers (pagination, filtering) go in a route-local `_utils/` folder with its
    own `index.ts` barrel. Promote to `@workspace/ui` only when a second package
    consumes them.
+   For page content, compose the shared layout primitives (`Center` / `VStack` /
+   `HStack` / `Container`) from `@/components` instead of hand-writing flex
+   utilities.
 
 6. **404 handling**: do NOT add a top-level `not-found.tsx`.
    `src/app/global-not-found.tsx` renders its own HTML document and composes its
