@@ -52,15 +52,23 @@ co-locating route-specific components.
    (If you need a custom params shape, see `SingleParam` / `DinamicParams` /
    `Params` in `packages/types/src/web/layout.ts`.)
 
-   Root the page tree at `Screen` from `@/components` (the 404 document is the
-   only exception — the `<body>` is locked, so `Screen`'s `<main>` is the scroll
-   container). Choose the mode with `scroll` (`auto` default / `none` / `snap`)
-   and add `smooth` / `hideScrollbar`:
+   Page chrome (header/footer + the scroll region) lives in a route-group
+   `layout.tsx`, not the page. The `(app)` group's layout composes a `Screen`
+   (`<main>`) with `Header` / `Footer` and sets `--header-height`; pages under
+   it just return their content. Put a page that needs different chrome (or
+   none) in its own group. The `Screen` mode is `scroll` (`auto` default /
+   `none` / `snap`) plus `smooth` / `hideScrollbar`:
    ```tsx
+   // app/(app)/layout.tsx
+   import type { CSSProperties } from 'react';
    import { Screen } from '@/components';
+   import { Header } from '@/components/Header';
+   import { Footer } from '@/components/Footer';
 
-   <Screen scroll='snap' smooth hideScrollbar>
-     {/* sections */}
+   <Screen scroll='auto' smooth hideScrollbar style={{ '--header-height': '4rem' } as CSSProperties}>
+     <Header />
+     {children}
+     <Footer />
    </Screen>
    ```
 
@@ -82,11 +90,12 @@ co-locating route-specific components.
 5. **Co-locate route-specific pieces** in a private `_components/` folder (the
    underscore opts the folder out of routing), exported via an `index.ts`
    barrel:
-   - `src/app/_components/` for shared root-level pieces (e.g. `Header`,
-     `Section`), OR
-   - `src/app/<route>/_components/` for route-local pieces.
-   A component with parts becomes a folder (`Header/index.tsx` +
-   `Header/ToggleIcon.tsx`); colocate `Skeleton.tsx`, a `'use server'`
+   - `src/app/_components/` for root-level pieces (e.g. the `NotFound` 404
+     pieces), OR
+   - `src/app/<route>/_components/` for route-local pieces (e.g. the `(app)`
+     group's `Section`).
+   A component with parts becomes a folder (`index.tsx` + its parts, as in
+   `components/Header/`); colocate `Skeleton.tsx`, a `'use server'`
    `actions.ts`, and `types.ts` in the same folder when needed. Non-component
    helpers (pagination, filtering) go in a route-local `_utils/` folder with its
    own `index.ts` barrel. Promote to `@workspace/ui` only when a second package
