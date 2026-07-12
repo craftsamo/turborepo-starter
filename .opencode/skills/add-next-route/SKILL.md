@@ -52,6 +52,18 @@ co-locating route-specific components.
    (If you need a custom params shape, see `SingleParam` / `DinamicParams` /
    `Params` in `packages/types/src/web/layout.ts`.)
 
+   Root the page tree at `Screen` from `@/components` (the 404 document is the
+   only exception — the `<body>` is locked, so `Screen`'s `<main>` is the scroll
+   container). Choose the mode with `scroll` (`auto` default / `none` / `snap`)
+   and add `smooth` / `hideScrollbar`:
+   ```tsx
+   import { Screen } from '@/components';
+
+   <Screen scroll='snap' smooth hideScrollbar>
+     {/* sections */}
+   </Screen>
+   ```
+
 3. **Add `layout.tsx`** when the route needs shared UI or data. Props are
    `LayoutProps` from `@workspace/types/web`:
    ```tsx
@@ -81,10 +93,11 @@ co-locating route-specific components.
    consumes them.
 
 6. **404 handling**: do NOT add a top-level `not-found.tsx`.
-   `src/app/global-not-found.tsx` renders its own HTML document and composes the
-   pieces from `src/app/_components/NotFound` (`NotFoundMain` / `BackHomeButton`)
-   with the shared `Heading` / `Text` primitives from `@/components` for the
-   title and copy. Extend those pieces if you need route-specific not-found UI.
+   `src/app/global-not-found.tsx` renders its own HTML document and composes its
+   layout inline (`<main>` + `Container`) with the shared `Heading` / `Text`
+   primitives from `@/components` and the `BackHomeButton` from
+   `src/app/_components/NotFound`. Extend the 404 document or those pieces if you
+   need route-specific not-found UI.
 
 7. **Import UI via subpaths**: `@workspace/ui/components/<name>`,
    `@workspace/ui/lib/utils` (for `cn`). Never deep-import via relative paths.
