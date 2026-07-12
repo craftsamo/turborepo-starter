@@ -82,9 +82,9 @@ co-locating route-specific components.
 
 6. **404 handling**: do NOT add a top-level `not-found.tsx`.
    `src/app/global-not-found.tsx` renders its own HTML document and composes the
-   pieces from `src/app/_components/NotFound` (`NotFoundMain` / `NotFoundTitle` /
-   `NotFoundDescription` / `BackHomeButton`). Extend those pieces if you need
-   route-specific not-found UI.
+   pieces from `src/app/_components/NotFound` (`NotFoundMain` / `BackHomeButton`)
+   with the shared `Heading` / `Text` primitives from `@/components` for the
+   title and copy. Extend those pieces if you need route-specific not-found UI.
 
 7. **Import UI via subpaths**: `@workspace/ui/components/<name>`,
    `@workspace/ui/lib/utils` (for `cn`). Never deep-import via relative paths.

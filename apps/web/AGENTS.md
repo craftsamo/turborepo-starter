@@ -60,9 +60,10 @@ src/
   `chain([...])` array (top-to-bottom execution order). `ratelimit` is
   available but commented out by default.
 - **404**: `global-not-found.tsx` renders its own HTML document and composes the
-  pieces from `app/_components/NotFound` (`NotFoundMain` / `NotFoundTitle` /
-  `NotFoundDescription` / `BackHomeButton`). Do not add a top-level
-  `not-found.tsx`; extend the `NotFound` pieces instead.
+  pieces from `app/_components/NotFound` (`NotFoundMain` / `BackHomeButton`) with
+  the shared `Heading` / `Text` primitives from `@/components` for the title and
+  copy. Do not add a top-level `not-found.tsx`; extend the `NotFound` pieces
+  instead.
 - **Route-local colocation**: keep route-specific pieces in `_components/`
   (Next.js private folder — the underscore excludes it from routing) next to the
   route that uses them: `app/_components/` for root-level pieces,
