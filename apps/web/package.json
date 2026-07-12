@@ -15,6 +15,7 @@
     "test:ci": "vitest run"
   },
   "dependencies": {
+    "@radix-ui/react-slot": "^1.2.3",
     "@reduxjs/toolkit": "^2.4.0",
     "@workspace/ui": "workspace:*",
     "@workspace/constants": "workspace:*",
