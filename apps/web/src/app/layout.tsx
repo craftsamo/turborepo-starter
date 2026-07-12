@@ -52,7 +52,7 @@ export default async function RootLayout(props: LayoutProps) {
       <body className={`${fontSans.variable} ${fontMono.variable} font-sans antialiased`}>
         <ReduxToolProvider>
           <ThemeProvider attribute='class' defaultTheme='system' enableSystem>
-            <div className='px-6 sm:px-12'>
+            <div className='mx-auto w-full max-w-6xl px-6 sm:px-12'>
               <Header />
               {props.children}
             </div>
