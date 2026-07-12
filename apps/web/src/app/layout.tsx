@@ -50,7 +50,9 @@ export const metadata: Metadata = {
 export default async function RootLayout(props: LayoutProps) {
   return (
     <html lang='en' suppressHydrationWarning>
-      <body className={`${fontSans.variable} ${fontMono.variable} font-sans antialiased`}>
+      <body
+        className={`${fontSans.variable} ${fontMono.variable} font-sans antialiased overflow-hidden`}
+      >
         <ReduxToolProvider>
           <ThemeProvider attribute='class' defaultTheme='system' enableSystem>
             <Container>

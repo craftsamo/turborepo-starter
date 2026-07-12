@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Button } from '@workspace/ui/components/button';
+import { Screen } from '@/components';
 import { Section } from './_components';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -13,32 +14,25 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function RootPage() {
   return (
-    <div className='scroll-smooth'>
-      <main
-        className={` 
-          h-[calc(100svh-4rem)] px-2 
-          snap-y overflow-y-auto snap-mandatory no-scrollbar
-        `}
+    <Screen scroll='snap' smooth hideScrollbar className='px-2'>
+      <Section
+        id='hero'
+        title='Turborepo Starter'
+        description='Boilerplate for streamlined development of Turborepo applications with best practices and curated configurations.'
+        className='items-center sm:items-start justify-center max-[375px]:items-start'
       >
-        <Section
-          id='hero'
-          title='Turborepo Starter'
-          description='Boilerplate for streamlined development of Turborepo applications with best practices and curated configurations.'
-          className='items-center sm:items-start justify-center max-[375px]:items-start'
-        >
-          <div className='flex flex-col sm:flex-row mt-6 gap-6 sm:gap-3'>
-            <Button asChild className='w-full sm:w-auto h-10 sm:h-9'>
-              <Link
-                href='https://github.com/craftsamo/turborepo-starter'
-                target='_blank'
-                rel='noopener noreferrer'
-              >
-                Getting Start
-              </Link>
-            </Button>
-          </div>
-        </Section>
-      </main>
-    </div>
+        <div className='flex flex-col sm:flex-row mt-6 gap-6 sm:gap-3'>
+          <Button asChild className='w-full sm:w-auto h-10 sm:h-9'>
+            <Link
+              href='https://github.com/craftsamo/turborepo-starter'
+              target='_blank'
+              rel='noopener noreferrer'
+            >
+              Getting Start
+            </Link>
+          </Button>
+        </div>
+      </Section>
+    </Screen>
   );
 }
