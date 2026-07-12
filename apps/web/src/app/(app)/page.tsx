@@ -13,7 +13,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function RootPage() {
   return (
-    <Center asChild min='section'>
+    <Center asChild className='flex-1'>
       <section id='hero'>
         <Container>
           <VStack gap={6} className='items-center text-center sm:items-start sm:text-left'>

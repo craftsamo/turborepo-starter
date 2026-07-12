@@ -2,7 +2,7 @@ import type { ComponentProps } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@workspace/ui/lib/utils';
 
-const screenVariants = cva('h-svh', {
+const screenVariants = cva('flex h-svh flex-col', {
   variants: {
     scroll: {
       /** Normal internal scrolling (default). */
@@ -28,9 +28,10 @@ type ScreenProps = ComponentProps<'main'> & VariantProps<typeof screenVariants>;
  * Full-height scroll region that owns a page's vertical scrolling.
  *
  * The `<body>` is locked (see the root layout), so this `<main>` is the actual
- * scroll container. Every app page (the 404 document is the exception) roots
- * its tree here and opts into behavior via props instead of inheriting it from
- * global CSS.
+ * scroll container. It is a flex column, so chrome (header/footer) sits at its
+ * edges while a `flex-1` child fills the space between them. Every app page
+ * (the 404 document is the exception) roots its tree here and opts into
+ * behavior via props instead of inheriting it from global CSS.
  */
 export const Screen = ({ scroll, smooth, hideScrollbar, className, ...props }: ScreenProps) => (
   <main className={cn(screenVariants({ scroll, smooth, hideScrollbar }), className)} {...props} />
