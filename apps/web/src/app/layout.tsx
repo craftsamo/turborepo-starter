@@ -3,9 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import type { LayoutProps } from '@workspace/types/web';
 import { Toaster } from '@workspace/ui/components/sonner';
 import '@workspace/ui/globals.css';
-import { Container } from '@/components';
 import { ReduxToolProvider, ThemeProvider } from '@/components/Providers';
-import { Header } from './_components';
 
 const baseUrl = process.env.BASE_URL ?? 'http://localhost';
 const SITE_NAME = 'Turborepo Starter';
@@ -55,10 +53,7 @@ export default async function RootLayout(props: LayoutProps) {
       >
         <ReduxToolProvider>
           <ThemeProvider attribute='class' defaultTheme='system' enableSystem>
-            <Container>
-              <Header />
-              {props.children}
-            </Container>
+            {props.children}
             <Toaster />
           </ThemeProvider>
         </ReduxToolProvider>

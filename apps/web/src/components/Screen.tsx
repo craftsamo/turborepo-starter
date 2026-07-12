@@ -2,7 +2,7 @@ import type { ComponentProps } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@workspace/ui/lib/utils';
 
-const screenVariants = cva('h-[calc(100svh-4rem)]', {
+const screenVariants = cva('h-svh', {
   variants: {
     scroll: {
       /** Normal internal scrolling (default). */
