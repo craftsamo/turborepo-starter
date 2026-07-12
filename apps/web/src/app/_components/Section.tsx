@@ -1,4 +1,5 @@
 import type { JSX } from 'react';
+import { Heading, Text } from '@/components';
 
 export interface SectionProps {
   id: string;
@@ -13,11 +14,11 @@ export const Section = ({ id, className = '', title, description, children }: Se
     id={id}
     className={`flex flex-col min-h-[calc(100svh-4rem)] items-start snap-start snap-always ${className}`}
   >
-    {title && <h1 className='text-[clamp(1.5rem,6vw,2.25rem)] font-semibold'>{title}</h1>}
+    {title && <Heading>{title}</Heading>}
     {description && (
-      <p className='mt-4 max-w-sm md:max-w-xl text-[clamp(1rem,2.8vw,1.125rem)] text-foreground'>
+      <Text variant='lead' className='mt-4 max-w-sm md:max-w-xl'>
         {description}
-      </p>
+      </Text>
     )}
     {children}
   </section>

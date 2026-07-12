@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { Container } from '@/components';
 
 export const NotFoundMain = async ({
   className = '',
@@ -7,12 +8,7 @@ export const NotFoundMain = async ({
   className?: string;
   children: ReactNode;
 }) => (
-  <main
-    className={`
-      min-h-screen max-w-screen-xl mx-auto px-4 flex items-center justify-start h-screen md:px-8
-      ${className}
-    `}
-  >
-    {children}
+  <main className='flex min-h-screen items-center'>
+    <Container className={className}>{children}</Container>
   </main>
 );

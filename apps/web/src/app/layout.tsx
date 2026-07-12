@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import type { LayoutProps } from '@workspace/types/web';
 import { Toaster } from '@workspace/ui/components/sonner';
 import '@workspace/ui/globals.css';
+import { Container } from '@/components';
 import { ReduxToolProvider, ThemeProvider } from '@/components/Providers';
 import { Header } from './_components';
 
@@ -52,10 +53,10 @@ export default async function RootLayout(props: LayoutProps) {
       <body className={`${fontSans.variable} ${fontMono.variable} font-sans antialiased`}>
         <ReduxToolProvider>
           <ThemeProvider attribute='class' defaultTheme='system' enableSystem>
-            <div className='mx-auto w-full max-w-6xl px-6 sm:px-12'>
+            <Container>
               <Header />
               {props.children}
-            </div>
+            </Container>
             <Toaster />
           </ThemeProvider>
         </ReduxToolProvider>
