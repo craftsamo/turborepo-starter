@@ -1,4 +1,4 @@
-import { Geist_Mono, Inter } from 'next/font/google';
+import { Geist, Geist_Mono } from 'next/font/google';
 import type { Metadata } from 'next';
 import '@workspace/ui/globals.css';
 import { ThemeProvider } from '@/components/Providers';
@@ -11,7 +11,10 @@ import {
 
 const baseUrl = process.env.BASE_URL ?? 'http://localhost';
 
-const inter = Inter({ subsets: ['latin'] });
+const fontSans = Geist({
+  subsets: ['latin'],
+  variable: '--font-sans',
+});
 
 const fontMono = Geist_Mono({
   subsets: ['latin'],
@@ -28,8 +31,8 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function GlobalNotFound() {
   return (
-    <html lang='en' suppressHydrationWarning className={inter.className}>
-      <body className={`${fontMono.variable} font-mono antialiased`}>
+    <html lang='en' suppressHydrationWarning>
+      <body className={`${fontSans.variable} ${fontMono.variable} font-sans antialiased`}>
         <ThemeProvider attribute='class' defaultTheme='system'>
           <NotFoundMain>
             <div className='min-h-[60vh] flex flex-col items-center justify-center px-4 py-16 text-center space-y-6 max-w-2xl mx-auto'>
