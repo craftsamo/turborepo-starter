@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Button } from '@workspace/ui/components/button';
-import { Section } from './_components';
+import { Center, Container, Heading, HStack, Text, VStack } from '@/components';
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -13,23 +13,29 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function RootPage() {
   return (
-    <Section
-      id='hero'
-      title='Turborepo Starter'
-      description='Boilerplate for streamlined development of Turborepo applications with best practices and curated configurations.'
-      className='items-center justify-center sm:items-start max-[375px]:items-start'
-    >
-      <div className='flex flex-col sm:flex-row mt-6 gap-6 sm:gap-3'>
-        <Button asChild className='w-full sm:w-auto h-10 sm:h-9'>
-          <Link
-            href='https://github.com/craftsamo/turborepo-starter'
-            target='_blank'
-            rel='noopener noreferrer'
-          >
-            Getting Start
-          </Link>
-        </Button>
-      </div>
-    </Section>
+    <Center asChild min='section'>
+      <section id='hero'>
+        <Container>
+          <VStack gap={6} className='items-center text-center sm:items-start sm:text-left'>
+            <Heading>Turborepo Starter</Heading>
+            <Text variant='lead' className='max-w-sm md:max-w-xl'>
+              Boilerplate for streamlined development of Turborepo applications with best practices
+              and curated configurations.
+            </Text>
+            <HStack collapse gap={6} className='sm:gap-3'>
+              <Button asChild className='h-10 w-full sm:h-9 sm:w-auto'>
+                <Link
+                  href='https://github.com/craftsamo/turborepo-starter'
+                  target='_blank'
+                  rel='noopener noreferrer'
+                >
+                  Getting Start
+                </Link>
+              </Button>
+            </HStack>
+          </VStack>
+        </Container>
+      </section>
+    </Center>
   );
 }
