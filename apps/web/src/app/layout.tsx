@@ -4,7 +4,7 @@ import type { LayoutProps } from '@workspace/types/web';
 import { Toaster } from '@workspace/ui/components/sonner';
 import '@workspace/ui/globals.css';
 import { ReduxToolProvider, ThemeProvider } from '@/components/Providers';
-import { Header } from './components';
+import { Header } from './_components';
 
 const baseUrl = process.env.BASE_URL ?? 'http://localhost';
 const SITE_NAME = 'Turborepo Starter';

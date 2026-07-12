@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Button } from '@workspace/ui/components/button';
-import { Section } from './components';
+import { Section } from './_components';
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
