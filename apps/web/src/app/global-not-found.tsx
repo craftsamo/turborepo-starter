@@ -36,7 +36,7 @@ export default async function GlobalNotFound() {
         <ThemeProvider attribute='class' defaultTheme='system'>
           <NotFoundMain>
             <div className='min-h-[60vh] flex flex-col items-center justify-center px-4 py-16 text-center space-y-6 max-w-2xl mx-auto'>
-              <h3 className='text-indigo-600 font-semibold text-sm'>404 Error</h3>
+              <h3 className='text-primary font-semibold text-sm'>404 Error</h3>
               <NotFoundTitle>Page not found</NotFoundTitle>
               <NotFoundDescription>
                 Sorry, the page you are looking for could not be found or has been removed.

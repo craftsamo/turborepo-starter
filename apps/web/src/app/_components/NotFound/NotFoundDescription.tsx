@@ -9,7 +9,7 @@ export const NotFoundDescription = async ({
 }) => (
   <p
     className={`
-      mt-4 text-foreground text-[clamp(1rem,2.8vw,1.125rem)] max-w-xl
+      mt-4 text-muted-foreground text-[clamp(1rem,2.8vw,1.125rem)] max-w-xl
       ${className}
     `}
   >
