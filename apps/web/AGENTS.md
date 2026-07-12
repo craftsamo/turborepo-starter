@@ -16,10 +16,12 @@ src/
   app/
     layout.tsx              # root layout (async, LayoutProps from @workspace/types/web)
     page.tsx                # root page (async server component)
-    components/             # route-local components (Header, Section, ...)
-    (global-not-found)/     # 404 route group
-      index.tsx             # GlobalNotFoundContent (server component)
-      components/
+    global-not-found.tsx    # 404 document (composes _components/NotFound)
+    _components/            # route-local pieces (private folder, excluded from routing)
+      index.ts              # barrel (Header, Section) — NotFound imported directly
+      Header/               # component folder: index.tsx + parts (ToggleIcon, ...)
+      Section.tsx
+      NotFound/             # 404 pieces (Main/Title/Description/BackHomeButton) + index.ts
   components/
     Providers/              # client providers (ReduxTool, NextTheme) — 'use client'
   store/
@@ -57,11 +59,23 @@ src/
   `middlewares/`, export from `middlewares/index.ts`, then register in the
   `chain([...])` array (top-to-bottom execution order). `ratelimit` is
   available but commented out by default.
-- **404**: the `(global-not-found)` route group renders `GlobalNotFoundContent`.
-  Do not add a top-level `not-found.tsx`; extend this group instead.
-- Keep route-specific components in `app/components/` or
-  `app/<route>/components/`. Promote to `@workspace/ui` only when a second
-  consumer appears.
+- **404**: `global-not-found.tsx` renders its own HTML document and composes the
+  pieces from `app/_components/NotFound` (`NotFoundMain` / `NotFoundTitle` /
+  `NotFoundDescription` / `BackHomeButton`). Do not add a top-level
+  `not-found.tsx`; extend the `NotFound` pieces instead.
+- **Route-local colocation**: keep route-specific pieces in `_components/`
+  (Next.js private folder — the underscore excludes it from routing) next to the
+  route that uses them: `app/_components/` for root-level pieces,
+  `app/<route>/_components/` for nested routes. Export them through an
+  `index.ts` barrel. Promote to `@workspace/ui` only when a second consumer
+  appears.
+- **Component folders**: a component with parts becomes a folder with a named
+  entry (`Header/index.tsx`) plus its parts (`Header/ToggleIcon.tsx`); colocate
+  a streaming `Skeleton.tsx`, a `'use server'` `actions.ts`, and a local
+  `types.ts` in the same folder when the component needs them.
+- **Non-component route helpers** (pagination, filtering, formatting) live in a
+  route-local `_utils/` folder (also a private folder), exported via its own
+  `index.ts` barrel.
 - Import shared constants from `@workspace/constants` (e.g.
   `rateLimitConfigs`, `RateLimitConfig`); never duplicate them locally.
 

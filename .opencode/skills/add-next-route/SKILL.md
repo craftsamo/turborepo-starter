@@ -1,6 +1,6 @@
 ---
 name: add-next-route
-description: Use when adding a new Next.js App Router route or route group to apps/web (page.tsx, layout.tsx, loading.tsx, route groups). Covers async server components, PageProps/LayoutProps from @workspace/types/web, awaiting Promise params/searchParams, route-local components, and the (global-not-found) 404 group. Trigger keywords: "new route", "page.tsx", "layout.tsx", "App Router", "route group", "Next 16".
+description: Use when adding a new Next.js App Router route or route group to apps/web (page.tsx, layout.tsx, loading.tsx, route groups). Covers async server components, PageProps/LayoutProps from @workspace/types/web, awaiting Promise params/searchParams, route-local _components/_utils, and the _components/NotFound 404 pieces. Trigger keywords: "new route", "page.tsx", "layout.tsx", "App Router", "route group", "Next 16".
 license: MIT
 compatibility: opencode
 metadata:
@@ -24,7 +24,7 @@ co-locating route-specific components.
   `not-found.tsx` (do NOT add top-level — use the existing route group)
 - Full conventions: see `apps/web/AGENTS.md` (always loaded).
 - Reference routes: `src/app/page.tsx`, `src/app/layout.tsx`,
-  `src/app/(global-not-found)/index.tsx`.
+  `src/app/global-not-found.tsx` (composes `src/app/_components/NotFound`).
 
 </Scope>
 
@@ -67,16 +67,24 @@ co-locating route-specific components.
    need browser APIs, hooks, context, or providers (see
    `src/components/Providers/*.tsx`).
 
-5. **Co-locate route-specific components** in:
-   - `src/app/components/` for shared root-level pieces (e.g. `Header`,
+5. **Co-locate route-specific pieces** in a private `_components/` folder (the
+   underscore opts the folder out of routing), exported via an `index.ts`
+   barrel:
+   - `src/app/_components/` for shared root-level pieces (e.g. `Header`,
      `Section`), OR
-   - `src/app/<route>/components/` for route-local pieces.
-   Promote to `@workspace/ui` only when a second package consumes them.
+   - `src/app/<route>/_components/` for route-local pieces.
+   A component with parts becomes a folder (`Header/index.tsx` +
+   `Header/ToggleIcon.tsx`); colocate `Skeleton.tsx`, a `'use server'`
+   `actions.ts`, and `types.ts` in the same folder when needed. Non-component
+   helpers (pagination, filtering) go in a route-local `_utils/` folder with its
+   own `index.ts` barrel. Promote to `@workspace/ui` only when a second package
+   consumes them.
 
-6. **404 handling**: do NOT add a top-level `not-found.tsx`. The
-   `(global-not-found)` route group renders `GlobalNotFoundContent`
-   (`src/app/(global-not-found)/index.tsx`). Extend that group if you need
-   route-specific not-found UI inside a nested layout.
+6. **404 handling**: do NOT add a top-level `not-found.tsx`.
+   `src/app/global-not-found.tsx` renders its own HTML document and composes the
+   pieces from `src/app/_components/NotFound` (`NotFoundMain` / `NotFoundTitle` /
+   `NotFoundDescription` / `BackHomeButton`). Extend those pieces if you need
+   route-specific not-found UI.
 
 7. **Import UI via subpaths**: `@workspace/ui/components/<name>`,
    `@workspace/ui/lib/utils` (for `cn`). Never deep-import via relative paths.
@@ -98,8 +106,8 @@ co-locating route-specific components.
 
 - Do NOT make `params` / `searchParams` synchronous — Next 16 + React 19 pass
   them as `Promise<...>`. Always `await`.
-- Do NOT add a top-level `not-found.tsx` — extend the `(global-not-found)`
-  group instead.
+- Do NOT add a top-level `not-found.tsx` — extend the `_components/NotFound`
+  pieces composed by `global-not-found.tsx` instead.
 - Do NOT default to `'use client'` for pages/layouts — server components are
   the default; add the directive only when needed.
 - Do NOT deep-import UI via relative paths — use the `@workspace/ui/*`
