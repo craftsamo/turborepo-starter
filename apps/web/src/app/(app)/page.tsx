@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Button } from '@workspace/ui/components/button';
-import { Center, Container, Heading, HStack, Text, VStack } from '@/components';
+import { Container, Heading, HStack, Screen, Section, Text, VStack } from '@/components';
+import { Footer } from '@/components/Footer';
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -13,8 +14,8 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function RootPage() {
   return (
-    <Center asChild className='flex-1'>
-      <section id='hero'>
+    <Screen smooth hideScrollbar>
+      <Section id='hero' className='grow justify-center'>
         <Container>
           <VStack gap={6} className='items-center text-center sm:items-start sm:text-left'>
             <Heading>Turborepo Starter</Heading>
@@ -35,7 +36,8 @@ export default async function RootPage() {
             </HStack>
           </VStack>
         </Container>
-      </section>
-    </Center>
+      </Section>
+      <Footer />
+    </Screen>
   );
 }

@@ -4,10 +4,10 @@ import { Container } from '../Container';
 import { HStack } from '../Stack';
 
 /**
- * Minimal app footer. Composed by a route-group layout (e.g. `(app)/layout.tsx`).
+ * Minimal app footer. Place it explicitly inside the page's `Screen`.
  */
 export const Footer = () => (
-  <footer className='border-t py-3'>
+  <footer className='shrink-0 snap-end border-t py-3'>
     <Container>
       <HStack gap={2} justify='between' className='text-sm text-muted-foreground'>
         <p>© {new Date().getFullYear()} Turborepo Starter</p>

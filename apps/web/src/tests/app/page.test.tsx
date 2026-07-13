@@ -9,7 +9,8 @@ describe('RootPage', async () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText(/Turborepo Starter/i)).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Turborepo Starter' })).toBeInTheDocument();
+      expect(screen.getByRole('main')).toHaveAttribute('data-mode', 'flow');
     });
   });
 });
