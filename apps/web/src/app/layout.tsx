@@ -1,10 +1,9 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import type { LayoutProps } from '@workspace/types/web';
 import { Toaster } from '@workspace/ui/components/sonner';
 import '@workspace/ui/globals.css';
 import { ReduxToolProvider, ThemeProvider } from '@/components/Providers';
-import { Header } from './_components';
 
 const baseUrl = process.env.BASE_URL ?? 'http://localhost';
 const SITE_NAME = 'Turborepo Starter';
@@ -19,6 +18,12 @@ const fontMono = Geist_Mono({
   subsets: ['latin'],
   variable: '--font-mono',
 });
+
+// `viewport-fit=cover` lets the mobile bottom nav honor the safe-area inset on
+// notched devices.
+export const viewport: Viewport = {
+  viewportFit: 'cover',
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
@@ -49,13 +54,12 @@ export const metadata: Metadata = {
 export default async function RootLayout(props: LayoutProps) {
   return (
     <html lang='en' suppressHydrationWarning>
-      <body className={`${fontSans.variable} ${fontMono.variable} font-mono antialiased`}>
+      <body
+        className={`${fontSans.variable} ${fontMono.variable} font-sans antialiased overflow-hidden`}
+      >
         <ReduxToolProvider>
           <ThemeProvider attribute='class' defaultTheme='system' enableSystem>
-            <div className='px-6 sm:px-12'>
-              <Header />
-              {props.children}
-            </div>
+            {props.children}
             <Toaster />
           </ThemeProvider>
         </ReduxToolProvider>

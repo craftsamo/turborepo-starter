@@ -1,6 +1,6 @@
 import '@testing-library/dom';
 import { render, act, waitFor, screen } from '../testUtils';
-import RootPage from '../../app/page';
+import RootPage from '../../app/(app)/page';
 
 describe('RootPage', async () => {
   it('renders the RootPage correctly', async function () {
@@ -9,7 +9,8 @@ describe('RootPage', async () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText(/Turborepo Starter/i)).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Turborepo Starter' })).toBeInTheDocument();
+      expect(screen.getByRole('main')).toHaveAttribute('data-mode', 'flow');
     });
   });
 });
