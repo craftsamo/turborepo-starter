@@ -52,22 +52,33 @@ co-locating route-specific components.
    (If you need a custom params shape, see `SingleParam` / `DinamicParams` /
    `Params` in `packages/types/src/web/layout.ts`.)
 
-   Page chrome (header/footer + the scroll region) lives in a route-group
-   `layout.tsx`, not the page. The `(app)` group's layout composes a `Screen`
-   (`<main>`) with `Header` / `Footer` and sets `--header-height`; pages under
-   it just return their content. Put a page that needs different chrome (or
-   none) in its own group. The `Screen` mode is `scroll` (`auto` default /
-   `none` / `snap`) plus `smooth` / `hideScrollbar`:
+   Page chrome lives in a route-group `layout.tsx`, not the page, as a fixed
+   app-shell frame: `Toolbar` (sm+) at the top and `BottomNav` (mobile) at the
+   bottom. Each page (or a nested route-group layout) owns the `Screen` between
+   them so it can choose `mode` (`flow` default / `full` / `snap`) and place its
+   `Footer` explicitly. `Section` follows the parent Screen mode automatically:
+   natural height in `flow`, full visible height in `full`, and full height plus
+   snap points in `snap`.
    ```tsx
    // app/(app)/layout.tsx
-   import type { CSSProperties } from 'react';
-   import { Screen } from '@/components';
-   import { Header } from '@/components/Header';
+   import { BottomNav, Toolbar, type NavigationVariant } from '@/components/Navigation';
+
+   const navigationVariant: NavigationVariant = 'floating';
+
+   <div className='flex h-svh flex-col overflow-hidden'>
+     <Toolbar variant={navigationVariant} />
+     {children}
+     <BottomNav variant={navigationVariant} />
+   </div>
+   ```
+
+   ```tsx
+   // app/(app)/page.tsx — omit mode for normal flow
+   import { Screen, Section } from '@/components';
    import { Footer } from '@/components/Footer';
 
-   <Screen scroll='auto' smooth hideScrollbar style={{ '--header-height': '4rem' } as CSSProperties}>
-     <Header />
-     {children}
+   <Screen mode='snap' smooth hideScrollbar>
+     <Section>{/* page content */}</Section>
      <Footer />
    </Screen>
    ```
@@ -92,8 +103,9 @@ co-locating route-specific components.
    barrel:
    - `src/app/(app)/_components/` for pieces local to the main route group, OR
    - `src/app/<route>/_components/` for pieces local to a nested route.
-   A component with parts becomes a folder (`index.tsx` + its parts, as in
-   `components/Header/`); colocate `Skeleton.tsx`, a `'use server'`
+   A component with parts becomes a folder (`index.tsx` + its parts, or a
+   barrel `index.ts` grouping related components as in `components/Navigation/`);
+   colocate `Skeleton.tsx`, a `'use server'`
    `actions.ts`, and `types.ts` in the same folder when needed. Non-component
    helpers (pagination, filtering) go in a route-local `_utils/` folder with its
    own `index.ts` barrel. Promote to `@workspace/ui` only when a second package

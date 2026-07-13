@@ -16,19 +16,20 @@ src/
   app/
     layout.tsx              # root layout — slim: Providers + Toaster + body lock only
     global-not-found.tsx    # 404 document (self-contained: Container + Heading + Text + inline back link)
-    (app)/                  # main route group — owns page chrome
-      layout.tsx            # Screen + Header + Footer; sets --header-height
-      page.tsx              # home page (async server component) — composes layout primitives
+    (app)/                  # main route group — owns page chrome (app shell)
+      layout.tsx            # h-svh frame: Toolbar (sm+) + page-owned Screen + BottomNav (xs)
+      page.tsx              # home page — composes Screen + Section(s) + Footer
   components/               # app-wide shared components (server-safe primitives + chrome)
-    index.ts                # barrel: Center, Container, Heading, Screen, Stack, Text (server-safe only)
+    index.ts                # barrel: Center, Container, Heading, Screen, Section, Stack, Text (server-safe only)
     Container.tsx           # page width + horizontal padding (single source)
     Heading.tsx             # canonical heading scale (as prop for semantics)
     Text.tsx                # body text tone variants (body/muted/lead)
-    Screen.tsx              # full-height scroll region (scroll/smooth/hideScrollbar props)
-    Center.tsx              # centering frame (axis + min: none/screen/section); asChild
+    Screen.tsx              # page scroll region (mode: flow/full/snap; smooth/hideScrollbar)
+    Section.tsx             # semantic page section; follows parent Screen mode
+    Center.tsx              # centering frame (axis + min: none/screen); asChild
     Stack.tsx               # flex stack primitive + VStack/HStack presets (gap/align/justify/wrap/collapse); asChild
-    Header/                 # app header ('use client'): index.tsx + parts (ThemeToggle, MobileMenu, ...)
-    Footer/                 # app footer (minimal)
+    Navigation/             # responsive chrome: Toolbar (sm+) + BottomNav (xs); docked/floating variants
+    Footer/                 # app footer (minimal, slim)
     Providers/              # client providers (ReduxTool, NextTheme) — 'use client'
   store/
     index.ts                # configureStore + typed hooks (useAppDispatch/useAppSelector)
@@ -61,30 +62,43 @@ src/
   (see `app/layout.tsx`). `ThemeProvider` dynamically imports
   `next-themes`' `ThemeProvider` with `ssr: true`.
 - **Shared primitives**: import `Center` / `Container` / `Heading` / `Screen` /
-  `Stack` (+ `VStack` / `HStack`) / `Text` from `@/components` (the root barrel
-  is server-safe — never add a `'use client'` component to it; client providers
-  stay under `@/components/Providers`, and `Header` / `Footer` are imported via
-  `@/components/Header` / `@/components/Footer` by route-group layouts). These
+  `Section` / `Stack` (+ `VStack` / `HStack`) / `Text` from `@/components` (the
+  root barrel is server-safe — never add a `'use client'` component to it;
+  client providers stay under `@/components/Providers`, and the chrome
+  (`Navigation` / `Footer`) is imported via `@/components/Navigation` /
+  `@/components/Footer`). These
   own width, type scale, body tone, scrolling, centering, and stacking so routes
   compose them instead of re-deriving Tailwind classes.
 - **Layout primitives**: reach for `VStack` / `HStack` (the `Stack` presets) for
-  gapped columns/rows and `Center` for centering (`min='section'` fills the
-  viewport below the header). Drop to `Stack` directly only to drive `direction`
-  yourself. They are cva wrappers with `asChild` (Radix `Slot`) — project the
-  layout onto a semantic element (`<Center asChild min='section'><section>`,
-  `<HStack asChild><footer>`) instead of adding a wrapper. Compose these instead
+  gapped columns/rows and `Center` for centering (a `flex-1` child fills the
+  scroll region between the chrome). Drop to `Stack` directly only to drive
+  `direction` yourself. They are cva wrappers with `asChild` (Radix `Slot`) —
+  project the layout onto a semantic element (`<Center asChild><section>`,
+  `<HStack asChild><nav>`) instead of adding a wrapper. Compose these instead
   of hand-writing `flex … gap-*`; `Container` still owns width and `Screen`
   scrolling.
-- **Page chrome & scrolling**: page chrome lives in a route-group layout, not
-  the root layout. The `(app)` group's `layout.tsx` composes a `Screen`
-  (`<main>`) with the `Header` and `Footer` and sets `--header-height` so
-  full-height sections subtract the header; groups without chrome (e.g. auth)
-  simply omit it. The root layout locks `<body>` (`overflow-hidden`), so
-  `Screen` is the scroll container — pick the mode with `scroll`
-  (`auto` default / `none` / `snap`) and add `smooth` / `hideScrollbar`. The
-  `snap` mode is available as foresight; if you build snap sections, give each
-  its own `snap-start`. The shared `globals.css` intentionally does not own
-  app-level scroll/snap rules.
+- **App shell & scrolling**: page chrome lives in a route-group layout, not the
+  root layout, as an app shell. The `(app)` group's `layout.tsx` is a
+  fixed-height flex column (`h-svh`, `overflow-hidden`) that never scrolls: the
+  `Toolbar` (sm+) is pinned at the top and the `BottomNav` (mobile) at the
+  bottom. Each page (or nested route-group layout) places a `Screen` (`<main>`,
+  `flex-1`) between them, chooses `mode` (`flow` default / `full` / `snap`),
+  composes one or more `Section` children, and places `Footer` explicitly when
+  wanted. `Section` reads its parent Screen mode: `flow` keeps natural height,
+  `full` fills the visible region, and `snap` also adds snap points. Because the
+  chrome sits outside `Screen`, it stays put while only page content scrolls.
+  The root layout locks `<body>` (`overflow-hidden`) and sets
+  `viewport-fit=cover` for the bottom nav's safe-area inset. Add `smooth` /
+  `hideScrollbar` to Screen as needed. The shared `globals.css` intentionally
+  does not own app-level scroll/snap rules.
+- **Navigation style**: `Toolbar` and `BottomNav` share a
+  `NavigationVariant` (`docked` / `floating`). Set the variant once in the
+  `(app)` layout and pass it to both components. `docked` is the edge-to-edge
+  default; `floating` is an inset Liquid Glass treatment (translucent surface,
+  strong blur, subtle border/shadow, rounded capsule). The floating mobile bar
+  is a compact icon-only capsule; the docked bar keeps visible labels. Keep the
+  two chrome surfaces on the same variant so the responsive switch feels
+  coherent.
 - **Middleware**: compose with `chain([...factories])` in `proxy.ts`. Each
   factory is `(proxy: NextProxy) => NextProxy`. Add new middleware in
   `middlewares/`, export from `middlewares/index.ts`, then register in the
@@ -101,9 +115,10 @@ src/
   `index.ts` barrel. Promote to `@workspace/ui` only when a second consumer
   appears.
 - **Component folders**: a component with parts becomes a folder with a named
-  entry (`Header/index.tsx`) plus its parts (`Header/ToggleIcon.tsx`); colocate
-  a streaming `Skeleton.tsx`, a `'use server'` `actions.ts`, and a local
-  `types.ts` in the same folder when the component needs them.
+  entry (`index.tsx`) plus its sibling parts, or a barrel (`index.ts`) grouping
+  related components (as `Navigation/` does with `Toolbar` + `BottomNav`);
+  colocate a streaming `Skeleton.tsx`, a `'use server'` `actions.ts`, and a
+  local `types.ts` in the same folder when the component needs them.
 - **Non-component route helpers** (pagination, filtering, formatting) live in a
   route-local `_utils/` folder (also a private folder), exported via its own
   `index.ts` barrel.
