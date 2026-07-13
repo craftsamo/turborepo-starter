@@ -33,6 +33,9 @@ export const metadata: Metadata = {
     template: `%s | ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,
+  other: {
+    repository: 'https://github.com/craftsamo/turborepo-starter',
+  },
   openGraph: {
     type: 'website',
     siteName: SITE_NAME,
