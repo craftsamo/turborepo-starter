@@ -38,11 +38,7 @@ type ScreenProps = ComponentProps<'main'> & VariantProps<typeof screenVariants>;
 export const Screen = ({ mode, smooth, hideScrollbar, className, ...props }: ScreenProps) => (
   <main
     data-mode={mode ?? 'flow'}
-    className={cn(
-      'group/screen',
-      screenVariants({ mode, smooth, hideScrollbar }),
-      className,
-    )}
+    className={cn('group/screen', screenVariants({ mode, smooth, hideScrollbar }), className)}
     {...props}
   />
 );
