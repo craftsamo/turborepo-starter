@@ -9,5 +9,5 @@ import { cn } from '@workspace/ui/lib/utils';
  * on the same measure.
  */
 export const Container = ({ className, ...props }: ComponentProps<'div'>) => (
-  <div className={cn('mx-auto w-full max-w-6xl px-6 sm:px-12', className)} {...props} />
+  <div className={cn('mx-auto w-full max-w-6xl px-6 sm:px-8 lg:px-12', className)} {...props} />
 );
