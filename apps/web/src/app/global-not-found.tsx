@@ -35,14 +35,10 @@ export default async function GlobalNotFound() {
           <Center asChild min='screen'>
             <main>
               <Container>
-                <VStack
-                  gap={6}
-                  align='center'
-                  className='mx-auto min-h-[60vh] max-w-2xl justify-center px-4 py-16 text-center'
-                >
-                  <h3 className='text-sm font-semibold text-primary'>404 Error</h3>
+                <VStack gap={6} align='center' className='text-center'>
+                  <Text variant='eyebrow'>404 Error</Text>
                   <Heading>Page not found</Heading>
-                  <Text variant='lead' className='max-w-xl'>
+                  <Text variant='lead' measure='prose'>
                     Sorry, the page you are looking for could not be found or has been removed.
                   </Text>
                   <HStack wrap justify='center'>

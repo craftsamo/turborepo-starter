@@ -19,12 +19,12 @@ export default async function RootPage() {
         <Container>
           <VStack gap={6} className='items-center text-center sm:items-start sm:text-left'>
             <Heading>Turborepo Starter</Heading>
-            <Text variant='lead' className='max-w-sm md:max-w-xl'>
+            <Text variant='lead' measure='prose'>
               Boilerplate for streamlined development of Turborepo applications with best practices
               and curated configurations.
             </Text>
-            <HStack collapse gap={6} className='sm:gap-3'>
-              <Button asChild className='h-10 w-full sm:h-9 sm:w-auto'>
+            <HStack collapse gap={3} className='w-full sm:w-auto'>
+              <Button asChild size='lg' className='w-full sm:w-auto'>
                 <Link
                   href='https://github.com/craftsamo/turborepo-starter'
                   target='_blank'
