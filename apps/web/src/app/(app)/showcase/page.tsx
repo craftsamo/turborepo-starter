@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowDown, Blocks, Layers3, Zap } from 'lucide-react';
+import { ArrowDown, ArrowRight, Blocks, Layers3, Zap } from 'lucide-react';
 import { Button } from '@workspace/ui/components/button';
 import { Container, Heading, HStack, Screen, Section, Text, VStack } from '@/components';
 import { StateFeedbackDemo, ThemeLayoutDemo } from './_components';
@@ -54,12 +54,20 @@ export default async function ShowcasePage() {
               ))}
             </div>
 
-            <Button asChild variant='outline' className='w-fit'>
-              <Link href='#state'>
-                Start exploring
-                <ArrowDown />
-              </Link>
-            </Button>
+            <HStack collapse gap={3} className='w-full sm:w-auto'>
+              <Button asChild variant='outline' className='w-full sm:w-auto'>
+                <Link href='#state'>
+                  Start exploring
+                  <ArrowDown />
+                </Link>
+              </Button>
+              <Button asChild className='w-full sm:w-auto'>
+                <Link href='/showcase/streaming' prefetch={false}>
+                  Open streaming demo
+                  <ArrowRight />
+                </Link>
+              </Button>
+            </HStack>
           </VStack>
         </Container>
       </Section>

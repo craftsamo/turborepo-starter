@@ -9,6 +9,7 @@ import { HStack } from '../Stack';
 import { ThemeToggle } from '../Theme';
 import { navItems } from './items';
 import { navigationSurfaceVariants } from './styles';
+import { ToolbarLink } from './ToolbarLink';
 import type { NavigationVariantProps } from './types';
 
 const toolbarVariants = cva('relative z-40 hidden sm:block', {
@@ -73,12 +74,7 @@ export const Toolbar = ({ variant = 'docked' }: NavigationVariantProps) => (
               .filter((item) => item.href !== '/')
               .map((item) => (
                 <Button key={item.href} asChild variant='ghost' size='sm'>
-                  <Link
-                    href={item.href}
-                    {...(item.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                  >
-                    {item.label}
-                  </Link>
+                  <ToolbarLink href={item.href} label={item.label} external={item.external} />
                 </Button>
               ))}
             <ThemeToggle />

@@ -15,6 +15,10 @@ describe('ShowcasePage', () => {
     expect(
       screen.getByRole('heading', { name: 'One system, multiple modes.' }),
     ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /open streaming demo/i })).toHaveAttribute(
+      'href',
+      '/showcase/streaming',
+    );
   });
 
   it('updates the shared counter from the playground', async () => {

@@ -75,7 +75,9 @@ export const BottomNav = ({ variant = 'docked' }: NavigationVariantProps) => {
     >
       <ul className='flex items-stretch'>
         {navItems.map((item) => {
-          const active = !item.external && pathname === item.href;
+          const active =
+            !item.external &&
+            (pathname === item.href || (item.href !== '/' && pathname.startsWith(`${item.href}/`)));
           const Icon = item.icon;
           return (
             <li key={item.href} className='flex-1'>
