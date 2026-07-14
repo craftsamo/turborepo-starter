@@ -63,7 +63,7 @@ export default async function RootLayout(props: LayoutProps) {
         <ReduxToolProvider>
           <ThemeProvider attribute='class' defaultTheme='system' enableSystem>
             {props.children}
-            <Toaster />
+            <Toaster mobileOffset={{ bottom: 'calc(5rem + env(safe-area-inset-bottom))' }} />
           </ThemeProvider>
         </ReduxToolProvider>
       </body>
