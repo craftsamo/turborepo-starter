@@ -60,7 +60,7 @@ const tabVariants = cva(
  */
 export const BottomNav = ({ variant = 'docked' }: NavigationVariantProps) => {
   const pathname = usePathname();
-  const { isDark, label, toggle } = useThemeToggle();
+  const { toggle } = useThemeToggle();
 
   return (
     <nav
@@ -95,10 +95,11 @@ export const BottomNav = ({ variant = 'docked' }: NavigationVariantProps) => {
           <button
             type='button'
             onClick={toggle}
-            aria-label={label}
+            aria-label='Toggle color theme'
             className={cn(tabVariants({ variant }), 'border-0 bg-transparent')}
           >
-            {isDark ? <Moon className='size-5' /> : <Sun className='size-5' />}
+            <Sun aria-hidden='true' className='size-5 dark:hidden' />
+            <Moon aria-hidden='true' className='hidden size-5 dark:block' />
             <span className={variant === 'floating' ? 'sr-only' : undefined}>Theme</span>
           </button>
         </li>

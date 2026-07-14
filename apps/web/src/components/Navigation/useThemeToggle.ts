@@ -1,23 +1,17 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useTheme } from 'next-themes';
 
 /**
- * Shared light/dark toggle state for the navigation.
- *
- * Trusts the resolved theme only after mount, so both the toolbar button and
- * the bottom-nav action avoid a hydration mismatch (the theme is known only on
- * the client).
+ * Shared light/dark toggle action for the navigation.
  */
 export const useThemeToggle = () => {
-  const [mounted, setMounted] = useState(false);
-  const { resolvedTheme, setTheme } = useTheme();
+  const { setTheme } = useTheme();
 
-  useEffect(() => setMounted(true), []);
+  const toggle = () => {
+    const isDark = document.documentElement.classList.contains('dark');
+    setTheme(isDark ? 'light' : 'dark');
+  };
 
-  const isDark = mounted && resolvedTheme === 'dark';
-  const label = isDark ? 'Switch to light theme' : 'Switch to dark theme';
-
-  return { isDark, mounted, label, toggle: () => setTheme(isDark ? 'light' : 'dark') };
+  return { toggle };
 };

@@ -5,14 +5,20 @@ import { Button } from '@workspace/ui/components/button';
 import { useThemeToggle } from './useThemeToggle';
 
 /**
- * Icon button that toggles between light and dark themes. Used in the toolbar
- * (the bottom nav renders its own tab-styled action via `useThemeToggle`).
+ * Icon button that toggles between light and dark themes.
  */
 export const ThemeToggle = ({ className }: { className?: string }) => {
-  const { isDark, label, toggle } = useThemeToggle();
+  const { toggle } = useThemeToggle();
   return (
-    <Button size='icon' variant='ghost' className={className} aria-label={label} onClick={toggle}>
-      {isDark ? <Moon className='size-5' /> : <Sun className='size-5' />}
+    <Button
+      size='icon'
+      variant='ghost'
+      className={className}
+      aria-label='Toggle color theme'
+      onClick={toggle}
+    >
+      <Sun aria-hidden='true' className='size-5 dark:hidden' />
+      <Moon aria-hidden='true' className='hidden size-5 dark:block' />
     </Button>
   );
 };
