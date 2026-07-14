@@ -15,7 +15,7 @@ const toolbarVariants = cva('relative z-40 hidden sm:block', {
   variants: {
     variant: {
       docked: 'border-b',
-      floating: 'pt-3',
+      floating: 'pt-6',
     },
   },
   defaultVariants: {
