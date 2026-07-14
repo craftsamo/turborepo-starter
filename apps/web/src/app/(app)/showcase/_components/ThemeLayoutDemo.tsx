@@ -28,10 +28,7 @@ export const ThemeLayoutDemo = () => {
 
   return (
     <div className='grid gap-4 sm:gap-6 lg:grid-cols-[0.9fr_1.1fr]'>
-      <VStack
-        gap={6}
-        className='gap-4 rounded-xl border bg-card p-4 shadow-sm sm:gap-6 sm:p-8'
-      >
+      <VStack gap={6} className='gap-4 rounded-xl border bg-card p-4 shadow-sm sm:gap-6 sm:p-8'>
         <VStack gap={2}>
           <span className='font-mono text-xs font-medium uppercase tracking-widest text-primary'>
             Theme provider
