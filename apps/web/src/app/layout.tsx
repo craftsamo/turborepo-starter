@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
+import NextTopLoader from 'nextjs-toploader';
 import type { LayoutProps } from '@workspace/types/web';
 import { Toaster } from '@workspace/ui/components/sonner';
 import '@workspace/ui/globals.css';
@@ -63,6 +64,7 @@ export default async function RootLayout(props: LayoutProps) {
         <ReduxToolProvider>
           <ThemeProvider attribute='class' defaultTheme='system' enableSystem>
             {props.children}
+            <NextTopLoader color='var(--primary)' height={2} shadow={false} showSpinner={false} />
             <Toaster mobileOffset={{ bottom: 'calc(5rem + env(safe-area-inset-bottom))' }} />
           </ThemeProvider>
         </ReduxToolProvider>
