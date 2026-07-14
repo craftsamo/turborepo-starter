@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { Github, Home } from 'lucide-react';
+import { GalleryVerticalEnd, Github, Home } from 'lucide-react';
 
 export interface NavItem {
   /** Visible label and accessible name. */
@@ -15,6 +15,7 @@ export interface NavItem {
 /** Primary navigation destinations, shared by the toolbar and bottom nav. */
 export const navItems: NavItem[] = [
   { label: 'Home', href: '/', icon: Home },
+  { label: 'Showcase', href: '/showcase', icon: GalleryVerticalEnd },
   {
     label: 'GitHub',
     href: 'https://github.com/craftsamo/turborepo-starter',
