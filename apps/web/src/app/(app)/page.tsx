@@ -25,7 +25,10 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function RootPage() {
   return (
     <Screen smooth hideScrollbar>
-      <Section id='hero' className='relative grow justify-start py-12 sm:py-20 lg:justify-center'>
+      <Section
+        id='hero'
+        className='relative grow justify-start py-12 sm:pb-20 sm:pt-28 lg:justify-center lg:py-20'
+      >
         <div className='pointer-events-none absolute right-0 top-0 size-96 rounded-full bg-primary/10 blur-3xl' />
         <Container className='relative'>
           <div className='grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16'>

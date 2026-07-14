@@ -15,7 +15,7 @@ const toolbarVariants = cva('relative z-40 hidden sm:block', {
   variants: {
     variant: {
       docked: 'border-b',
-      floating: 'pt-6',
+      floating: 'fixed inset-x-0 top-6',
     },
   },
   defaultVariants: {
@@ -36,10 +36,9 @@ const toolbarSurfaceVariants = cva('h-12', {
 });
 
 /**
- * Top toolbar shown from the `sm` breakpoint up. The app-shell frame keeps it
- * pinned, so it needs no `sticky`. Use `docked` for a full-bleed bar or
- * `floating` for an inset Liquid Glass surface. Hidden on mobile, where the
- * `BottomNav` takes over.
+ * Top toolbar shown from the `sm` breakpoint up. Docked mode stays in the
+ * app-shell flow while floating mode overlays the viewport as an inset Liquid
+ * Glass surface. Hidden on mobile, where the `BottomNav` takes over.
  */
 export const Toolbar = ({ variant = 'docked' }: NavigationVariantProps) => (
   <header
@@ -56,6 +55,8 @@ export const Toolbar = ({ variant = 'docked' }: NavigationVariantProps) => (
         className={cn(
           toolbarSurfaceVariants({ variant }),
           variant === 'floating' && navigationSurfaceVariants({ variant }),
+          variant === 'floating' &&
+            'bg-background/85 from-white/45 to-white/10 shadow-[0_12px_40px_rgba(15,23,42,0.2)] dark:bg-secondary/80 dark:from-white/14 dark:to-white/5 dark:shadow-[0_12px_40px_rgba(0,0,0,0.5)]',
         )}
       >
         <nav aria-label='Primary'>
