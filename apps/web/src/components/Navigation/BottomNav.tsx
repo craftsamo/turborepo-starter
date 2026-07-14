@@ -5,10 +5,10 @@ import { usePathname } from 'next/navigation';
 import { Moon, Sun } from 'lucide-react';
 import { cva } from 'class-variance-authority';
 import { cn } from '@workspace/ui/lib/utils';
+import { useThemeToggle } from '../Theme';
 import { navItems } from './items';
 import { navigationSurfaceVariants } from './styles';
 import type { NavigationVariantProps } from './types';
-import { useThemeToggle } from './useThemeToggle';
 
 const bottomNavVariants = cva('relative z-40 sm:hidden', {
   variants: {

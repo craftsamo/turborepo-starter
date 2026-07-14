@@ -6,9 +6,9 @@ import { cn } from '@workspace/ui/lib/utils';
 import Logo from '../../../public/image/logo.svg';
 import { Container } from '../Container';
 import { HStack } from '../Stack';
+import { ThemeToggle } from '../Theme';
 import { navItems } from './items';
 import { navigationSurfaceVariants } from './styles';
-import { ThemeToggle } from './ThemeToggle';
 import type { NavigationVariantProps } from './types';
 
 const toolbarVariants = cva('relative z-40 hidden sm:block', {
