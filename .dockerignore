@@ -1,0 +1,23 @@
+# Dependencies and build output are regenerated inside the image via
+# `turbo prune` + `pnpm install`, so keep them out of the build context.
+**/node_modules
+.pnp
+.pnp.js
+**/.next
+**/dist
+**/.turbo
+**/out
+**/build
+**/tsconfig.tsbuildinfo
+apps/**/next-env.d.ts
+
+# VCS, local env and noise
+.git
+.github
+**/coverage
+**/*.log
+**/.DS_Store
+**/.env*
+**/*.pem
+**/*.key
+**/*.crt
