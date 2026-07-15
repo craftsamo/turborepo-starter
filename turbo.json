@@ -6,7 +6,7 @@
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": ["dist/**"]
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
     },
     "lint": {
       "cache": false
@@ -25,8 +25,20 @@
       "dependsOn": ["build"],
       "persistent": true
     },
+    "test": {
+      "cache": false
+    },
     "test:ci": {
       "cache": false
+    },
+    "test:e2e": {
+      "dependsOn": ["build"],
+      "cache": false,
+      "passThroughEnv": ["CI", "WEB_E2E_PORT"]
+    },
+    "test:live": {
+      "cache": false,
+      "passThroughEnv": ["CI", "PLAYWRIGHT_BASE_URL"]
     }
   }
 }
