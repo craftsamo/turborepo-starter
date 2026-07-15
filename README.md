@@ -76,6 +76,7 @@ turborepo-starter/
 
 - Node.js 24.0 or higher
 - pnpm 11.5.3 or higher (via Corepack)
+- GitHub CLI (`gh`), authenticated as a repository administrator
 
 ### Installation
 
@@ -94,7 +95,20 @@ pnpm install
 pnpm add -g nps
 ```
 
-3. **Configure local environment**
+3. **Configure GitHub**
+
+Preview and apply the starter's repository settings, Actions permissions,
+labels, and `main` protection:
+
+```sh
+nps "setup.github --dry-run --defaults"
+nps setup.github
+```
+
+See [GitHub Repository Setup](docs/github-actions/setup-github.md) for
+non-interactive setup and secret management.
+
+4. **Configure local environment**
 
 Copy the example env file and fill in the values you need for local
 development:
@@ -103,7 +117,7 @@ development:
 cp apps/web/.env.example apps/web/.env   # BASE_URL, LOG_LEVEL (optional)
 ```
 
-4. **Run Development Server**
+5. **Run Development Server**
 
 ```sh
 nps dev
@@ -123,7 +137,7 @@ The web app reads runtime configuration from `apps/web/.env`. See
 
 ### GitHub Actions Variables
 
-Set the following variables in your GitHub repository settings under
+Configure these optional variables through `nps setup.github` or under
 **Settings > Secrets and variables > Variables**:
 
 | Variable             | Default                    |
@@ -136,8 +150,9 @@ Set the following variables in your GitHub repository settings under
 
 ### GitHub Actions Secrets
 
-For GitHub Copilot authentication, add the following secret under **Settings >
-Secrets and variables > Secrets**:
+For GitHub Copilot authentication, run `nps setup.github.secrets` or add the
+following Repository secrets under **Settings > Secrets and variables >
+Secrets**:
 
 | Secret                  | Default |
 | ----------------------- | ------- |
@@ -163,8 +178,10 @@ list.
 | `nps lint.web`       | Lint only the web app                        |
 | `nps format`         | Format all apps and packages                 |
 | `nps typecheck`      | Type-check all apps and packages             |
-| `nps test`           | Run web app tests                            |
+| `nps test`           | Run repository script and web app tests      |
 | `nps test.watch`     | Run web app tests in watch mode              |
+| `nps setup.github`   | Configure GitHub repository settings         |
+| `nps setup.github.secrets` | Configure Repository or Environment secrets |
 | `nps docker.build.web` | Build the web Docker image                  |
 | `nps docker.start.web` | Start the web container via docker-compose  |
 | `nps start`          | Start the built web app in production mode   |
@@ -185,7 +202,7 @@ project standards.
 | **Sync Labels**     | Manual dispatch         | Synchronizes repository labels with `.github/labels.yml` configuration |
 | **Display Details** | Manual dispatch         | Displays project, apps, and repository information                     |
 | **Release Drafter** | Push/PR to main         | Creates and updates draft releases with categorized changes            |
-| **Tests**           | Push/PR to main/develop | Runs tests for affected apps and packages                              |
+| **Tests**           | Push/PR to main         | Runs tests for affected apps and packages                              |
 | **Run AI Agent**    | Issue/PR comment        | Executes AI-powered code tasks via `/oc` or `/opencode` commands       |
 
 ### Documentation
