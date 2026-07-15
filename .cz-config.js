@@ -1,8 +1,7 @@
 module.exports = {
   types: [
     { value: "feat", name: "feat:     A new feature" },
-    { value: "fix", name: "fix:      An enhancement or adjustment" },
-    { value: "bugfix", name: "bugfix:   A bug fix" },
+    { value: "fix", name: "fix:      A bug fix" },
     { value: "docs", name: "docs:     Documentation only changes" },
     {
       value: "style",
@@ -21,15 +20,17 @@ module.exports = {
       value: "chore",
       name: "chore:    Changes to the build process or auxiliary tools\n            and libraries such as documentation generation",
     },
+    { value: "build", name: "build:    Changes to the build system" },
+    { value: "ci", name: "ci:       Changes to CI configuration" },
     { value: "revert", name: "revert:   Revert to a commit" },
-    { value: "WIP", name: "WIP:      Work in progress" },
   ],
 
   scopes: [
     { name: "web" },
-    { name: "api" },
+    { name: "ui" },
+    { name: "constants" },
+    { name: "types" },
     { name: "workflows" },
-    { name: "packages" },
     { name: "scripts" },
     { name: "docs" },
   ],
@@ -56,9 +57,8 @@ module.exports = {
   messages: {
     type: "Select the type of change that you're committing:",
     scope: "\nDenote the SCOPE of this change (optional):",
-    // used if allowCustomScopes is true
-    customScope: "Denote the SCOPE of this change:",
-    subject: "Write a SHORT, IMPERATIVE tense description of the change:\n",
+    subject:
+      "Write a SHORT, lowercase, IMPERATIVE description of the change:\n",
     body: 'Provide a LONGER description of the change (optional). Use "|" to break new line:\n',
     breaking: "List any BREAKING CHANGES (optional):\n",
     footer:
@@ -66,10 +66,8 @@ module.exports = {
     confirmCommit: "Are you sure you want to proceed with the commit above?",
   },
 
-  allowCustomScopes: true,
-  allowBreakingChanges: ["feat", "fix", "bugfix"],
-  // skip any questions you want
-  skipQuestions: ["body"],
+  allowCustomScopes: false,
+  allowBreakingChanges: ["feat", "fix"],
 
   // limit subject length
   subjectLimit: 50,

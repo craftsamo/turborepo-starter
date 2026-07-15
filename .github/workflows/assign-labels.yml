@@ -27,8 +27,6 @@ jobs:
           elif [ $branch_type == 'docs' ]; then
             label_name="📝documentation"
           elif [ $branch_type == 'fix' ]; then
-            label_name="⚒️enhancement"
-          elif [ $branch_type == 'bugfix' ]; then
             label_name="🐛bug"
           elif [ $branch_type == 'hotfix' ]; then
             label_name="🐞hotfix"

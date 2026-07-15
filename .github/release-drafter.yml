@@ -56,12 +56,12 @@ autolabeler:
   # Automatically applies the "⚒️enhancement" label based on branch naming patterns.
   - label: "⚒️enhancement"
     branch:
-      - "/^(fix|enhance|improve|refactor|enhancement)[/-].+/"
+      - "/^(enhance|improve|refactor|enhancement)[/-].+/"
 
   # Automatically applies the "🐛bug" label based on branch naming patterns.
   - label: "🐛bug"
     branch:
-      - "/^bugfix[/-].+/"
+      - "/^fix[/-].+/"
 
   # Automatically applies the "📝documentation" label based on branch naming patterns or file changes.
   - label: "📝documentation"
