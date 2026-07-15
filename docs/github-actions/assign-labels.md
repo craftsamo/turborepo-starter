@@ -6,7 +6,8 @@
 
 - Pull request must be **opened** (not updated/reopened)
 - Branch must follow naming convention: `{type}/{description}`
-- Supported branch types: `feat`, `enhance`, `docs`, `fix`, `hotfix`
+- Supported branch types: `feat`, `enhance`, `improve`, `refactor`, `docs`,
+  `fix`, `hotfix`
 - Corresponding labels must exist in the repository
 
 ## How It Works
@@ -18,6 +19,8 @@ type (first segment before `/`):
 | ----------- | --------------- |
 | `feat/`     | 🌱feature       |
 | `enhance/`  | ⚒️enhancement   |
+| `improve/`  | ⚒️enhancement   |
+| `refactor/` | ⚒️enhancement   |
 | `docs/`     | 📝documentation |
 | `fix/`      | 🐛bug           |
 | `hotfix/`   | 🐞hotfix        |

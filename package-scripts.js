@@ -7,6 +7,12 @@ const ciWebPath = path.resolve(__dirname, "out/apps/web");
 module.exports = {
   scripts: {
     link: `node scripts/link-agent-skills.mjs`,
+    setup: {
+      github: {
+        default: `node scripts/setup/github/repository.mts`,
+        secrets: `node scripts/setup/github/secrets.mts`,
+      },
+    },
     prepare: {
       default: `nps prepare.web`,
       web: `pnpm install`,
@@ -35,7 +41,8 @@ module.exports = {
       },
     },
     typecheck: {
-      default: `npx turbo run typecheck`,
+      default: `nps typecheck.scripts && npx turbo run typecheck`,
+      scripts: `pnpm exec tsc6 --project scripts/tsconfig.json`,
       web: `npx turbo run typecheck --filter=web`,
       packages: {
         default: `npx turbo run typecheck --filter=@workspace/ui --filter=@workspace/constants --filter=@workspace/types`,

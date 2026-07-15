@@ -53,19 +53,29 @@ template: |
   $CHANGES
 
 autolabeler:
+  # Automatically applies the "🌱feature" label based on branch naming patterns.
+  - label: "🌱feature"
+    branch:
+      - "/^feat[/-].+/"
+
   # Automatically applies the "⚒️enhancement" label based on branch naming patterns.
   - label: "⚒️enhancement"
     branch:
-      - "/^(enhance|improve|refactor|enhancement)[/-].+/"
+      - "/^(enhance|improve|refactor)[/-].+/"
 
   # Automatically applies the "🐛bug" label based on branch naming patterns.
   - label: "🐛bug"
     branch:
       - "/^fix[/-].+/"
 
+  # Automatically applies the "🐞hotfix" label based on branch naming patterns.
+  - label: "🐞hotfix"
+    branch:
+      - "/^hotfix[/-].+/"
+
   # Automatically applies the "📝documentation" label based on branch naming patterns or file changes.
   - label: "📝documentation"
     branch:
-      - "/^(doc|document|documentation)[/-].+/"
+      - "/^docs[/-].+/"
     files:
       - "*.md"
