@@ -130,10 +130,10 @@ nps dev
 The web app reads runtime configuration from `apps/web/.env`. See
 `apps/web/.env.example` for the full list:
 
-| Variable     | Purpose                                                        |
-| ------------ | -------------------------------------------------------------- |
-| `BASE_URL`   | Base URL used for absolute links, sitemap, robots, and API calls |
-| `LOG_LEVEL`  | Logger verbosity: `verbose` / `debug` / `info` / `log` / `warn` / `error` / `fatal` (default: `info`) |
+| Variable    | Purpose                                                                                               |
+| ----------- | ----------------------------------------------------------------------------------------------------- |
+| `BASE_URL`  | Base URL used for absolute links, sitemap, robots, and API calls                                      |
+| `LOG_LEVEL` | Logger verbosity: `verbose` / `debug` / `info` / `log` / `warn` / `error` / `fatal` (default: `info`) |
 
 ### GitHub Actions Variables
 
@@ -168,25 +168,37 @@ Commands are run with [`nps`](https://github.com/seblepouls/nps)
 (npm-script-runner). See [package-scripts.js](package-scripts.js) for the full
 list.
 
-| Command              | Description                                  |
-| -------------------- | -------------------------------------------- |
-| `nps dev`            | Start the web dev server (Turborepo dev)     |
-| `nps build`          | Build all apps and packages                  |
-| `nps build.web`      | Build only the web app                       |
-| `nps build.packages` | Build shared packages (constants, types)     |
-| `nps lint`           | Lint all apps and packages                   |
-| `nps lint.web`       | Lint only the web app                        |
-| `nps format`         | Format all apps and packages                 |
-| `nps typecheck`      | Type-check all apps and packages             |
-| `nps test`           | Run repository script and web app tests      |
-| `nps test.watch`     | Run web app tests in watch mode              |
-| `nps setup.github`   | Configure GitHub repository settings         |
+| Command                    | Description                                 |
+| -------------------------- | ------------------------------------------- |
+| `nps dev`                  | Start the web dev server (Turborepo dev)    |
+| `nps build`                | Build all apps and packages                 |
+| `nps build.web`            | Build only the web app                      |
+| `nps build.packages`       | Build shared packages (constants, types)    |
+| `nps lint`                 | Lint all apps and packages                  |
+| `nps lint.web`             | Lint only the web app                       |
+| `nps format`               | Format all apps and packages                |
+| `nps typecheck`            | Type-check all apps and packages            |
+| `nps test`                 | Run repository and workspace unit tests     |
+| `nps test.web.unit`        | Run web unit/component tests                |
+| `nps test.e2e`             | Run all workspace E2E tasks                 |
+| `nps test.web.e2e.all`     | Run web E2E tests at every viewport         |
+| `nps test.web.live`        | Run web E2E tests against an external URL   |
+| `nps test.watch`           | Run web app tests in watch mode             |
+| `nps setup.github`         | Configure GitHub repository settings        |
 | `nps setup.github.secrets` | Configure Repository or Environment secrets |
-| `nps docker.build.web` | Build the web Docker image                  |
-| `nps docker.start.web` | Start the web container via docker-compose  |
-| `nps start`          | Start the built web app in production mode   |
+| `nps docker.build.web`     | Build the web Docker image                  |
+| `nps docker.start.web`     | Start the web container via docker-compose  |
+| `nps start`                | Start the built web app in production mode  |
 
 > Single test file: `cd apps/web && pnpm test -- path/to/test.test.tsx`
+
+Workspace apps join the parallel test orchestration by defining `test` for
+unit/component tests and `test:e2e` for E2E tests. Live tests are opt-in and
+app-scoped because they may access external services. For example:
+
+```sh
+PLAYWRIGHT_BASE_URL=https://staging.example.com nps test.web.live
+```
 
 ## 🔄 GitHub Actions Workflows
 
@@ -196,14 +208,14 @@ project standards.
 
 ### Available Workflows
 
-| Workflow            | Trigger                 | Purpose                                                                |
-| ------------------- | ----------------------- | ---------------------------------------------------------------------- |
-| **Assign Labels**   | PR opened               | Automatically assigns labels based on branch naming convention         |
-| **Sync Labels**     | Manual dispatch         | Synchronizes repository labels with `.github/labels.yml` configuration |
-| **Display Details** | Manual dispatch         | Displays project, apps, and repository information                     |
-| **Release Drafter** | Push/PR to main         | Creates and updates draft releases with categorized changes            |
-| **Tests**           | Push/PR to main         | Runs tests for affected apps and packages                              |
-| **Run AI Agent**    | Issue/PR comment        | Executes AI-powered code tasks via `/oc` or `/opencode` commands       |
+| Workflow            | Trigger          | Purpose                                                                |
+| ------------------- | ---------------- | ---------------------------------------------------------------------- |
+| **Assign Labels**   | PR opened        | Automatically assigns labels based on branch naming convention         |
+| **Sync Labels**     | Manual dispatch  | Synchronizes repository labels with `.github/labels.yml` configuration |
+| **Display Details** | Manual dispatch  | Displays project, apps, and repository information                     |
+| **Release Drafter** | Push/PR to main  | Creates and updates draft releases with categorized changes            |
+| **Tests**           | Push/PR to main  | Runs tests for affected apps and packages                              |
+| **Run AI Agent**    | Issue/PR comment | Executes AI-powered code tasks via `/oc` or `/opencode` commands       |
 
 ### Documentation
 

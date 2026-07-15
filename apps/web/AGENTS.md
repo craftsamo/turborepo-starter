@@ -131,7 +131,13 @@ Tests are located in `src/tests/**/*.test.tsx` using Vitest + jsdom.
 
 Run tests with:
 
-- `nps test.web` - Run all web app tests
+- `nps test.web` / `nps test.web.unit` - Run Vitest unit/component tests
+- `nps test.web.e2e.desktop` - Run Playwright in desktop Chromium
+- `nps test.web.e2e.tablet` - Run Playwright in tablet Chromium
+- `nps test.web.e2e.mobile` - Run Playwright in mobile Chromium
+- `nps test.web.e2e.all` - Run all Playwright viewport projects
+- `PLAYWRIGHT_BASE_URL=https://staging.example.com nps test.web.live` - Run the
+  same Playwright smoke test against an external deployment
 - `nps test.watch` - Watch mode
 - `cd apps/web && pnpm test -- path/to/test.test.tsx` - Single test file
 
@@ -144,3 +150,7 @@ Test utilities:
   `next/router`. Add global mocks here.
 - Server components are async — `await` the component before rendering:
   `render(await RootPage())`, wrapped in `act`/`waitFor` as needed.
+- Local Playwright runs own `WEB_E2E_PORT` (3100 by default) and never reuse an
+  existing server. `nps test.web.live` instead requires `PLAYWRIGHT_BASE_URL`
+  and never starts a local server. Keep every future browser app on a distinct
+  default port so Turbo can run E2E tasks concurrently.

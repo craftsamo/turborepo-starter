@@ -11,8 +11,15 @@
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write \"src/**/*.{ts,tsx,md,css,json}\"",
     "test": "vitest run",
+    "test:unit": "vitest run",
     "test:watch": "vitest --watch",
-    "test:ci": "vitest run"
+    "test:ci": "vitest run",
+    "test:e2e": "playwright test",
+    "test:e2e:desktop": "playwright test --project=desktop",
+    "test:e2e:tablet": "playwright test --project=tablet",
+    "test:e2e:mobile": "playwright test --project=mobile",
+    "test:e2e:all": "playwright test --project=desktop --project=tablet --project=mobile",
+    "test:live": "playwright test --config=playwright.live.config.ts"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.3",
@@ -29,6 +36,7 @@
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^15.1.5",
+    "@playwright/test": "^1.61.1",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",

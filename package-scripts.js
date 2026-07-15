@@ -2,7 +2,7 @@ const path = require("path");
 
 const webPath = path.resolve(__dirname, "apps/web");
 
-const ciWebPath = path.resolve(__dirname, "out/apps/web");
+const ciPath = path.resolve(__dirname, "out");
 
 module.exports = {
   scripts: {
@@ -52,13 +52,35 @@ module.exports = {
       },
     },
     test: {
-      default: `nps test.scripts && nps test.web`,
+      default: `nps test.scripts && npx turbo run test`,
       scripts: `node --test scripts/tests/*.test.mjs`,
-      web: `cd ${webPath} && pnpm test`,
+      e2e: `npx turbo run test:e2e`,
+      web: {
+        default: `nps test.web.unit`,
+        unit: `npx turbo run test --filter=web`,
+        e2e: {
+          default: `nps test.web.e2e.all`,
+          desktop: `npx turbo run test:e2e --filter=web -- --project=desktop`,
+          tablet: `npx turbo run test:e2e --filter=web -- --project=tablet`,
+          mobile: `npx turbo run test:e2e --filter=web -- --project=mobile`,
+          all: `npx turbo run test:e2e --filter=web`,
+        },
+        live: `npx turbo run test:live --filter=web`,
+      },
       ci: {
         default: `nps test.ci.scripts && nps test.ci.web`,
         scripts: `node --test scripts/tests/*.test.mjs`,
-        web: `cd ${ciWebPath} && pnpm test:ci`,
+        web: {
+          default: `nps test.ci.web.unit`,
+          unit: `cd ${ciPath} && pnpm exec turbo run test:ci --filter=web`,
+          e2e: {
+            default: `nps test.ci.web.e2e.all`,
+            desktop: `cd ${ciPath} && pnpm exec turbo run test:e2e --filter=web -- --project=desktop`,
+            tablet: `cd ${ciPath} && pnpm exec turbo run test:e2e --filter=web -- --project=tablet`,
+            mobile: `cd ${ciPath} && pnpm exec turbo run test:e2e --filter=web -- --project=mobile`,
+            all: `cd ${ciPath} && pnpm exec turbo run test:e2e --filter=web`,
+          },
+        },
       },
       watch: {
         default: `nps test.watch.web`,
