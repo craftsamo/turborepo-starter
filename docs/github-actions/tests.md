@@ -4,47 +4,50 @@
 
 ## Prerequisites
 
-- Push to `main` or `develop` branches with application, package, workflow, or
-  root toolchain changes
-- Pull request against `main` or `develop` branches with the same relevant
-  changes
+- Push to `main` with application, package, workflow, or root toolchain changes
+- Pull request against `main`
 - Or manual trigger via GitHub Actions UI (`workflow_dispatch`)
 - Node.js 24.x compatible environment
 - pnpm 11.5.3 managed by Corepack with a lockfile present
 
 ## How It Works
 
-The workflow automatically runs tests for applications and packages when
-relevant changes are detected. It uses path filtering to optimize test execution
-by only running tests when specific directories change.
+The workflow always reports a `Required checks` result for pull requests while
+using path filtering to skip expensive application checks when no relevant files
+changed.
 
 ### Process
 
-1. **Trigger**: Push/PR to `main`/`develop` or manual dispatch
+1. **Trigger**: Push/PR to `main` or manual dispatch
 2. **Filter**: Detect application, package, workflow, and root toolchain changes
 3. **Setup**: Install Node.js 24.x, cache dependencies, lint, and typecheck
 4. **Prepare**: Prune monorepo and install dependencies (CI mode)
 5. **Build**: Build the application
 6. **Test**: Run test suite
+7. **Required checks**: Aggregate required jobs into one Ruleset-compatible result
 
 ### Job Structure
 
-| Job     | Purpose                               | Conditions               |
-| ------- | ------------------------------------- | ------------------------ |
-| changes | Detect file changes in relevant paths | Always runs              |
-| setup   | Install, lint, and typecheck           | Runs if changes detected |
-| test    | Build and test the application        | Runs if setup succeeds   |
+| Job             | Purpose                                   | Conditions               |
+| --------------- | ----------------------------------------- | ------------------------ |
+| script-tests    | Test repository automation scripts        | Always runs              |
+| changes         | Detect file changes in relevant paths     | Always runs              |
+| setup           | Install, lint, and typecheck              | Runs if changes detected |
+| test            | Build and test the application            | Runs if setup succeeds   |
+| Required checks | Aggregate the required results for `main` | Always runs              |
 
 ### Change Detection
 
 The workflow uses [dorny/paths-filter](https://github.com/dorny/paths-filter) to
 detect changes:
 
-| Target | Paths Monitored                                                         |
-| ------ | ----------------------------------------------------------------------- |
-| web    | `apps/web/**`, `packages/**`, the tests workflow, and root toolchain files |
+| Target | Paths Monitored                                                                          |
+| ------ | ---------------------------------------------------------------------------------------- |
+| web    | `apps/web/**`, `packages/**`, `scripts/**`, the tests workflow, and root toolchain files |
 
 Tests only run for a target if changes are detected in its monitored paths.
+Manual dispatches run all targets so repository setup can verify the required
+status check before protecting `main`.
 
 ### Commands Executed
 

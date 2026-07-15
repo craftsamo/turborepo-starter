@@ -2,7 +2,7 @@ name: Tests
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
     paths:
       - ".github/workflows/tests.yml"
       - ".cz-config.js"
@@ -17,20 +17,7 @@ on:
       - "scripts/**"
       - "turbo.json"
   pull_request:
-    branches: [main, develop]
-    paths:
-      - ".github/workflows/tests.yml"
-      - ".cz-config.js"
-      - ".husky/**"
-      - "apps/**"
-      - "commitlint.config.js"
-      - "package.json"
-      - "package-scripts.js"
-      - "packages/**"
-      - "pnpm-lock.yaml"
-      - "pnpm-workspace.yaml"
-      - "scripts/**"
-      - "turbo.json"
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -57,11 +44,12 @@ jobs:
   changes:
     runs-on: ubuntu-latest
     outputs:
-      web: ${{ steps.filter.outputs.web }}
+      web: ${{ steps.force.outputs.web || steps.filter.outputs.web }}
     steps:
       - uses: actions/checkout@v5
       - uses: dorny/paths-filter@v3
         id: filter
+        if: github.event_name != 'workflow_dispatch'
         with:
           filters: |
             web:
@@ -72,7 +60,12 @@ jobs:
               - 'packages/**'
               - 'pnpm-lock.yaml'
               - 'pnpm-workspace.yaml'
+              - 'scripts/**'
               - 'turbo.json'
+      - name: Run all checks for manual dispatch
+        id: force
+        if: github.event_name == 'workflow_dispatch'
+        run: echo "web=true" >> "$GITHUB_OUTPUT"
 
   setup:
     runs-on: ubuntu-latest
@@ -150,3 +143,25 @@ jobs:
       - name: Test
         if: matrix.run == 'true'
         run: npx nps test.ci.${{ matrix.target }}
+
+  required-checks:
+    name: Required checks
+    if: always()
+    needs: [script-tests, changes, setup, test]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify required jobs
+        env:
+          SCRIPT_TESTS_RESULT: ${{ needs.script-tests.result }}
+          CHANGES_RESULT: ${{ needs.changes.result }}
+          WEB_CHANGED: ${{ needs.changes.outputs.web }}
+          SETUP_RESULT: ${{ needs.setup.result }}
+          TEST_RESULT: ${{ needs.test.result }}
+        run: |
+          if [[ "$SCRIPT_TESTS_RESULT" != "success" || "$CHANGES_RESULT" != "success" ]]; then
+            exit 1
+          fi
+
+          if [[ "$WEB_CHANGED" == "true" && ( "$SETUP_RESULT" != "success" || "$TEST_RESULT" != "success" ) ]]; then
+            exit 1
+          fi
