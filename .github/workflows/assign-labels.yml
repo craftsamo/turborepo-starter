@@ -13,29 +13,24 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      BRANCH_TYPE: ${{ github.head_ref }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      REPOSITORY: ${{ github.repository }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
       - name: Get label name
         id: label_name
         run: |
-          branch_type=$(echo ${{ github.head_ref }} | cut -d "/" -f1)
-          if [ $branch_type == 'feat' ]; then
-            label_name="🌱feature"
-          elif [ $branch_type == 'enhance' ]; then
-            label_name="⚒️enhancement"
-          elif [ $branch_type == 'docs' ]; then
-            label_name="📝documentation"
-          elif [ $branch_type == 'fix' ]; then
-            label_name="🐛bug"
-          elif [ $branch_type == 'hotfix' ]; then
-            label_name="🐞hotfix"
-          else
-            label_name=""
-          fi
-          echo "label_name=$label_name" >> $GITHUB_OUTPUT
+          case "${BRANCH_TYPE%%/*}" in
+            feat) label_name="🌱feature" ;;
+            enhance|improve|refactor) label_name="⚒️enhancement" ;;
+            docs) label_name="📝documentation" ;;
+            fix) label_name="🐛bug" ;;
+            hotfix) label_name="🐞hotfix" ;;
+            *) label_name="" ;;
+          esac
+          echo "label_name=$label_name" >> "$GITHUB_OUTPUT"
       - name: Auto labeling
         if: ${{ steps.label_name.outputs.label_name != '' }}
-        run: |
-          number=$(echo ${{ github.event.pull_request.number }})
-          gh pr edit $number --add-label ${{ steps.label_name.outputs.label_name }}
+        env:
+          LABEL_NAME: ${{ steps.label_name.outputs.label_name }}
+        run: gh pr edit "$PR_NUMBER" --repo "$REPOSITORY" --add-label "$LABEL_NAME"

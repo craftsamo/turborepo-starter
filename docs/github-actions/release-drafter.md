@@ -61,8 +61,9 @@ Version bumps are determined by labels on pull requests:
 Labels are automatically applied based on branch naming patterns or file
 changes:
 
-1. **Enhancement**: Branch name starts with `enhance/`, `improve/`,
-   `refactor/`, or `enhancement/`
-2. **Bug Fix**: Branch name starts with `fix/`
-3. **Documentation**: Branch name starts with `doc/`, `document/`, or
-   `documentation/` OR changes `.md` files
+1. **Feature**: Branch name starts with `feat/`
+2. **Enhancement**: Branch name starts with `enhance/`, `improve/`, or
+   `refactor/`
+3. **Bug Fix**: Branch name starts with `fix/`
+4. **Hotfix**: Branch name starts with `hotfix/`
+5. **Documentation**: Branch name starts with `docs/` or changes `.md` files

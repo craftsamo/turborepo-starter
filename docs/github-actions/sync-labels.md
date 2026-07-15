@@ -36,12 +36,12 @@ The workflow manages all labels defined in `.github/labels.yml`:
 
 - **Types**: `🌱feature`, `⚒️enhancement`, `🐛bug`, `🐞hotfix`,
   `📝documentation`
-- **Questions/Issues**: `💬quesion`, `🔁duplicate`, `🚫wontfix`
+- **Questions/Issues**: `💬question`, `🔁duplicate`, `🚫wontfix`
 - **Version**: `🌟major`
 - **Apps**: `🌐app: web`
-- **Packages**: `📦package: jest`, `📦package: vitest`, `📦package: eslint`,
+- **Packages**: `📦package: vitest`, `📦package: eslint`,
   `📦package: prettier`, `📦package: tsconfig`, `📦package: ui`,
   `📦package: types`, `📦package: constants`
 - **Workflows**: `🔄workflow: sync-labels`, `🔄workflow: release`,
-  `🔄workflow: deployment`, `🔄workflow: get-details`,
+  `🔄workflow: get-details`,
   `🔄workflow: display-details`, `🔄workflow: tests`

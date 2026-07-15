@@ -12,6 +12,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - name: Migrate renamed labels
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          legacy_exists=false
+          corrected_exists=false
+          gh label view "💬quesion" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 && legacy_exists=true
+          gh label view "💬question" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 && corrected_exists=true
+
+          if [[ "$legacy_exists" == "true" && "$corrected_exists" == "true" ]]; then
+            echo "Both question labels exist. Merge their assignments before syncing." >&2
+            exit 1
+          fi
+
+          if [[ "$legacy_exists" == "true" ]]; then
+            gh label edit "💬quesion" --repo "$GITHUB_REPOSITORY" --name "💬question"
+          fi
       - name: Sync labels
         uses: micnncim/action-label-syncer@v1
         env:

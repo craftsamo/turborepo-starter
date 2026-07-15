@@ -14,7 +14,7 @@
 - name: "📝documentation"
   description: "Documentation improvement or addition"
   color: "0075CA"
-- name: "💬quesion"
+- name: "💬question"
   description: "General inquiries or clarifications"
   color: "D876E3"
 - name: "🔁duplicate"
