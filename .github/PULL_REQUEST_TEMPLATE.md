@@ -11,7 +11,7 @@ Describe the changes in the following format:
   - Detailed change 1
   - Detailed change 2
 
-- ### Improvement or bugfix of YY feature
+- ### Improvement or bug fix of YY feature
   - Explanation of the change
   - Effect of the change
 -->

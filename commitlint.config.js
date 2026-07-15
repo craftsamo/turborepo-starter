@@ -5,7 +5,7 @@ module.exports = {
     "body-max-line-length": [2, "always", 100],
     "footer-leading-blank": [1, "always"],
     "footer-max-line-length": [2, "always", 100],
-    "header-max-length": [2, "always", 100],
+    "header-max-length": [2, "always", 72],
     "header-trim": [2, "always"],
     "subject-case": [
       2,
@@ -14,6 +14,7 @@ module.exports = {
     ],
     "subject-empty": [2, "never"],
     "subject-full-stop": [2, "never", "."],
+    "subject-max-length": [2, "always", 50],
     "type-case": [2, "always", "lower-case"],
     "type-empty": [2, "never"],
     "type-enum": [
@@ -26,7 +27,6 @@ module.exports = {
         "docs",
         "feat",
         "fix",
-        "bugfix",
         "perf",
         "refactor",
         "revert",

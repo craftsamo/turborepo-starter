@@ -8,7 +8,8 @@
   "scripts": {
     "build": "turbo run build",
     "commit": "cz",
-    "postinstall": "node -e \"const f='scripts/link-agent-skills.mjs';if(require('fs').existsSync(f))require('child_process').execFileSync(process.execPath,[f],{stdio:'inherit'})\""
+    "postinstall": "node -e \"const f='scripts/link-agent-skills.mjs';if(require('fs').existsSync(f))require('child_process').execFileSync(process.execPath,[f],{stdio:'inherit'})\"",
+    "prepare": "node -e \"const f='scripts/install-husky.mjs';if(require('fs').existsSync(f))require('child_process').execFileSync(process.execPath,[f],{stdio:'inherit'})\""
   },
   "devDependencies": {
     "@commitlint/cli": "^19.6.1",

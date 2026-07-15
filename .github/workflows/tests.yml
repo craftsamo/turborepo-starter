@@ -5,23 +5,31 @@ on:
     branches: [main, develop]
     paths:
       - ".github/workflows/tests.yml"
+      - ".cz-config.js"
+      - ".husky/**"
       - "apps/**"
+      - "commitlint.config.js"
       - "package.json"
       - "package-scripts.js"
       - "packages/**"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
+      - "scripts/**"
       - "turbo.json"
   pull_request:
     branches: [main, develop]
     paths:
       - ".github/workflows/tests.yml"
+      - ".cz-config.js"
+      - ".husky/**"
       - "apps/**"
+      - "commitlint.config.js"
       - "package.json"
       - "package-scripts.js"
       - "packages/**"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
+      - "scripts/**"
       - "turbo.json"
   workflow_dispatch:
 
@@ -34,6 +42,18 @@ env:
   COREPACK_ENABLE_DOWNLOAD_PROMPT: 0
 
 jobs:
+  script-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Use Node.js 24.x
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24.x
+          package-manager-cache: false
+      - name: Test repository scripts
+        run: npx nps test.ci.scripts
+
   changes:
     runs-on: ubuntu-latest
     outputs:
