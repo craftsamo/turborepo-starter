@@ -45,10 +45,12 @@ module.exports = {
       },
     },
     test: {
-      default: `nps test.web`,
+      default: `nps test.scripts && nps test.web`,
+      scripts: `node --test scripts/tests/*.test.mjs`,
       web: `cd ${webPath} && pnpm test`,
       ci: {
-        default: `nps test.ci.web`,
+        default: `nps test.ci.scripts && nps test.ci.web`,
+        scripts: `node --test scripts/tests/*.test.mjs`,
         web: `cd ${ciWebPath} && pnpm test:ci`,
       },
       watch: {
