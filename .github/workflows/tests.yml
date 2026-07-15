@@ -144,10 +144,48 @@ jobs:
         if: matrix.run == 'true'
         run: npx nps test.ci.${{ matrix.target }}
 
+  e2e:
+    needs: [setup, changes]
+    runs-on: ubuntu-latest
+    if: needs.setup.result == 'success' && needs.changes.outputs.web == 'true'
+    steps:
+      - uses: actions/checkout@v5
+      - name: Use Node.js 24.x
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24.x
+          package-manager-cache: false
+      - name: Enable Corepack
+        run: corepack enable
+      - name: Restore pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ needs.setup.outputs.pnpm-store-dir }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+      - name: Prepare
+        run: npx nps prepare.ci.web
+      - name: Install Chromium
+        working-directory: out/apps/web
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Test E2E
+        run: npx nps test.ci.web.e2e.all
+      - name: Upload Playwright artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-playwright-artifacts
+          path: |
+            out/apps/web/playwright-report/
+            out/apps/web/test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
   required-checks:
     name: Required checks
     if: always()
-    needs: [script-tests, changes, setup, test]
+    needs: [script-tests, changes, setup, test, e2e]
     runs-on: ubuntu-latest
     steps:
       - name: Verify required jobs
@@ -157,11 +195,12 @@ jobs:
           WEB_CHANGED: ${{ needs.changes.outputs.web }}
           SETUP_RESULT: ${{ needs.setup.result }}
           TEST_RESULT: ${{ needs.test.result }}
+          E2E_RESULT: ${{ needs.e2e.result }}
         run: |
           if [[ "$SCRIPT_TESTS_RESULT" != "success" || "$CHANGES_RESULT" != "success" ]]; then
             exit 1
           fi
 
-          if [[ "$WEB_CHANGED" == "true" && ( "$SETUP_RESULT" != "success" || "$TEST_RESULT" != "success" ) ]]; then
+          if [[ "$WEB_CHANGED" == "true" && ( "$SETUP_RESULT" != "success" || "$TEST_RESULT" != "success" || "$E2E_RESULT" != "success" ) ]]; then
             exit 1
           fi
