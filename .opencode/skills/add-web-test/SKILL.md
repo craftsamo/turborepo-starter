@@ -41,16 +41,18 @@ present) and correctly handles async server components.
    from raw `@testing-library/react`. `testUtils.tsx` re-exports
    `customRender` as `render` and also re-exports `@testing-library/react` and
    `@testing-library/user-event`:
+
    ```tsx
-   import { render, act, waitFor, screen } from '../testUtils';
+   import { render, act, waitFor, screen } from "../testUtils";
    ```
 
 3. **For async server components**, `await` the component before rendering
    (they return a `Promise<ReactElement>`):
-   ```tsx
-   import MyPage from '../../app/page';
 
-   it('renders', async () => {
+   ```tsx
+   import MyPage from "../../app/page";
+
+   it("renders", async () => {
      await act(async () => {
        render(await MyPage());
      });
@@ -59,6 +61,7 @@ present) and correctly handles async server components.
      });
    });
    ```
+
    See `src/tests/app/page.test.tsx:5-14` for the exact pattern.
 
 4. **For client components** that use Redux, the wrapper already provides
@@ -82,7 +85,7 @@ present) and correctly handles async server components.
 <Verify>
 
 - `cd apps/web && pnpm test -- path/to/test.test.tsx` — single file
-- `nps test.web` — all web app tests
+- `nps test.web` / `nps test.web.unit` — all Vitest unit/component tests through Turbo
 - `nps test.watch` — watch mode
 - `nps lint.web` + `nps typecheck.web` — keep the test green with lint/types
 
