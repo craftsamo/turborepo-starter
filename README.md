@@ -95,7 +95,20 @@ pnpm install
 pnpm add -g nps
 ```
 
-3. **Configure GitHub**
+3. **Initialize the project**
+
+Replace the starter metadata and choose how the derived project is licensed:
+
+```sh
+nps setup.project
+```
+
+The default private/commercial profile marks the project as `UNLICENSED`,
+replaces the root license with an all-rights-reserved notice, and preserves the
+starter's MIT license under `LICENSES/`. See
+[Project Setup](docs/setup-project.md) for dry-run and non-interactive usage.
+
+4. **Configure GitHub**
 
 Preview and apply the starter's repository settings, Actions permissions,
 labels, and `main` protection:
@@ -108,7 +121,7 @@ nps setup.github
 See [GitHub Repository Setup](docs/github-actions/setup-github.md) for
 non-interactive setup and secret management.
 
-4. **Configure local environment**
+5. **Configure local environment**
 
 Copy the example env file and fill in the values you need for local
 development:
@@ -117,7 +130,7 @@ development:
 cp apps/web/.env.example apps/web/.env   # BASE_URL, LOG_LEVEL (optional)
 ```
 
-5. **Run Development Server**
+6. **Run Development Server**
 
 ```sh
 nps dev
@@ -184,6 +197,7 @@ list.
 | `nps test.web.e2e.all`     | Run web E2E tests at every viewport         |
 | `nps test.web.live`        | Run web E2E tests against an external URL   |
 | `nps test.watch`           | Run web app tests in watch mode             |
+| `nps setup.project`        | Initialize project metadata and licensing   |
 | `nps setup.github`         | Configure GitHub repository settings        |
 | `nps setup.github.secrets` | Configure Repository or Environment secrets |
 | `nps docker.build.web`     | Build the web Docker image                  |

@@ -8,6 +8,7 @@ module.exports = {
   scripts: {
     link: `node scripts/link-agent-skills.mjs`,
     setup: {
+      project: `node scripts/setup/project/index.mts`,
       github: {
         default: `node scripts/setup/github/repository.mts`,
         secrets: `node scripts/setup/github/secrets.mts`,
