@@ -29,13 +29,23 @@ WORKDIR /app
 # Enable Corepack so the pinned pnpm version is used
 RUN corepack enable
 
-# Copy the pruned package.json files, lockfile and pnpm-workspace.yaml.
+# Copy only the files `pnpm fetch` depends on: the lockfile, the workspace
+# layout and the root package.json (Corepack reads its packageManager field).
 # `turbo prune --docker` places pnpm-lock.yaml and pnpm-workspace.yaml in out/json.
+COPY --from=builder /app/out/json/package.json /app/out/json/pnpm-lock.yaml /app/out/json/pnpm-workspace.yaml ./
+
+# Populate the pnpm store from the lockfile alone, so this layer stays cached
+# as long as pnpm-lock.yaml is unchanged (e.g. across version bumps and
+# package.json script edits).
+RUN pnpm fetch
+
+# Copy the pruned package.json files of the isolated subworkspace
 COPY --from=builder /app/out/json/ .
 COPY --from=builder /app/turbo.json ./turbo.json
 
-# Install dependencies (dev deps included; required by the build stage)
-RUN pnpm install --frozen-lockfile
+# Install dependencies from the pre-populated store, without network access
+# (dev deps included; required by the build stage)
+RUN pnpm install --frozen-lockfile --offline
 
 ###############################################################################
 # Sourcer stage: Build the application                                        #
