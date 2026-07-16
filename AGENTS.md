@@ -7,6 +7,19 @@ This is a monorepo with TypeScript, Turbo, and pnpm workspaces.
 1. **Session title**: begin with verb (e.g., `Add ...`, `Fix ...`), max 30 chars
 2. **Language**: respond in user's language
 
+## Skill Routing
+
+When asked to update this fork from the repository configured as the `upstream`
+Git remote, load and follow the `sync-upstream` skill before running Git
+commands. Match the user's intent, including requests to incorporate the parent
+repository's latest changes, bring the fork up to date, rebase the fork onto
+`upstream/main`, or resolve conflicts caused by that operation.
+
+Do not use `sync-upstream` for ordinary feature-branch rebases, unrelated merge
+conflicts, or deciding which fork layer should own a change. Use
+`fork-layer-placement` for the ownership decision. The words "rebase", "merge
+conflict", or "fork" alone are not sufficient to trigger `sync-upstream`.
+
 ## Build, Lint, Test Commands
 
 Use `nps` (npm-script-runner) for all commands. See `package-scripts.js` for
