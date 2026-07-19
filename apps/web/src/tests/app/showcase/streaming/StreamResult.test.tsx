@@ -8,6 +8,7 @@ import {
 describe('RSC streaming result', () => {
   it('renders a resolved server payload', async () => {
     const result = await StreamResult({
+      locale: 'en',
       resultPromise: Promise.resolve({
         delayMs: 800,
         title: 'Primary payload arrived',
@@ -24,8 +25,10 @@ describe('RSC streaming result', () => {
   });
 
   it('announces a pending server payload', async () => {
+    const result = await StreamResultSkeleton({ label: 'Secondary payload', locale: 'en' });
+
     await act(async () => {
-      render(<StreamResultSkeleton label='Secondary payload' />);
+      render(result);
     });
 
     expect(screen.getByRole('status', { name: 'Secondary payload is streaming' })).toHaveAttribute(
