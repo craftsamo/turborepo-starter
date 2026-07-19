@@ -1,6 +1,7 @@
 'use client';
 
 import { Minus, Plus, RotateCcw, Sparkles } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@workspace/ui/components/button';
 import { toast } from '@workspace/ui/components/sonner';
 import { HStack, VStack } from '@/components';
@@ -10,15 +11,23 @@ import { decrement, increment, reset } from '@/store/slices/counter';
 export const StateFeedbackDemo = () => {
   const count = useAppSelector((state) => state.counter.value);
   const dispatch = useAppDispatch();
+  const t = useTranslations('counter');
 
   const updateCount = (action: 'decrement' | 'increment' | 'reset') => {
     if (action === 'decrement') dispatch(decrement());
     if (action === 'increment') dispatch(increment());
     if (action === 'reset') dispatch(reset());
 
-    toast.success(action === 'reset' ? 'Counter reset' : `Counter ${action}ed`, {
-      description: 'Redux updated the shared state.',
-    });
+    toast.success(
+      action === 'reset'
+        ? t('resetToast')
+        : action === 'decrement'
+          ? t('decrementToast')
+          : t('incrementToast'),
+      {
+        description: t('toastDescription'),
+      },
+    );
   };
 
   return (
@@ -34,7 +43,7 @@ export const StateFeedbackDemo = () => {
         <Sparkles className='size-4 text-primary' aria-hidden='true' />
       </HStack>
       <output
-        aria-label='Counter value'
+        aria-label={t('value')}
         className='font-mono text-7xl font-semibold tabular-nums tracking-tighter sm:text-8xl'
       >
         {count}
@@ -43,7 +52,7 @@ export const StateFeedbackDemo = () => {
         <Button
           variant='outline'
           size='icon'
-          aria-label='Decrease counter'
+          aria-label={t('decrease')}
           onClick={() => updateCount('decrement')}
         >
           <Minus />
@@ -51,14 +60,14 @@ export const StateFeedbackDemo = () => {
         <Button
           variant='outline'
           size='icon'
-          aria-label='Reset counter'
+          aria-label={t('reset')}
           onClick={() => updateCount('reset')}
         >
           <RotateCcw />
         </Button>
         <Button className='ml-auto' onClick={() => updateCount('increment')}>
           <Plus />
-          Increment
+          {t('increment')}
         </Button>
       </HStack>
     </VStack>

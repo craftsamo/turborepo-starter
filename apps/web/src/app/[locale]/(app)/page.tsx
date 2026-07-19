@@ -1,28 +1,40 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { ArrowRight, Github } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
+import type { Language } from '@workspace/constants';
 import { Button } from '@workspace/ui/components/button';
+import type { PageProps } from '@workspace/types/web';
 import { Container, Heading, HStack, Screen, Section, Text, VStack } from '@/components';
 import { Footer } from '@/components/Footer';
-
-const workspaceLayers = [
-  { path: 'apps/web', detail: 'Next.js 16 application', index: '01' },
-  { path: 'packages/ui', detail: 'Shared interface primitives', index: '02' },
-  { path: 'packages/types', detail: 'Cross-package contracts', index: '03' },
-  { path: 'packages/constants', detail: 'Runtime configuration', index: '04' },
-] as const;
+import { createLocalizedMetadata } from '@/i18n/metadata';
+import { Link } from '@/i18n/navigation';
 
 const stack = ['Next.js 16', 'React 19', 'Turborepo'] as const;
 
-export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: 'Home',
-    description:
-      'Boilerplate for streamlined development of Turborepo applications with best practices and curated configurations.',
-  };
+export async function generateMetadata({
+  params,
+}: PageProps<{ locale: Language }>): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'metadata' });
+
+  return createLocalizedMetadata({
+    language: locale,
+    pathname: '/',
+    title: t('homeTitle'),
+    description: t('homeDescription'),
+  });
 }
 
-export default async function RootPage() {
+export default async function RootPage({ params }: PageProps<{ locale: Language }>) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'home' });
+  const workspaceLayers = [
+    { path: 'apps/web', detail: t('layers.web'), index: '01' },
+    { path: 'packages/ui', detail: t('layers.ui'), index: '02' },
+    { path: 'packages/types', detail: t('layers.types'), index: '03' },
+    { path: 'packages/constants', detail: t('layers.constants'), index: '04' },
+  ] as const;
+
   return (
     <Screen smooth hideScrollbar>
       <Section
@@ -35,12 +47,11 @@ export default async function RootPage() {
             <VStack gap={8}>
               <VStack gap={4}>
                 <Text variant='eyebrow' className='font-mono uppercase tracking-widest'>
-                  Turborepo Starter / 2026
+                  {t('eyebrow')}
                 </Text>
-                <Heading className='max-w-[12ch]'>Build from a stronger starting point.</Heading>
+                <Heading className='max-w-[12ch]'>{t('heading')}</Heading>
                 <Text variant='lead' measure='prose'>
-                  A production-minded monorepo foundation with modern React, shared packages, typed
-                  state, and curated tooling already working together.
+                  {t('introduction')}
                 </Text>
               </VStack>
 
@@ -58,19 +69,19 @@ export default async function RootPage() {
               <HStack collapse gap={3} className='w-full sm:w-auto'>
                 <Button asChild size='lg' className='w-full sm:w-auto'>
                   <Link href='/showcase'>
-                    Explore showcase
+                    {t('exploreShowcase')}
                     <ArrowRight />
                   </Link>
                 </Button>
                 <Button asChild size='lg' variant='outline' className='w-full sm:w-auto'>
-                  <Link
+                  <a
                     href='https://github.com/craftsamo/turborepo-starter'
                     target='_blank'
                     rel='noopener noreferrer'
                   >
                     <Github />
-                    View on GitHub
-                  </Link>
+                    {t('viewOnGitHub')}
+                  </a>
                 </Button>
               </HStack>
             </VStack>
@@ -81,7 +92,7 @@ export default async function RootPage() {
                   <span className='size-2 rounded-full bg-primary' />
                   <span className='font-mono text-xs font-semibold'>workspace/</span>
                 </HStack>
-                <span className='font-mono text-xs text-muted-foreground'>4 packages</span>
+                <span className='font-mono text-xs text-muted-foreground'>{t('packageCount')}</span>
               </HStack>
 
               <VStack asChild className='gap-0'>
@@ -112,7 +123,9 @@ export default async function RootPage() {
               <HStack gap={2} className='w-full border-t bg-muted/40 px-5 py-3'>
                 <span className='font-mono text-xs text-primary'>$</span>
                 <span className='font-mono text-xs text-muted-foreground'>nps dev</span>
-                <span className='ml-auto font-mono text-xs text-muted-foreground'>ready</span>
+                <span className='ml-auto font-mono text-xs text-muted-foreground'>
+                  {t('ready')}
+                </span>
               </HStack>
             </VStack>
           </div>
