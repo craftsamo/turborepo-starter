@@ -1,42 +1,57 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
-import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 import { connection } from 'next/server';
 import { ArrowLeft, Radio } from 'lucide-react';
+import type { Language } from '@workspace/constants';
 import { Button } from '@workspace/ui/components/button';
+import type { PageProps } from '@workspace/types/web';
 import { Container, Heading, HStack, Screen, Section, Text, VStack } from '@/components';
+import { createLocalizedMetadata } from '@/i18n/metadata';
+import { Link } from '@/i18n/navigation';
 import { StreamResult, StreamResultSkeleton, type StreamingDemoResult } from './_components';
 
-export const metadata: Metadata = {
-  title: 'RSC Streaming',
-  description: 'See independent React Server Component boundaries stream into the page.',
-};
+export async function generateMetadata({
+  params,
+}: PageProps<{ locale: Language }>): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'metadata' });
+
+  return createLocalizedMetadata({
+    language: locale,
+    pathname: '/showcase/streaming',
+    title: t('streamingTitle'),
+    description: t('streamingDescription'),
+  });
+}
 
 const resolveAfter = (result: StreamingDemoResult) =>
   new Promise<StreamingDemoResult>((resolve) => {
     setTimeout(() => resolve(result), result.delayMs);
   });
 
-export default async function StreamingPage() {
+export default async function StreamingPage({ params }: PageProps<{ locale: Language }>) {
   await connection();
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'streaming' });
 
   const stages = [
     {
       index: '01',
-      label: 'Primary payload',
+      label: t('primaryLabel'),
       resultPromise: resolveAfter({
         delayMs: 800,
-        title: 'Primary payload arrived',
-        description: 'This boundary resolves first without waiting for the slower sibling below.',
+        title: t('primaryTitle'),
+        description: t('primaryDescription'),
       }),
     },
     {
       index: '02',
-      label: 'Secondary payload',
+      label: t('secondaryLabel'),
       resultPromise: resolveAfter({
         delayMs: 1800,
-        title: 'Secondary payload arrived',
-        description: 'Independent work can finish later while the rest of the page stays usable.',
+        title: t('secondaryTitle'),
+        description: t('secondaryDescription'),
       }),
     },
   ] as const;
@@ -49,12 +64,11 @@ export default async function StreamingPage() {
             <VStack gap={4}>
               <HStack gap={2} className='font-mono text-xs uppercase tracking-widest text-primary'>
                 <Radio className='size-4' aria-hidden='true' />
-                Live server stream
+                {t('eyebrow')}
               </HStack>
-              <Heading>Watch the server arrive in stages.</Heading>
+              <Heading>{t('heading')}</Heading>
               <Text variant='lead' measure='prose'>
-                The route shell renders immediately. Each card then unwraps its own server promise
-                inside an independent Suspense boundary.
+                {t('introduction')}
               </Text>
             </VStack>
 
@@ -71,8 +85,10 @@ export default async function StreamingPage() {
                       <span className='font-mono text-xs text-muted-foreground'>{stage.index}</span>
                       <span className='font-mono text-xs text-muted-foreground'>{stage.label}</span>
                     </HStack>
-                    <Suspense fallback={<StreamResultSkeleton label={stage.label} />}>
-                      <StreamResult resultPromise={stage.resultPromise} />
+                    <Suspense
+                      fallback={<StreamResultSkeleton label={stage.label} locale={locale} />}
+                    >
+                      <StreamResult locale={locale} resultPromise={stage.resultPromise} />
                     </Suspense>
                   </article>
                 </VStack>
@@ -81,15 +97,14 @@ export default async function StreamingPage() {
 
             <div className='rounded-xl border border-dashed bg-muted/30 p-4 sm:p-5'>
               <Text variant='muted' measure='prose'>
-                The top progress bar covers navigation to this route. These skeletons cover server
-                work that continues streaming after the route shell appears.
+                {t('skeletonDescription')}
               </Text>
             </div>
 
             <Button asChild variant='outline' className='w-fit'>
               <Link href='/showcase'>
                 <ArrowLeft />
-                Back to showcase
+                {t('backToShowcase')}
               </Link>
             </Button>
           </VStack>
