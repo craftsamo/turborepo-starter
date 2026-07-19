@@ -1,4 +1,6 @@
 import { CircleCheck } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
+import type { Language } from '@workspace/constants';
 import { HStack, Text, VStack } from '@/components';
 
 export interface StreamingDemoResult {
@@ -8,11 +10,13 @@ export interface StreamingDemoResult {
 }
 
 interface StreamResultProps {
+  locale: Language;
   resultPromise: Promise<StreamingDemoResult>;
 }
 
-export const StreamResult = async ({ resultPromise }: StreamResultProps) => {
+export const StreamResult = async ({ locale, resultPromise }: StreamResultProps) => {
   const result = await resultPromise;
+  const t = await getTranslations({ locale, namespace: 'streaming' });
 
   return (
     <VStack gap={4} className='min-h-36 justify-between border-t pt-5'>
@@ -21,7 +25,7 @@ export const StreamResult = async ({ resultPromise }: StreamResultProps) => {
         <Text variant='muted'>{result.description}</Text>
       </VStack>
       <span className='w-fit rounded-full bg-primary/10 px-3 py-1 font-mono text-xs font-semibold text-primary'>
-        resolved after {result.delayMs.toLocaleString('en-US')} ms
+        {t('resolvedAfter', { delay: result.delayMs })}
       </span>
     </VStack>
   );

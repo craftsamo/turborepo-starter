@@ -1,14 +1,15 @@
+import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { notFound } from 'next/navigation';
 import NextTopLoader from 'nextjs-toploader';
 import type { LayoutProps } from '@workspace/types/web';
 import { Toaster } from '@workspace/ui/components/sonner';
 import '@workspace/ui/globals.css';
 import { ReduxToolProvider, ThemeProvider } from '@/components/Providers';
-
-const baseUrl = process.env.BASE_URL ?? 'http://localhost';
-const SITE_NAME = 'Turborepo Starter';
-const SITE_DESCRIPTION = 'This is the Turborepo Starter web application.';
+import { baseUrl } from '@/i18n/metadata';
+import { routing } from '@/i18n/routing';
 
 const fontSans = Geist({
   subsets: ['latin'],
@@ -20,50 +21,55 @@ const fontMono = Geist_Mono({
   variable: '--font-mono',
 });
 
-// `viewport-fit=cover` lets the mobile bottom nav honor the safe-area inset on
-// notched devices.
 export const viewport: Viewport = {
   viewportFit: 'cover',
 };
 
-export const metadata: Metadata = {
-  metadataBase: new URL(baseUrl),
-  applicationName: SITE_NAME,
-  title: {
-    default: SITE_NAME,
-    template: `%s | ${SITE_NAME}`,
-  },
-  description: SITE_DESCRIPTION,
-  other: {
-    repository: 'https://github.com/craftsamo/turborepo-starter',
-  },
-  openGraph: {
-    type: 'website',
-    siteName: SITE_NAME,
-    title: SITE_NAME,
-    description: SITE_DESCRIPTION,
-    url: '/',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: SITE_NAME,
-    description: SITE_DESCRIPTION,
-  },
-};
+export function generateStaticParams() {
+  return routing.locales.map((locale) => ({ locale }));
+}
 
-/**
- * The root layout component for the application.
- * @param {LayoutProps} props - The layout properties.
- */
-export default async function RootLayout(props: LayoutProps) {
+export async function generateMetadata({
+  params,
+}: LayoutProps<{ locale: string }>): Promise<Metadata> {
+  const { locale } = await params;
+
+  if (!hasLocale(routing.locales, locale)) return {};
+
+  const t = await getTranslations({ locale, namespace: 'site' });
+
+  return {
+    metadataBase: new URL(baseUrl),
+    applicationName: t('name'),
+    title: {
+      default: t('name'),
+      template: `%s | ${t('name')}`,
+    },
+    description: t('description'),
+    manifest: `/${locale}/manifest.webmanifest`,
+    other: {
+      repository: 'https://github.com/craftsamo/turborepo-starter',
+    },
+  };
+}
+
+export default async function LocaleLayout({ children, params }: LayoutProps<{ locale: string }>) {
+  const { locale } = await params;
+
+  if (!hasLocale(routing.locales, locale)) {
+    notFound();
+  }
+
+  setRequestLocale(locale);
+
   return (
-    <html lang='en' suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <body
         className={`${fontSans.variable} ${fontMono.variable} font-sans antialiased overflow-hidden`}
       >
         <ReduxToolProvider>
           <ThemeProvider attribute='class' defaultTheme='system' enableSystem>
-            {props.children}
+            <NextIntlClientProvider>{children}</NextIntlClientProvider>
             <NextTopLoader color='var(--primary)' height={2} shadow={false} showSpinner={false} />
             <Toaster mobileOffset={{ bottom: 'calc(5rem + env(safe-area-inset-bottom))' }} />
           </ThemeProvider>
