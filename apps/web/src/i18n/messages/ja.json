@@ -1,0 +1,122 @@
+{
+  "site": {
+    "name": "Turborepo Starter",
+    "description": "Turborepo Starter の Web アプリケーションです。"
+  },
+  "metadata": {
+    "homeTitle": "ホーム",
+    "homeDescription": "ベストプラクティスと厳選した設定を備え、Turborepo アプリケーションを効率よく開発するためのボイラープレートです。",
+    "showcaseTitle": "ショーケース",
+    "showcaseDescription": "このスターターに組み込まれた状態管理、フィードバック、テーマ、レイアウトの基盤を紹介します。",
+    "streamingTitle": "RSC ストリーミング",
+    "streamingDescription": "独立した React Server Component の境界がページへ順次配信される様子を確認できます。",
+    "notFoundTitle": "404 | ページが見つかりません",
+    "notFoundDescription": "お探しのページは存在しません。"
+  },
+  "navigation": {
+    "primary": "メインナビゲーション",
+    "home": "ホーム",
+    "showcase": "ショーケース",
+    "github": "GitHub",
+    "theme": "テーマ",
+    "toggleTheme": "カラーテーマを切り替える",
+    "logoAlt": "Turborepo Starter のロゴ"
+  },
+  "language": {
+    "label": "言語",
+    "switchTo": "{language}に切り替える"
+  },
+  "home": {
+    "eyebrow": "Turborepo Starter / 2026",
+    "heading": "より強固な土台から始めよう。",
+    "introduction": "モダンな React、共有パッケージ、型付けされた状態管理、厳選したツール群を連携済みの、本番運用を見据えたモノレポ基盤です。",
+    "exploreShowcase": "ショーケースを見る",
+    "viewOnGitHub": "GitHub で見る",
+    "packageCount": "4 パッケージ",
+    "ready": "準備完了",
+    "layers": {
+      "web": "Next.js 16 アプリケーション",
+      "ui": "共有 UI プリミティブ",
+      "types": "パッケージ間の型契約",
+      "constants": "実行時設定"
+    }
+  },
+  "showcase": {
+    "overviewEyebrow": "インタラクティブショーケース / 01",
+    "overviewHeading": "触れて確かめる基盤。",
+    "overviewDescription": "このスターターに組み込み済みの基盤を実際に操作できます。状態を変更し、フィードバックを表示し、テーマを切り替え、レイアウトシステムを体験してください。",
+    "foundationState": "状態管理",
+    "foundationFeedback": "フィードバック",
+    "foundationLayout": "レイアウト",
+    "startExploring": "操作を始める",
+    "openStreaming": "ストリーミングデモを開く",
+    "stateEyebrow": "状態管理とフィードバック / 02",
+    "stateHeading": "目に見える状態管理。",
+    "stateDescription": "すべての操作は型付けされた Redux hooks を通じて dispatch されます。Sonner は操作を妨げることなく、同じ内容を通知します。",
+    "themeEyebrow": "テーマとレイアウト / 03",
+    "themeHeading": "一つのシステムに複数のモード。",
+    "themeDescription": "テーマトークンはすべての表示面をまとめて更新します。このページでは snap モードを使用していますが、同じプリミティブで自然なフローと全画面表示にも対応できます。"
+  },
+  "counter": {
+    "resetToast": "カウンターをリセットしました",
+    "decrementToast": "カウンターを減らしました",
+    "incrementToast": "カウンターを増やしました",
+    "toastDescription": "Redux が共有状態を更新しました。",
+    "value": "カウンターの値",
+    "decrease": "カウンターを減らす",
+    "reset": "カウンターをリセットする",
+    "increment": "増やす"
+  },
+  "themeDemo": {
+    "provider": "テーマプロバイダー",
+    "summary": "一つのトークンシステム、三つの設定。",
+    "light": "ライト",
+    "dark": "ダーク",
+    "system": "システム",
+    "toastTitle": "テーマを{theme}に設定しました",
+    "toastDescription": "デザイントークンがすぐに更新されます。",
+    "colorTokens": "テーマのカラートークン",
+    "background": "背景",
+    "primary": "プライマリー",
+    "secondary": "セカンダリー",
+    "muted": "ミュート",
+    "screenModes": "画面モード",
+    "flow": "flow",
+    "flowDescription": "文書の自然な流れ",
+    "full": "full",
+    "fullDescription": "ビューポートと同じ高さのセクション",
+    "snap": "snap",
+    "snapDescription": "セクションごとに移動する表示"
+  },
+  "streaming": {
+    "eyebrow": "サーバーからライブ配信",
+    "heading": "サーバーから段階的に届く様子を見る。",
+    "introduction": "ルートの外枠はすぐに表示されます。その後、各カードが独立した Suspense 境界内で、それぞれのサーバー Promise を解決します。",
+    "primaryLabel": "第1ペイロード",
+    "primaryTitle": "第1ペイロードが到着しました",
+    "primaryDescription": "下にある低速な処理を待たずに、この境界が先に解決されます。",
+    "secondaryLabel": "第2ペイロード",
+    "secondaryTitle": "第2ペイロードが到着しました",
+    "secondaryDescription": "残りのページを操作できる状態のまま、独立した処理を後から完了できます。",
+    "resolvedAfter": "{delay, number} ms 後に解決",
+    "isStreaming": "{label}を配信中",
+    "streamingLabel": "{label}を配信しています",
+    "skeletonDescription": "上部の進捗バーは、このルートへの移動状況を示します。各スケルトンは、ルートの外枠が表示された後も続くサーバー処理の状況を示します。",
+    "backToShowcase": "ショーケースに戻る"
+  },
+  "footer": {
+    "copyright": "© {year} Turborepo Starter",
+    "github": "GitHub で Turborepo Starter を見る"
+  },
+  "notFound": {
+    "eyebrow": "404 エラー",
+    "heading": "ページが見つかりません",
+    "description": "お探しのページは存在しないか、移動した可能性があります。",
+    "backHome": "ホームに戻る"
+  },
+  "manifest": {
+    "name": "Turborepo Starter",
+    "shortName": "Starter",
+    "description": "Turborepo Starter の Web アプリケーションです。"
+  }
+}
