@@ -1,0 +1,122 @@
+{
+  "site": {
+    "name": "Turborepo Starter",
+    "description": "This is the Turborepo Starter web application."
+  },
+  "metadata": {
+    "homeTitle": "Home",
+    "homeDescription": "Boilerplate for streamlined development of Turborepo applications with best practices and curated configurations.",
+    "showcaseTitle": "Showcase",
+    "showcaseDescription": "Explore the state, feedback, theme, and layout foundations in this starter.",
+    "streamingTitle": "RSC Streaming",
+    "streamingDescription": "See independent React Server Component boundaries stream into the page.",
+    "notFoundTitle": "404 | Page Not Found",
+    "notFoundDescription": "The page you are looking for does not exist."
+  },
+  "navigation": {
+    "primary": "Primary navigation",
+    "home": "Home",
+    "showcase": "Showcase",
+    "github": "GitHub",
+    "theme": "Theme",
+    "toggleTheme": "Toggle color theme",
+    "logoAlt": "Turborepo Starter logo"
+  },
+  "language": {
+    "label": "Language",
+    "switchTo": "Switch to {language}"
+  },
+  "home": {
+    "eyebrow": "Turborepo Starter / 2026",
+    "heading": "Build from a stronger starting point.",
+    "introduction": "A production-minded monorepo foundation with modern React, shared packages, typed state, and curated tooling already working together.",
+    "exploreShowcase": "Explore showcase",
+    "viewOnGitHub": "View on GitHub",
+    "packageCount": "4 packages",
+    "ready": "ready",
+    "layers": {
+      "web": "Next.js 16 application",
+      "ui": "Shared interface primitives",
+      "types": "Cross-package contracts",
+      "constants": "Runtime configuration"
+    }
+  },
+  "showcase": {
+    "overviewEyebrow": "Interactive showcase / 01",
+    "overviewHeading": "Built to be touched.",
+    "overviewDescription": "A working tour of the foundations already wired into this starter. Change state, trigger feedback, switch themes, and move through the layout system.",
+    "foundationState": "State",
+    "foundationFeedback": "Feedback",
+    "foundationLayout": "Layout",
+    "startExploring": "Start exploring",
+    "openStreaming": "Open streaming demo",
+    "stateEyebrow": "State & feedback / 02",
+    "stateHeading": "State you can see.",
+    "stateDescription": "Every control dispatches through the typed Redux hooks. Sonner confirms the same action without blocking the flow.",
+    "themeEyebrow": "Theme & layout / 03",
+    "themeHeading": "One system, multiple modes.",
+    "themeDescription": "Theme tokens update every surface together. This page itself uses the snap mode, while the same primitives also support natural and full-height flows."
+  },
+  "counter": {
+    "resetToast": "Counter reset",
+    "decrementToast": "Counter decremented",
+    "incrementToast": "Counter incremented",
+    "toastDescription": "Redux updated the shared state.",
+    "value": "Counter value",
+    "decrease": "Decrease counter",
+    "reset": "Reset counter",
+    "increment": "Increment"
+  },
+  "themeDemo": {
+    "provider": "Theme provider",
+    "summary": "One token system, three preferences.",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System",
+    "toastTitle": "Theme set to {theme}",
+    "toastDescription": "The design tokens update instantly.",
+    "colorTokens": "Theme color tokens",
+    "background": "Background",
+    "primary": "Primary",
+    "secondary": "Secondary",
+    "muted": "Muted",
+    "screenModes": "Screen modes",
+    "flow": "flow",
+    "flowDescription": "Natural document rhythm",
+    "full": "full",
+    "fullDescription": "Viewport-sized sections",
+    "snap": "snap",
+    "snapDescription": "Focused slide navigation"
+  },
+  "streaming": {
+    "eyebrow": "Live server stream",
+    "heading": "Watch the server arrive in stages.",
+    "introduction": "The route shell renders immediately. Each card then unwraps its own server promise inside an independent Suspense boundary.",
+    "primaryLabel": "Primary payload",
+    "primaryTitle": "Primary payload arrived",
+    "primaryDescription": "This boundary resolves first without waiting for the slower sibling below.",
+    "secondaryLabel": "Secondary payload",
+    "secondaryTitle": "Secondary payload arrived",
+    "secondaryDescription": "Independent work can finish later while the rest of the page stays usable.",
+    "resolvedAfter": "resolved after {delay, number} ms",
+    "isStreaming": "{label} is streaming",
+    "streamingLabel": "Streaming {label}",
+    "skeletonDescription": "The top progress bar covers navigation to this route. These skeletons cover server work that continues streaming after the route shell appears.",
+    "backToShowcase": "Back to showcase"
+  },
+  "footer": {
+    "copyright": "© {year} Turborepo Starter",
+    "github": "Turborepo Starter on GitHub"
+  },
+  "notFound": {
+    "eyebrow": "404 Error",
+    "heading": "Page not found",
+    "description": "The page you are looking for does not exist or has been moved.",
+    "backHome": "Back to home"
+  },
+  "manifest": {
+    "name": "Turborepo Starter",
+    "shortName": "Starter",
+    "description": "This is the Turborepo Starter web application."
+  }
+}
