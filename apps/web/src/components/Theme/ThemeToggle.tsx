@@ -1,6 +1,7 @@
 'use client';
 
 import { Moon, Sun } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@workspace/ui/components/button';
 import { useThemeToggle } from './useThemeToggle';
 
@@ -9,12 +10,13 @@ import { useThemeToggle } from './useThemeToggle';
  */
 export const ThemeToggle = ({ className }: { className?: string }) => {
   const { toggle } = useThemeToggle();
+  const t = useTranslations('navigation');
   return (
     <Button
       size='icon'
       variant='ghost'
       className={className}
-      aria-label='Toggle color theme'
+      aria-label={t('toggleTheme')}
       onClick={toggle}
     >
       <Sun aria-hidden='true' className='size-5 dark:hidden' />
