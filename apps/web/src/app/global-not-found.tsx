@@ -1,13 +1,12 @@
-import { Geist, Geist_Mono } from 'next/font/google';
 import type { Metadata } from 'next';
-import Link from 'next/link';
+import { Geist, Geist_Mono } from 'next/font/google';
 import { ArrowLeft } from 'lucide-react';
-import '@workspace/ui/globals.css';
+import { getLocale, getTranslations } from 'next-intl/server';
 import { Button } from '@workspace/ui/components/button';
-import { ThemeProvider } from '@/components/Providers';
+import '@workspace/ui/globals.css';
 import { Center, Container, Heading, HStack, Text, VStack } from '@/components';
-
-const baseUrl = process.env.BASE_URL ?? 'http://localhost';
+import { ThemeProvider } from '@/components/Providers';
+import { baseUrl } from '@/i18n/metadata';
 
 const fontSans = Geist({
   subsets: ['latin'],
@@ -20,33 +19,39 @@ const fontMono = Geist_Mono({
 });
 
 export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('metadata');
+
   return {
     metadataBase: new URL(baseUrl),
-    title: '404 | Page Not Found',
-    description: 'The page you are looking for does not exist.',
+    title: t('notFoundTitle'),
+    description: t('notFoundDescription'),
+    robots: { index: false, follow: false },
   };
 }
 
 export default async function GlobalNotFound() {
+  const locale = await getLocale();
+  const t = await getTranslations('notFound');
+
   return (
-    <html lang='en' suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <body className={`${fontSans.variable} ${fontMono.variable} font-sans antialiased`}>
         <ThemeProvider attribute='class' defaultTheme='system'>
           <Center asChild min='screen'>
             <main>
               <Container>
                 <VStack gap={6} align='center' className='text-center'>
-                  <Text variant='eyebrow'>404 Error</Text>
-                  <Heading>Page not found</Heading>
+                  <Text variant='eyebrow'>{t('eyebrow')}</Text>
+                  <Heading>{t('heading')}</Heading>
                   <Text variant='lead' measure='prose'>
-                    Sorry, the page you are looking for could not be found or has been removed.
+                    {t('description')}
                   </Text>
                   <HStack wrap justify='center'>
                     <Button asChild>
-                      <Link href='/' aria-label='Back to home'>
+                      <a href={`/${locale}`} aria-label={t('backHome')}>
                         <ArrowLeft className='size-4' />
-                        Back To Home
-                      </Link>
+                        {t('backHome')}
+                      </a>
                     </Button>
                   </HStack>
                 </VStack>
