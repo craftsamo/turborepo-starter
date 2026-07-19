@@ -1,6 +1,6 @@
 import '@testing-library/dom';
 import { render, act, waitFor, screen } from '../testUtils';
-import RootPage from '../../app/(app)/page';
+import RootPage from '../../app/[locale]/(app)/page';
 
 describe('RootPage', async () => {
   it('renders the RootPage correctly', async function () {
