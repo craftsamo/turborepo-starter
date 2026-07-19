@@ -7,6 +7,14 @@ vi.mock('next/navigation', () => ({
   usePathname: () => '/showcase/streaming',
 }));
 
+vi.mock('@/i18n/navigation', () => ({
+  Link: ({ href, ...props }: React.ComponentProps<'a'>) => (
+    <a href={`/en${href === '/' ? '' : href}`} {...props} />
+  ),
+  usePathname: () => '/showcase/streaming',
+  useRouter: () => ({ replace: vi.fn() }),
+}));
+
 describe('BottomNav', () => {
   it('keeps the parent navigation item active on a nested route', async () => {
     await act(async () => {
