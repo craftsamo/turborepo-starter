@@ -1,7 +1,7 @@
 import '@testing-library/dom';
 import { toast } from '@workspace/ui/components/sonner';
 import { act, render, screen, userEvent, waitFor } from '../../testUtils';
-import ShowcasePage from '../../../app/(app)/showcase/page';
+import ShowcasePage from '../../../app/[locale]/(app)/showcase/page';
 
 describe('ShowcasePage', () => {
   it('renders each interactive foundation in snap mode', async () => {
