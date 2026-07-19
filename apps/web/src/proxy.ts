@@ -1,29 +1,12 @@
 import { type NextProxy, NextResponse } from 'next/server';
-// import { ratelimit } from './middlewares';
+import { i18n } from './middlewares';
 
 //#############################################################################
 // Middleware Configuration                                                   #
 //#############################################################################
 
-/**
- * Configuration for the middleware matcher in a Next.js application.
- * - `next-router-prefetch`: Indicates whether the router is prefetching.
- * - `purpose`: Specifies the purpose of the request, e.g., prefetch.
- */
 export const config = {
-  matcher: [
-    {
-      source:
-        '/((?!api||trpc|_next/static|_next/image|image|sitemap.xml|favicon.ico|robots.txt.*\\..*).*)',
-    },
-    {
-      source: '/:path*',
-      missing: [
-        { type: 'header', key: 'next-router-prefetch' },
-        { type: 'header', key: 'purpose', value: 'prefetch' },
-      ],
-    },
-  ],
+  matcher: ['/((?!api|trpc|_next|_vercel|image|.*\\..*).*)'],
 };
 
 //#############################################################################
@@ -49,5 +32,6 @@ export function chain(functions: NextProxyFactory[], index = 0): NextProxy {
 
 export default chain([
   // ratelimit,
-  // ...Add middleware here (executed in order from top to bottom)
+  // Keep i18n last because it terminates the chain with the routing response.
+  i18n,
 ]);
