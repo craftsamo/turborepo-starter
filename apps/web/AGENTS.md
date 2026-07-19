@@ -14,11 +14,12 @@ For general rules and code style guidelines, see @AGENTS.md.
 ```
 src/
   app/
-    layout.tsx              # root layout — slim: Providers + Toaster + body lock only
     global-not-found.tsx    # 404 document (self-contained: Container + Heading + Text + inline back link)
-    (app)/                  # main route group — owns page chrome (app shell)
-      layout.tsx            # h-svh frame: Toolbar (sm+) + page-owned Screen + BottomNav (xs)
-      page.tsx              # home page — composes Screen + Section(s) + Footer
+    [locale]/               # locale root — html lang + providers + localized metadata
+      layout.tsx            # root document: Providers + Toaster + body lock
+      (app)/                # main route group — owns page chrome (app shell)
+        layout.tsx          # h-svh frame: Toolbar (sm+) + page-owned Screen + BottomNav (xs)
+        page.tsx            # home page — composes Screen + Section(s) + Footer
   components/               # app-wide shared components (server-safe primitives + chrome)
     index.ts                # barrel: Center, Container, Heading, Screen, Section, Stack, Text (server-safe only)
     Container.tsx           # page width + horizontal padding (single source)
@@ -59,7 +60,7 @@ src/
   `useAppDispatch` / `useAppSelector` from `@/store` — never raw
   `useDispatch`/`useSelector`.
 - **Providers**: wrap the app in `ReduxToolProvider` then `ThemeProvider`
-  (see `app/layout.tsx`). `ThemeProvider` dynamically imports
+  (see `app/[locale]/layout.tsx`). `ThemeProvider` dynamically imports
   `next-themes`' `ThemeProvider` with `ssr: true`.
 - **Shared primitives**: import `Center` / `Container` / `Heading` / `Screen` /
   `Section` / `Stack` (+ `VStack` / `HStack`) / `Text` from `@/components` (the
@@ -78,7 +79,7 @@ src/
   of hand-writing `flex … gap-*`; `Container` still owns width and `Screen`
   scrolling.
 - **App shell & scrolling**: page chrome lives in a route-group layout, not the
-  root layout, as an app shell. The `(app)` group's `layout.tsx` is a
+  locale root layout, as an app shell. The `[locale]/(app)` group's `layout.tsx` is a
   fixed-height flex column (`h-svh`, `overflow-hidden`) that never scrolls: the
   `Toolbar` (sm+) is pinned at the top and the `BottomNav` (mobile) at the
   bottom. Each page (or nested route-group layout) places a `Screen` (`<main>`,
@@ -87,7 +88,7 @@ src/
   wanted. `Section` reads its parent Screen mode: `flow` keeps natural height,
   `full` fills the visible region, and `snap` also adds snap points. Because the
   chrome sits outside `Screen`, it stays put while only page content scrolls.
-  The root layout locks `<body>` (`overflow-hidden`) and sets
+  The locale root layout locks `<body>` (`overflow-hidden`) and sets
   `viewport-fit=cover` for the bottom nav's safe-area inset. Add `smooth` /
   `hideScrollbar` to Screen as needed. The shared `globals.css` intentionally
   does not own app-level scroll/snap rules.
