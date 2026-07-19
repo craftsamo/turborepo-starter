@@ -109,6 +109,11 @@ src/
   layout inline (`<main>` + `Container`) with the shared `Heading` / `Text`
   primitives from `@/components` and an inline back-home `Button` + `Link`. Do
   not add a top-level `not-found.tsx`; extend the 404 document itself instead.
+- **Locale switching**: `[locale]/layout.tsx` owns `<html>` + Providers so the
+  pages statically generate (SSG); `useLocaleSwitch` switches with a full reload
+  (`window.location.replace`). To switch to SPA soft navigation (no reload, no
+  `next-themes` script warning) at the cost of dynamic rendering, follow the
+  `locale-spa-switch` skill — do not hand-roll it.
 - **Route-local colocation**: keep route-specific pieces in `_components/`
   (Next.js private folder — the underscore excludes it from routing) next to the
   route that uses them: `app/(app)/_components/` for the main group,
