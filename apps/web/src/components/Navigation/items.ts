@@ -2,8 +2,8 @@ import type { LucideIcon } from 'lucide-react';
 import { GalleryVerticalEnd, Github, Home } from 'lucide-react';
 
 export interface NavItem {
-  /** Visible label and accessible name. */
-  label: string;
+  /** Translation key for the visible label and accessible name. */
+  label: 'github' | 'home' | 'showcase';
   /** Destination. Internal routes drive the active state. */
   href: string;
   /** Icon shown in the bottom navigation. */
@@ -14,10 +14,10 @@ export interface NavItem {
 
 /** Primary navigation destinations, shared by the toolbar and bottom nav. */
 export const navItems: NavItem[] = [
-  { label: 'Home', href: '/', icon: Home },
-  { label: 'Showcase', href: '/showcase', icon: GalleryVerticalEnd },
+  { label: 'home', href: '/', icon: Home },
+  { label: 'showcase', href: '/showcase', icon: GalleryVerticalEnd },
   {
-    label: 'GitHub',
+    label: 'github',
     href: 'https://github.com/craftsamo/turborepo-starter',
     icon: Github,
     external: true,
