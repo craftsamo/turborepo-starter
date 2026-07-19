@@ -4,9 +4,14 @@ import { act, render, screen, userEvent, waitFor } from '../../testUtils';
 import ShowcasePage from '../../../app/[locale]/(app)/showcase/page';
 
 describe('ShowcasePage', () => {
+  const props = {
+    params: Promise.resolve({ locale: 'en' as const }),
+    searchParams: Promise.resolve({}),
+  };
+
   it('renders each interactive foundation in snap mode', async () => {
     await act(async () => {
-      render(await ShowcasePage());
+      render(await ShowcasePage(props));
     });
 
     expect(screen.getByRole('main')).toHaveAttribute('data-mode', 'snap');
@@ -17,7 +22,7 @@ describe('ShowcasePage', () => {
     ).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /open streaming demo/i })).toHaveAttribute(
       'href',
-      '/showcase/streaming',
+      '/en/showcase/streaming',
     );
   });
 
@@ -26,7 +31,7 @@ describe('ShowcasePage', () => {
     const toastSpy = vi.spyOn(toast, 'success').mockReturnValue('counter-toast');
 
     await act(async () => {
-      render(await ShowcasePage());
+      render(await ShowcasePage(props));
     });
 
     await user.click(screen.getByRole('button', { name: 'Increment' }));

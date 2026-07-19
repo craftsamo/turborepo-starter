@@ -1,10 +1,11 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import { Moon, Sun } from 'lucide-react';
 import { cva } from 'class-variance-authority';
+import { useTranslations } from 'next-intl';
 import { cn } from '@workspace/ui/lib/utils';
+import { Link, usePathname } from '@/i18n/navigation';
+import { LanguageSwitcher } from '../LanguageSwitcher';
 import { useThemeToggle } from '../Theme';
 import { navItems } from './items';
 import { navigationSurfaceVariants } from './styles';
@@ -61,10 +62,11 @@ const tabVariants = cva(
 export const BottomNav = ({ variant = 'docked' }: NavigationVariantProps) => {
   const pathname = usePathname();
   const { toggle } = useThemeToggle();
+  const t = useTranslations('navigation');
 
   return (
     <nav
-      aria-label='Primary'
+      aria-label={t('primary')}
       className={cn(
         bottomNavVariants({ variant }),
         navigationSurfaceVariants({ variant }),
@@ -88,21 +90,30 @@ export const BottomNav = ({ variant = 'docked' }: NavigationVariantProps) => {
                 className={tabVariants({ variant, active })}
               >
                 <Icon className='size-5' />
-                <span className={variant === 'floating' ? 'sr-only' : undefined}>{item.label}</span>
+                <span className={variant === 'floating' ? 'sr-only' : undefined}>
+                  {t(item.label)}
+                </span>
               </Link>
             </li>
           );
         })}
         <li className='flex-1'>
+          <LanguageSwitcher
+            mode='bottom'
+            className={tabVariants({ variant })}
+            hideLabel={variant === 'floating'}
+          />
+        </li>
+        <li className='flex-1'>
           <button
             type='button'
             onClick={toggle}
-            aria-label='Toggle color theme'
+            aria-label={t('toggleTheme')}
             className={cn(tabVariants({ variant }), 'border-0 bg-transparent')}
           >
             <Sun aria-hidden='true' className='size-5 dark:hidden' />
             <Moon aria-hidden='true' className='hidden size-5 dark:block' />
-            <span className={variant === 'floating' ? 'sr-only' : undefined}>Theme</span>
+            <span className={variant === 'floating' ? 'sr-only' : undefined}>{t('theme')}</span>
           </button>
         </li>
       </ul>
