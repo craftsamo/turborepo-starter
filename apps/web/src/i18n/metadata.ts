@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import type { Language } from '@workspace/constants';
 import { languages } from '@workspace/constants';
 
-const configuredBaseUrl = process.env.BASE_URL;
+const configuredBaseUrl = process.env.WEB_BASE_URL;
 
 export const baseUrl =
   configuredBaseUrl && URL.canParse(configuredBaseUrl) ? configuredBaseUrl : 'http://localhost';
