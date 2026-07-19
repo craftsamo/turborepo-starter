@@ -52,18 +52,27 @@ while keeping the package framework-free and every `ErrorCode` paired with its
    must cover every code:
    ```ts
    const Unauthorized = {
-     log: '...',
-     notice: '...',
-   } as const;
+     log: {
+       en: 'The request is not authorized. Review the authentication flow.',
+       ja: 'リクエストが認証されていません。認証フローを確認してください。',
+     },
+     notice: {
+       en: 'You are not authorized to perform this action.',
+       ja: 'この操作を実行する権限がありません。',
+     },
+   } as const satisfies ErrorMessage;
 
    export const ErrorMessage: Record<ErrorCode, ErrorMessage> = {
      ...,
      [ErrorCode.Unauthorized]: Unauthorized,
    } as const;
    ```
-3. **`ErrorMessage` shape**: `{ log: string; notice: string } as const`.
+3. **`ErrorMessage` shape**: `{ log: Message; notice: Message } as const`,
+   where `Message` is `Record<Language, string>`.
    - `log` — diagnostic text for server logs (detailed, implementation-facing).
    - `notice` — user-safe text shown in the UI (generic, no internals).
+   - Add every supported language to both fields; never leave a fallback-only
+     entry.
 4. The barrel `src/errors/index.ts` already re-exports `./code` + `./message`;
    no change needed unless you add a new file.
 
@@ -101,8 +110,8 @@ while keeping the package framework-free and every `ErrorCode` paired with its
 - `nps lint.packages.constants` — ESLint `--max-warnings 0`
 - `nps typecheck.packages.constants` — `tsc --noEmit`
 - `nps build.packages.constants` — `tsup` build
-- Cross-check: `Object.keys(ErrorMessage)` length === `Object.keys(ErrorCode)`
-  length (no orphans).
+- Confirm typecheck covers every `ErrorCode` and every `Language` (no orphan
+  code or missing translation).
 
 </Verify>
 
@@ -111,6 +120,8 @@ while keeping the package framework-free and every `ErrorCode` paired with its
 - Do NOT renumber existing `ErrorCode` values — they are part of the wire
   contract; appending only.
 - Do NOT add an `ErrorCode` without its `ErrorMessage` (or vice versa).
+- Do NOT add a message without every supported `Language` in both `log` and
+  `notice`.
 - Do NOT import React/Next/framework code here — runtime constants only.
 - Do NOT duplicate these constants in `apps/web`.
 

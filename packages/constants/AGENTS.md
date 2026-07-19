@@ -24,9 +24,11 @@ src/
 - **Every `ErrorCode` must be paired with an `ErrorMessage`** in
   `ErrorMessage: Record<ErrorCode, ErrorMessage>`. An orphan code or message is
   a bug.
-- `ErrorMessage` shape: `{ log: string; notice: string } as const`.
+- `ErrorMessage` shape: `{ log: Message; notice: Message } as const`, where
+  `Message` is `Record<Language, string>`.
   - `log` — diagnostic text for server logs (detailed, implementation-facing).
   - `notice` — user-safe text shown in the UI (generic, no internals).
+  - Select the active `Language` before passing either value to a logger or UI.
 - `ErrorCode` is a numeric `enum`. **Never renumber existing codes**; append
   new ones at the end of their domain group. Group codes by domain with a
   comment header.

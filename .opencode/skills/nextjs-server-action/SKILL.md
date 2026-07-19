@@ -111,21 +111,22 @@ convention. Put a normalizer in `src/lib/api/utils/toActionErrorResult.ts`:
 
 ```ts
 import type { ActionErrorResult } from '../types';
-import { NodeErrorMessage, type ErrorCode } from '@workspace/constants';
+import { NodeErrorMessage, type ErrorCode, type Language } from '@workspace/constants';
 
-export function toActionErrorResult(e: unknown): ActionErrorResult {
+export function toActionErrorResult(e: unknown, language: Language): ActionErrorResult {
   const base = { success: false, isError: true } as const;
   // If you adopt a custom API client with notice/log split (like SDKError),
   // branch on it here and return e.noticeMessage — keep e.logMessage server-side.
   if (e instanceof Error) {
-    return { ...base, code: 'UNKNOWN' as const, message: NodeErrorMessage.NodeError.notice };
+    return { ...base, code: 'UNKNOWN' as const, message: NodeErrorMessage.NodeError.notice[language] };
   }
-  return { ...base, code: 'UNKNOWN' as const, message: NodeErrorMessage.UnknownError.notice };
+  return { ...base, code: 'UNKNOWN' as const, message: NodeErrorMessage.UnknownError.notice[language] };
 }
 ```
 
-Rule: **the action/SDK returns `ErrorMessage.notice` / `NodeErrorMessage.notice`
-to the client; `.log` stays server-side** (pass it to your logger only). This is
+Rule: **the action/SDK selects the active language from `ErrorMessage.notice` /
+`NodeErrorMessage.notice` before returning it to the client; `.log` stays
+server-side** (select its language before passing it to your logger). This is
 the structural enforcement — a future custom error class with separate
 `noticeMessage` / `logMessage` fields slots in naturally.
 
@@ -194,7 +195,7 @@ export async function updateThing(id: string, input: Partial<Thing>): Promise<Ac
 ```
 
 When you add auth, gate mutations with a `requireSession` helper that returns
-`{ success: false, isError: true, code: ErrorCode.Unauthorized, message: ErrorMessage[ErrorCode.Unauthorized].notice }`.
+`{ success: false, isError: true, code: ErrorCode.Unauthorized, message: ErrorMessage[ErrorCode.Unauthorized].notice[language] }`.
 
 ### 3. Centralize cache tags + revalidate helpers
 
@@ -483,7 +484,7 @@ proven baseline. Add it only if your form actually has typed fields.
 - Do NOT use `revalidatePath` — use `revalidateTag(tag, 'max')` via centralized
   `cacheTags.ts` + `revalidate*.ts` helpers.
 - Do NOT leak `ErrorMessage.log` / `NodeErrorMessage.log` to the client —
-  return only `.notice`. Enforce it in `toActionErrorResult`.
+  return only `.notice[language]`. Enforce it in `toActionErrorResult`.
 - Do NOT put real backend work in the route action — delegate to the Tier 2 SDK
   in `src/lib/api/**` (also `'use server'`).
 - Do NOT reach for `useFormState` — it's deprecated in React 19; use
