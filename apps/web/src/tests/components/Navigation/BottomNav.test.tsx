@@ -5,8 +5,19 @@ import { BottomNav } from '../../../components/Navigation';
 import { navItems } from '../../../components/Navigation/items';
 import { ToolbarLink } from '../../../components/Navigation/ToolbarLink';
 
+/** English names of the tabs, in `navItems` order. */
+const tabNames = ['Home', 'Showcase', 'GitHub'];
+
 vi.mock('next/navigation', () => ({
   usePathname: () => '/showcase/streaming',
+}));
+
+vi.mock('@/i18n/navigation', () => ({
+  Link: ({ href, ...props }: React.ComponentProps<'a'>) => (
+    <a href={`/en${href === '/' ? '' : href}`} {...props} />
+  ),
+  usePathname: () => '/showcase/streaming',
+  useRouter: () => ({ replace: vi.fn() }),
 }));
 
 const getBar = () => document.querySelector('[data-slot="bottom-bar"]');
@@ -114,7 +125,7 @@ describe('BottomNav', () => {
       .map((link) => link.textContent);
 
     // Whether the labels are visible is a layout question for the VRT shots.
-    expect(names).toEqual(navItems.map((item) => item.label));
+    expect(names).toEqual(tabNames);
   });
 
   it.each(['docked', 'floating'] as const)(
@@ -124,8 +135,8 @@ describe('BottomNav', () => {
         render(<BottomNav variant={variant} labels='hidden' />);
       });
 
-      for (const item of navItems) {
-        expect(screen.getByRole('link', { name: item.label })).toBeInTheDocument();
+      for (const name of tabNames) {
+        expect(screen.getByRole('link', { name })).toBeInTheDocument();
       }
       expect(screen.getByRole('button', { name: 'Toggle color theme' })).toBeInTheDocument();
       expect(getBar()).toHaveAttribute('data-labels', 'hidden');

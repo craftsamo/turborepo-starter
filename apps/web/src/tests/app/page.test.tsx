@@ -1,6 +1,13 @@
 import '@testing-library/dom';
+import { vi } from 'vitest';
 import { render, act, waitFor, screen } from '../testUtils';
 import RootPage from '../../app/[locale]/(app)/page';
+
+// Footer is an async Server Component; stub it so the client-side test
+// renderer can mount the page without resolving a nested async component.
+vi.mock('@/components/Footer', () => ({
+  Footer: () => <footer />,
+}));
 
 describe('RootPage', async () => {
   it('renders the RootPage correctly', async function () {

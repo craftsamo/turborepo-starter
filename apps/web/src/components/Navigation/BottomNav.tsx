@@ -1,10 +1,11 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import { Moon, Sun } from 'lucide-react';
 import { cva } from 'class-variance-authority';
+import { useTranslations } from 'next-intl';
 import { cn } from '@workspace/ui/lib/utils';
+import { Link, usePathname } from '@/i18n/navigation';
+import { LanguageSwitcher } from '../LanguageSwitcher';
 import { useThemeToggle } from '../Theme';
 import { navItems } from './items';
 import { navigationSurfaceVariants } from './styles';
@@ -88,14 +89,16 @@ const ThemeIcons = () => (
 /**
  * Mobile bottom bar with only destination tabs inside its navigation landmark,
  * icons over labels like the iOS tab bar, the current tab on an inset pill when
- * floating. The theme toggle is not a destination, so it sits outside the nav:
- * above it on its own glass button when floating, at the end of the row when
- * docked. Docked stays in the app-shell flow; floating overlays the page. Both
- * honor the safe-area inset and are hidden from `sm` up, where the `Toolbar`
- * takes over. When floating it slides away while the page scrolls down and
- * returns on scroll up, at either end of the page and when focus enters it (see
- * `useHideOnScroll`); it stays on screen while focus is inside it. `labels`
- * hides the tab text (kept as accessible names) for a compact icon-only bar.
+ * floating. The language switch, named in the other language's own script, and
+ * the theme toggle are not destinations, so they sit outside the nav: above it
+ * on glass buttons (a pill and a round button) when floating, at the end of the
+ * row when docked. Docked stays in the app-shell flow; floating overlays the
+ * page. Both honor the safe-area inset and are hidden from `sm` up, where the
+ * `Toolbar` takes over. When floating it slides away while the page scrolls
+ * down and returns on scroll up, at either end of the page and when focus
+ * enters it (see `useHideOnScroll`); it stays on screen while focus is inside
+ * it. `labels` hides the tab text (kept as accessible names) for a compact
+ * icon-only bar.
  */
 export const BottomNav = ({
   variant = 'docked',
@@ -104,6 +107,7 @@ export const BottomNav = ({
 }: BottomNavProps) => {
   const pathname = usePathname();
   const { toggle } = useThemeToggle();
+  const t = useTranslations('navigation');
   const { hidden, show } = useHideOnScroll(pathname);
   const slidAway = variant === 'floating' && hidden;
 
@@ -122,17 +126,31 @@ export const BottomNav = ({
       )}
     >
       {variant === 'floating' && (
-        <button
-          type='button'
-          onClick={toggle}
-          aria-label='Toggle color theme'
-          className={cn(toolVariants(), navigationSurfaceVariants({ variant, surface }), 'size-11')}
-        >
-          <ThemeIcons />
-        </button>
+        <div className='flex gap-2'>
+          <LanguageSwitcher
+            mode='bottom'
+            className={cn(
+              toolVariants(),
+              navigationSurfaceVariants({ variant, surface }),
+              'h-11 gap-2 px-4 text-sm',
+            )}
+          />
+          <button
+            type='button'
+            onClick={toggle}
+            aria-label={t('toggleTheme')}
+            className={cn(
+              toolVariants(),
+              navigationSurfaceVariants({ variant, surface }),
+              'size-11',
+            )}
+          >
+            <ThemeIcons />
+          </button>
+        </div>
       )}
       <nav
-        aria-label='Primary'
+        aria-label={t('primary')}
         className={cn(
           navVariants({ variant }),
           variant === 'floating' && navigationSurfaceVariants({ variant, surface }),
@@ -155,7 +173,9 @@ export const BottomNav = ({
                   className={tabVariants({ variant, labels, active })}
                 >
                   <Icon aria-hidden='true' className='size-5' />
-                  <span className={labels === 'hidden' ? 'sr-only' : undefined}>{item.label}</span>
+                  <span className={labels === 'hidden' ? 'sr-only' : undefined}>
+                    {t(item.label)}
+                  </span>
                 </Link>
               </li>
             );
@@ -163,15 +183,25 @@ export const BottomNav = ({
         </ul>
       </nav>
       {variant === 'docked' && (
-        <button
-          type='button'
-          onClick={toggle}
-          aria-label='Toggle color theme'
-          className={cn(tabVariants({ variant, labels }), 'w-20 shrink-0 border-0 bg-transparent')}
-        >
-          <ThemeIcons />
-          <span className={labels === 'hidden' ? 'sr-only' : undefined}>Theme</span>
-        </button>
+        <>
+          <LanguageSwitcher
+            mode='bottom'
+            hideLabel={labels === 'hidden'}
+            className={cn(tabVariants({ variant, labels }), 'w-20 shrink-0')}
+          />
+          <button
+            type='button'
+            onClick={toggle}
+            aria-label={t('toggleTheme')}
+            className={cn(
+              tabVariants({ variant, labels }),
+              'w-20 shrink-0 border-0 bg-transparent',
+            )}
+          >
+            <ThemeIcons />
+            <span className={labels === 'hidden' ? 'sr-only' : undefined}>{t('theme')}</span>
+          </button>
+        </>
       )}
     </div>
   );

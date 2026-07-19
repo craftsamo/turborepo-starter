@@ -9,12 +9,11 @@ export function isLanguage(locale: string | undefined): locale is Language {
 }
 
 export const localeOptions = [
-  { code: 'en', label: 'English', shortLabel: 'EN' },
-  { code: 'ja', label: '日本語', shortLabel: 'JA' },
+  { code: 'en', label: 'English' },
+  { code: 'ja', label: '日本語' },
 ] as const satisfies ReadonlyArray<{
   code: Language;
   label: string;
-  shortLabel: string;
 }>;
 
 export const routing = defineRouting({

@@ -94,36 +94,38 @@ src/
   `hideScrollbar` to Screen as needed. The shared `globals.css` intentionally
   does not own app-level scroll/snap rules.
 - **Bottom-bar clearance**: `--bottom-nav-clearance` is defined on `<body>`
-  (root layout adds `bottomNavClearance` from `@/components/Navigation`) only
-  while a floating bottom bar is rendered below `sm` (sized per `labels`
-  mode); read it as `var(--bottom-nav-clearance, 0px)`. `Screen` ends with a
-  spacer of that height (a snap stop in snap mode) unless its last child is
-  the shared `Footer` (`data-slot='footer'`), which pads its bottom by it
-  instead; the Toaster offsets read it too. Never hard-code the bar's height
-  elsewhere.
+  (the locale root layout adds `bottomNavClearance` from
+  `@/components/Navigation`) only while a floating bottom bar is rendered
+  below `sm` (sized per `labels` mode); read it as
+  `var(--bottom-nav-clearance, 0px)`. `Screen` ends with a spacer of that
+  height (a snap stop in snap mode) unless its last child is the shared `Footer`
+  (`data-slot='footer'`), which pads its bottom by it instead; the Toaster
+  offsets read it too. Never hard-code the bar's height elsewhere.
 - **Navigation style**: `Toolbar` (every viewport: logo only on mobile; from
-  `sm` also the primary links in `<nav aria-label='Primary'>` and the theme
-  toggle outside the nav; 48px tall, 64px from `sm`) and `BottomNav` (below
-  `sm`) take two independent props. `NavigationVariant`: `docked` is attached
-  to the screen edge in the app-shell flow, `floating` is an inset capsule
-  overlaying the page. `NavigationSurface`: `solid` (default) is opaque,
-  `glass` is iOS/macOS system glass (thin translucent theme-surface fill over a
-  strong, color-lifting blur, one bright rim with a top highlight, soft neutral
-  shadow; opaque where `backdrop-filter` is unsupported). Shared styles live in
-  `Navigation/styles.ts` (`navigationSurfaceVariants`). Set them in the `(app)`
-  layout (`toolbarVariant = 'docked'`, `bottomNavVariant = 'floating'`,
-  `bottomNavSurface = 'glass'`); the two components need not share a variant.
+  `sm` also the primary links in `<nav aria-label='Primary'>` and the language
+  switch and theme toggle outside the nav; 48px tall, 64px from `sm`) and
+  `BottomNav` (below `sm`) take two independent props. `NavigationVariant`:
+  `docked` is attached to the screen edge in the app-shell flow, `floating` is
+  an inset capsule overlaying the page. `NavigationSurface`: `solid` (default)
+  is opaque, `glass` is iOS/macOS system glass (thin translucent theme-surface
+  fill over a strong, color-lifting blur, one bright rim with a top highlight,
+  soft neutral shadow; opaque where `backdrop-filter` is unsupported). Shared
+  styles live in `Navigation/styles.ts` (`navigationSurfaceVariants`). Set them
+  in the `(app)` layout (`toolbarVariant = 'docked'`,
+  `bottomNavVariant = 'floating'`, `bottomNavSurface = 'glass'`); the two
+  components need not share a variant.
   The `BottomNav` is a `div[data-slot='bottom-bar']` whose `<nav>` holds only
   destination tabs, icons over visible labels like the iOS tab bar; when
   floating, the current tab sits on a neutral inset pill with a primary-color
   label. `labels` (`visible` default / `hidden`) picks whether the tabs show
   their text; hidden labels stay as accessible names and the floating bar turns
-  compact. The theme toggle stays outside the nav: on its own round button
-  above the bar when floating, at the end of the row when docked. A floating
-  bar slides away while the Screen scrolls down and returns on scroll up, near
-  either end of the page and when focus enters it (`useHideOnScroll`), and
-  stays on screen while focus is inside it; with reduced motion it does not
-  slide, and a docked bar never hides.
+  compact. The language switch and the theme toggle stay outside the nav:
+  above the bar when floating (the language as a glass pill naming the other
+  language in its own script, the theme as a round button), at the end of the
+  row when docked. A floating bar slides away while the Screen scrolls down and
+  returns on scroll up, near either end of the page and when focus enters it
+  (`useHideOnScroll`), and stays on screen while focus is inside it; with
+  reduced motion it does not slide, and a docked bar never hides.
 - **Middleware**: compose with `chain([...factories])` in `proxy.ts`. Each
   factory is `(proxy: NextProxy) => NextProxy`. Add new middleware in
   `middlewares/`, export from `middlewares/index.ts`, then register in the
