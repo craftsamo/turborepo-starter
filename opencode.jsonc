@@ -154,5 +154,6 @@
     { "action": "skill", "resource": "nextjs-rsc-streaming", "effect": "allow" },
     { "action": "skill", "resource": "nextjs-server-action", "effect": "allow" },
     { "action": "skill", "resource": "sync-upstream", "effect": "allow" },
+    { "action": "skill", "resource": "locale-spa-switch", "effect": "allow" },
   ],
 }
