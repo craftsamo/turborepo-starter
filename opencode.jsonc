@@ -159,7 +159,8 @@
       "fork-layer-placement": "allow",
       "nextjs-rsc-streaming": "allow",
       "nextjs-server-action": "allow",
-      "sync-upstream": "allow"
+      "sync-upstream": "allow",
+      "locale-spa-switch": "allow",
     }
   }
 }
