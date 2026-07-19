@@ -3,7 +3,7 @@ import { act, render, screen } from '../../../testUtils';
 import {
   StreamResult,
   StreamResultSkeleton,
-} from '../../../../app/(app)/showcase/streaming/_components';
+} from '../../../../app/[locale]/(app)/showcase/streaming/_components';
 
 describe('RSC streaming result', () => {
   it('renders a resolved server payload', async () => {
