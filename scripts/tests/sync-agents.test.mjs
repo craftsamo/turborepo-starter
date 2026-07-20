@@ -1,6 +1,14 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -92,6 +100,29 @@ describe("sync-agents", () => {
     assert.doesNotMatch(gemini, /write_file/);
   });
 
+  it("writes generated files read-only so in-place edits fail", () => {
+    const filePath = join(root, ".claude/agents/fixture.md");
+    assert.equal(statSync(filePath).mode & 0o222, 0, "generated file is writable");
+    assert.throws(() => writeFileSync(filePath, "sneaky edit\n"), /EACCES|EPERM/);
+  });
+
+  it("replaces a read-only generated file when the source changes", () => {
+    writeFileSync(
+      join(root, ".opencode/agents/fixture.md"),
+      AGENT_SOURCE.replace("Fixture body", "Updated body"),
+    );
+
+    runSync(root);
+
+    const claude = readFileSync(join(root, ".claude/agents/fixture.md"), "utf8");
+    assert.match(claude, /Updated body/);
+    assert.equal(statSync(join(root, ".claude/agents/fixture.md")).mode & 0o222, 0);
+
+    // Restore the original source and outputs for the remaining tests.
+    writeFileSync(join(root, ".opencode/agents/fixture.md"), AGENT_SOURCE);
+    runSync(root);
+  });
+
   it("is idempotent (second run writes nothing)", () => {
     assert.equal(runSync(root).trim(), "");
   });
@@ -114,6 +145,7 @@ describe("sync-agents", () => {
 
   it("never overwrites a hand-written file at a generated path", () => {
     const conflictPath = join(root, ".gemini/agents/fixture.md");
+    rmSync(conflictPath, { force: true });
     writeFileSync(conflictPath, "hand-written, no marker\n");
 
     const { status, stderr } = spawnSync(process.execPath, [scriptPath], {

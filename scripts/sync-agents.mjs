@@ -21,6 +21,7 @@
 //
 // Idempotent and safe to re-run. Only files containing the GENERATED_MARKER
 // are ever overwritten or deleted, so hand-written local agents survive.
+// Outputs are written read-only (0444) so nothing edits them in place.
 // Wired into `postinstall` (see package.json); run manually with
 // `nps sync.agents` or `node scripts/sync-agents.mjs`.
 
@@ -94,7 +95,11 @@ function main() {
       if (existsSync(filePath) && readFileSync(filePath, "utf8") === content) {
         continue;
       }
-      writeFileSync(filePath, content);
+      // Write read-only (0444): editors and AI tools get a permission error
+      // instead of silently editing a file the next sync would clobber. The
+      // sync itself replaces files by unlinking first, so it is unaffected.
+      rmSync(filePath, { force: true });
+      writeFileSync(filePath, content, { mode: 0o444 });
       console.log(`[sync-agents] wrote ${target.dir}/${agent.name}${target.ext}`);
     }
   }
