@@ -51,3 +51,9 @@ yarn-error.log*
 # generated agent-skill links (created by scripts/link-agent-skills.mjs on install)
 /.agents/skills
 /.claude/skills
+
+# generated tool-native agent definitions (created by scripts/sync-agents.mjs on install)
+/.claude/agents
+/.codex/agents
+/.gemini/agents
+/.github/agents
