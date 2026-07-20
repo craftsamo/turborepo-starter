@@ -22,7 +22,8 @@
     "husky": "^9.1.7",
     "shadcn": "^3.8.4",
     "turbo": "2.9.14",
-    "typescript": "npm:@typescript/typescript6@6.0.2"
+    "typescript": "npm:@typescript/typescript6@6.0.2",
+    "yaml": "^2.9.0"
   },
   "engines": {
     "node": ">=24"
