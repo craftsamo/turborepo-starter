@@ -35,7 +35,6 @@ import {
 } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import YAML from "yaml";
 
 const repoRoot = process.env.SYNC_AGENTS_ROOT
   ? resolve(process.env.SYNC_AGENTS_ROOT)
@@ -115,7 +114,7 @@ function parseAgent(filePath) {
 
   let frontmatter;
   try {
-    frontmatter = YAML.parse(match[1]) ?? {};
+    frontmatter = parseFrontmatterMap(match[1]);
   } catch (error) {
     console.warn(`[sync-agents] ${basename(filePath)}: invalid frontmatter (${error.message}); skipping.`);
     return null;
@@ -166,8 +165,105 @@ function isGenerated(filePath) {
 }
 
 function frontmatterDocument(fields, body) {
-  const yaml = YAML.stringify(fields, { lineWidth: 0 }).trimEnd();
-  return `---\n# ${GENERATED_NOTE}\n${yaml}\n---\n\n${body}\n`;
+  const lines = [];
+  for (const [key, value] of Object.entries(fields)) {
+    if (Array.isArray(value)) {
+      lines.push(`${key}:`);
+      for (const item of value) lines.push(`  - ${yamlScalar(item)}`);
+    } else {
+      lines.push(`${key}: ${yamlScalar(value)}`);
+    }
+  }
+  return `---\n# ${GENERATED_NOTE}\n${lines.join("\n")}\n---\n\n${body}\n`;
+}
+
+// Emit a value as a plain YAML scalar when that is unambiguous, otherwise as
+// a JSON string (every JSON string is a valid YAML double-quoted scalar).
+function yamlScalar(value) {
+  const text = String(value);
+  const plainSafe =
+    /^[A-Za-z0-9_][A-Za-z0-9_.,/* -]*$/.test(text) &&
+    !text.includes(": ") &&
+    !text.includes(" #") &&
+    !text.endsWith(" ");
+  return plainSafe ? text : JSON.stringify(text);
+}
+
+// --- Frontmatter parsing -----------------------------------------------------
+//
+// Minimal parser for the YAML subset this repo's agent frontmatter actually
+// uses, so the script stays dependency-free (the script-tests CI job runs
+// without an install step): nested maps via 2-space indentation, bare or
+// double-quoted keys, and bare / double-quoted / single-quoted scalar values.
+// Lists, block scalars, flow collections, and anchors are NOT supported —
+// parsing throws, and the caller skips that agent with a warning instead of
+// emitting a wrong conversion.
+
+function parseFrontmatterMap(text) {
+  const root = {};
+  const stack = [{ indent: -1, value: root }];
+  const lines = text.split(/\r?\n/);
+
+  for (let i = 0; i < lines.length; i++) {
+    const lineNo = i + 1;
+    const line = lines[i];
+    const trimmed = line.trim();
+    if (trimmed === "" || trimmed.startsWith("#")) continue;
+
+    const indent = line.length - line.trimStart().length;
+    if (indent % 2 !== 0) throw new Error(`odd indentation at line ${lineNo}`);
+    if (trimmed === "-" || trimmed.startsWith("- ")) {
+      throw new Error(`lists are not supported (line ${lineNo})`);
+    }
+
+    const { key, rest } = splitKey(trimmed, lineNo);
+
+    while (stack.length > 1 && indent <= stack[stack.length - 1].indent) {
+      stack.pop();
+    }
+    const parent = stack[stack.length - 1].value;
+
+    if (rest === "") {
+      const child = {};
+      parent[key] = child;
+      stack.push({ indent, value: child });
+    } else {
+      parent[key] = parseScalar(rest, lineNo);
+    }
+  }
+
+  return root;
+}
+
+function splitKey(entry, lineNo) {
+  if (entry.startsWith('"')) {
+    const match = entry.match(/^("(?:[^"\\]|\\.)*")\s*:\s*(.*)$/);
+    if (!match) throw new Error(`unterminated quoted key at line ${lineNo}`);
+    return { key: JSON.parse(match[1]), rest: match[2] };
+  }
+  const match = entry.match(/^([^:"']+?)\s*:\s*(.*)$/);
+  if (!match) throw new Error(`expected "key: value" at line ${lineNo}`);
+  return { key: match[1], rest: match[2] };
+}
+
+function parseScalar(text, lineNo) {
+  if (text.startsWith('"')) {
+    if (!/^"(?:[^"\\]|\\.)*"$/.test(text)) {
+      throw new Error(`unsupported quoted value at line ${lineNo}`);
+    }
+    return JSON.parse(text);
+  }
+  if (text.startsWith("'")) {
+    const match = text.match(/^'((?:[^']|'')*)'$/);
+    if (!match) throw new Error(`unsupported quoted value at line ${lineNo}`);
+    return match[1].replaceAll("''", "'");
+  }
+  if (text === "true") return true;
+  if (text === "false") return false;
+  if (text.startsWith("{") || text.startsWith("[") || text.startsWith("&") || text.startsWith("|") || text.startsWith(">")) {
+    throw new Error(`unsupported YAML syntax at line ${lineNo}`);
+  }
+  return text;
 }
 
 // --- Claude Code: .claude/agents/<name>.md ---------------------------------

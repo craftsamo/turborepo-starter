@@ -158,6 +158,65 @@ describe("sync-agents", () => {
     assert.match(stderr, /skipped \.gemini\/agents\/fixture\.md/);
   });
 
+  it("parses quoted scalars with colons, escapes, and comments", () => {
+    const edgePath = join(root, ".opencode/agents/edge.md");
+    writeFileSync(
+      edgePath,
+      `---
+# a comment line
+description: "Edge: says \\"hi\\" — and: more"
+mode: subagent
+options:
+  reasoningEffort: 'high'
+permission:
+  edit: deny
+---
+
+Edge body.
+`,
+    );
+
+    try {
+      runSync(root);
+      const claude = readFileSync(join(root, ".claude/agents/edge.md"), "utf8");
+      assert.match(claude, /^description: "Edge: says \\"hi\\" — and: more"$/m);
+      const codex = readFileSync(join(root, ".codex/agents/edge.toml"), "utf8");
+      assert.match(codex, /^model_reasoning_effort = "high"$/m);
+    } finally {
+      rmSync(edgePath, { force: true });
+      runSync(root);
+    }
+  });
+
+  it("skips agents using unsupported YAML syntax instead of misconverting", () => {
+    const brokenPath = join(root, ".opencode/agents/broken.md");
+    writeFileSync(
+      brokenPath,
+      `---
+description: "Uses a list"
+tags:
+  - one
+  - two
+---
+
+Body.
+`,
+    );
+
+    try {
+      const { status, stderr } = spawnSync(process.execPath, [scriptPath], {
+        env: { ...process.env, SYNC_AGENTS_ROOT: root },
+        encoding: "utf8",
+      });
+      assert.equal(status, 0);
+      assert.match(stderr, /broken\.md: invalid frontmatter/);
+      assert.ok(!existsSync(join(root, ".claude/agents/broken.md")));
+    } finally {
+      rmSync(brokenPath, { force: true });
+      runSync(root);
+    }
+  });
+
   it("skips gracefully when .opencode/agents is missing", () => {
     const emptyRoot = mkdtempSync(join(tmpdir(), "sync-agents-empty-"));
     try {
