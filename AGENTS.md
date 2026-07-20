@@ -20,6 +20,26 @@ conflicts, or deciding which fork layer should own a change. Use
 `fork-layer-placement` for the ownership decision. The words "rebase", "merge
 conflict", or "fork" alone are not sufficient to trigger `sync-upstream`.
 
+## Agent Routing
+
+The repository defines shared subagents in `.opencode/agents/`, mirrored to
+tool-native definitions (Claude Code, Codex CLI, Gemini CLI, Copilot CLI) on
+install.
+
+Use `reviewer` for a broad read-only scan of a change before commit or PR:
+project conventions, AGENTS.md violations, obvious bugs, missing tests, and
+low-cost regressions. Use `reviewer-deep` only on the high-risk areas that
+`reviewer` (or you) flag — system assumptions, responsibility ownership,
+runtime regressions, subtle edge cases — never as the first pass over a whole
+diff.
+
+Use `verifier` to run tests, typechecks, lint, format checks, and builds, and
+to summarize failure logs into the first actionable errors.
+
+All three agents are read-only. Do not use them to edit files, design fixes,
+or make decisions — apply fixes yourself after they report. Do not route
+root-cause debugging to `verifier`; it only runs checks and summarizes.
+
 ## Build, Lint, Test Commands
 
 Use `nps` (npm-script-runner) for all commands. See `package-scripts.js` for
