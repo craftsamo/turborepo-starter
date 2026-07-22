@@ -66,6 +66,7 @@ describe("sync-agents", () => {
       ".claude/agents/fixture.md",
       ".codex/agents/fixture.toml",
       ".gemini/agents/fixture.md",
+      ".grok/agents/fixture.md",
       ".github/agents/fixture.agent.md",
     ]) {
       assert.ok(existsSync(join(root, file)), `missing ${file}`);
@@ -98,6 +99,14 @@ describe("sync-agents", () => {
     assert.match(gemini, /- search_file_content/);
     assert.match(gemini, /- run_shell_command/);
     assert.doesNotMatch(gemini, /write_file/);
+  });
+
+  it("maps permissions to Grok Build tool names without model", () => {
+    const grok = readFileSync(join(root, ".grok/agents/fixture.md"), "utf8");
+    assert.match(grok, /^name: fixture$/m);
+    assert.match(grok, /^description: Read-only fixture agent\. Prefer invoking through the task tool\.$/m);
+    assert.match(grok, /^tools:\n  - read_file\n  - grep\n  - list_dir\n  - run_terminal_command$/m);
+    assert.doesNotMatch(grok, /^model:/m);
   });
 
   it("writes generated files read-only so in-place edits fail", () => {
@@ -136,6 +145,7 @@ describe("sync-agents", () => {
 
     assert.ok(!existsSync(join(root, ".claude/agents/fixture.md")));
     assert.ok(!existsSync(join(root, ".codex/agents/fixture.toml")));
+    assert.ok(!existsSync(join(root, ".grok/agents/fixture.md")));
     assert.ok(existsSync(handWritten), "hand-written agent was deleted");
 
     // Restore the fixture for any later assertions.
