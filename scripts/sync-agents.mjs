@@ -10,6 +10,7 @@
 //     -> .claude/agents/<name>.md          Claude Code (MD + frontmatter)
 //     -> .codex/agents/<name>.toml         Codex CLI (TOML)
 //     -> .gemini/agents/<name>.md          Gemini CLI (MD + frontmatter)
+//     -> .grok/agents/<name>.md            Grok Build (MD + frontmatter)
 //     -> .github/agents/<name>.agent.md    Copilot CLI (MD + frontmatter)
 //
 // The conversion is intentionally lossy: opencode's per-glob bash permissions
@@ -63,6 +64,7 @@ function main() {
     { dir: ".claude/agents", ext: ".md", emit: emitClaude },
     { dir: ".codex/agents", ext: ".toml", emit: emitCodex },
     { dir: ".gemini/agents", ext: ".md", emit: emitGemini },
+    { dir: ".grok/agents", ext: ".md", emit: emitGrok },
     { dir: ".github/agents", ext: ".agent.md", emit: emitCopilot },
   ];
 
@@ -333,6 +335,29 @@ function emitGemini(agent) {
     ...(c.bash ? ["run_shell_command"] : []),
     ...(c.webfetch ? ["web_fetch"] : []),
     ...(c.websearch ? ["google_web_search"] : []),
+  ];
+  return frontmatterDocument(
+    {
+      name: agent.name,
+      description: agent.description,
+      tools,
+    },
+    agent.body,
+  );
+}
+
+// --- Grok Build: .grok/agents/<name>.md --------------------------------------
+
+function emitGrok(agent) {
+  const c = agent.capabilities;
+  const tools = [
+    ...(c.read ? ["read_file"] : []),
+    ...(c.grep ? ["grep"] : []),
+    ...(c.glob || c.list ? ["list_dir"] : []),
+    ...(c.edit ? ["search_replace"] : []),
+    ...(c.bash ? ["run_terminal_command"] : []),
+    ...(c.webfetch ? ["web_fetch"] : []),
+    ...(c.websearch ? ["web_search"] : []),
   ];
   return frontmatterDocument(
     {

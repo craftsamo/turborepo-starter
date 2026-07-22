@@ -66,6 +66,7 @@ describe("sync-agents", () => {
       ".claude/agents/fixture.md",
       ".codex/agents/fixture.toml",
       ".gemini/agents/fixture.md",
+      ".grok/agents/fixture.md",
       ".github/agents/fixture.agent.md",
     ]) {
       assert.ok(existsSync(join(root, file)), `missing ${file}`);
@@ -98,6 +99,50 @@ describe("sync-agents", () => {
     assert.match(gemini, /- search_file_content/);
     assert.match(gemini, /- run_shell_command/);
     assert.doesNotMatch(gemini, /write_file/);
+  });
+
+  it("maps permissions to Grok Build tool names without model", () => {
+    const grok = readFileSync(join(root, ".grok/agents/fixture.md"), "utf8");
+    assert.match(grok, /^name: fixture$/m);
+    assert.match(grok, /^description: Read-only fixture agent\. Prefer invoking through the task tool\.$/m);
+    assert.match(grok, /^tools:\n  - read_file\n  - grep\n  - list_dir\n  - run_terminal_command$/m);
+    assert.doesNotMatch(grok, /^model:/m);
+  });
+
+  it("maps every enabled capability to the complete Grok Build tool allowlist", () => {
+    const allCapabilitiesPath = join(root, ".opencode/agents/all-capabilities.md");
+    writeFileSync(
+      allCapabilitiesPath,
+      `---
+description: "Fixture with every capability enabled."
+permission:
+  read: allow
+  grep: allow
+  glob: allow
+  list: allow
+  edit: allow
+  bash: allow
+  webfetch: allow
+  websearch: allow
+---
+
+All capabilities fixture.
+`,
+    );
+
+    try {
+      runSync(root);
+      const grok = readFileSync(join(root, ".grok/agents/all-capabilities.md"), "utf8");
+      assert.match(
+        grok,
+        /^tools:\n  - read_file\n  - grep\n  - list_dir\n  - search_replace\n  - run_terminal_command\n  - web_fetch\n  - web_search$/m,
+      );
+      assert.equal((grok.match(/^  - list_dir$/gm) ?? []).length, 1);
+      assert.doesNotMatch(grok, /^model:/m);
+    } finally {
+      rmSync(allCapabilitiesPath, { force: true });
+      runSync(root);
+    }
   });
 
   it("writes generated files read-only so in-place edits fail", () => {
@@ -136,6 +181,7 @@ describe("sync-agents", () => {
 
     assert.ok(!existsSync(join(root, ".claude/agents/fixture.md")));
     assert.ok(!existsSync(join(root, ".codex/agents/fixture.toml")));
+    assert.ok(!existsSync(join(root, ".grok/agents/fixture.md")));
     assert.ok(existsSync(handWritten), "hand-written agent was deleted");
 
     // Restore the fixture for any later assertions.

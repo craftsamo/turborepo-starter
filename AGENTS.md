@@ -23,8 +23,8 @@ conflict", or "fork" alone are not sufficient to trigger `sync-upstream`.
 ## Agent Routing
 
 The repository defines shared subagents in `.opencode/agents/`, mirrored to
-tool-native definitions (Claude Code, Codex CLI, Gemini CLI, Copilot CLI) on
-install.
+tool-native definitions (Claude Code, Codex CLI, Gemini CLI, Copilot CLI, Grok
+Build) on install, including `.grok/agents/`.
 
 Use `reviewer` for a broad read-only scan of a change before commit or PR:
 project conventions, AGENTS.md violations, obvious bugs, missing tests, and

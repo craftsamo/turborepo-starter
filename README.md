@@ -27,10 +27,11 @@ configurations.
 - **Testing**: Vitest setup for unit and integration tests
 - **Git Workflow**: Commitizen and Commitlint for conventional commits
 - **AI Agent Skills**: on-demand skills in `.opencode/skills/`, shared across
-  Claude Code, Codex, Gemini CLI, and Copilot. Tool-native skill links
-  (`.agents/skills/`, `.claude/skills/`) are generated on `pnpm install`
-  (POSIX symlink / Windows junction, no admin needed); per-package `AGENTS.md`
-  is auto-loaded as instructions
+  Claude Code, Codex, Gemini CLI, Copilot, and Grok Build. Tool-native skill
+  links (`.agents/skills/`, `.claude/skills/`) and agent definitions
+  (`.grok/agents/` from canonical `.opencode/agents/`) are generated on
+  `pnpm install` (POSIX symlink / Windows junction, no admin needed);
+  per-package `AGENTS.md` is auto-loaded as instructions
 - **Best Practices**: Optimized configurations and development guidelines
 
 ## 🛠 Tech Stack
