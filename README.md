@@ -128,7 +128,7 @@ Copy the example env file and fill in the values you need for local
 development:
 
 ```sh
-cp apps/web/.env.example apps/web/.env   # BASE_URL, LOG_LEVEL (optional)
+cp apps/web/.env.example apps/web/.env   # WEB_BASE_URL, LOG_LEVEL (optional)
 ```
 
 6. **Run Development Server**
@@ -144,10 +144,15 @@ nps dev
 The web app reads runtime configuration from `apps/web/.env`. See
 `apps/web/.env.example` for the full list:
 
-| Variable    | Purpose                                                                                               |
-| ----------- | ----------------------------------------------------------------------------------------------------- |
-| `BASE_URL`  | Base URL used for absolute links, sitemap, robots, and API calls                                      |
-| `LOG_LEVEL` | Logger verbosity: `verbose` / `debug` / `info` / `log` / `warn` / `error` / `fatal` (default: `info`) |
+| Variable       | Purpose                                                                                               |
+| -------------- | ----------------------------------------------------------------------------------------------------- |
+| `WEB_BASE_URL` | Base URL used for absolute links, sitemap, robots, and API calls                                      |
+| `LOG_LEVEL`    | Logger verbosity: `verbose` / `debug` / `info` / `log` / `warn` / `error` / `fatal` (default: `info`) |
+
+An app-specific variable is prefixed with the app directory name, so each app
+under `apps/` gets its own value (`WEB_BASE_URL`, and `<APP>_BASE_URL` for any
+app added later). A variable whose value is meant to be shared across apps,
+such as `LOG_LEVEL`, keeps its bare name.
 
 ### GitHub Actions Variables
 

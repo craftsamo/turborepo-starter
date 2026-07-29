@@ -7,7 +7,7 @@ import { Button } from '@workspace/ui/components/button';
 import { ThemeProvider } from '@/components/Providers';
 import { Center, Container, Heading, HStack, Text, VStack } from '@/components';
 
-const baseUrl = process.env.BASE_URL ?? 'http://localhost';
+const baseUrl = process.env.WEB_BASE_URL ?? 'http://localhost';
 
 const fontSans = Geist({
   subsets: ['latin'],
