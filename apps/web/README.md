@@ -63,9 +63,9 @@ The server will start at `http://localhost:3000`.
 
 ## 🔧 Environment Variables
 
-| Variable   | Default               | Description  |
-| ---------- | --------------------- | ------------ |
-| `BASE_URL` | http://localhost:3000 | API base URL |
+| Variable       | Default               | Description  |
+| -------------- | --------------------- | ------------ |
+| `WEB_BASE_URL` | http://localhost:3000 | API base URL |
 
 ## 📚 Available Commands
 

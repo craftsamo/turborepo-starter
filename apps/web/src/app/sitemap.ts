@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next';
 
-const baseUrl = process.env.BASE_URL ?? 'http://localhost';
+const baseUrl = process.env.WEB_BASE_URL ?? 'http://localhost';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [

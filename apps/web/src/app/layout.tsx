@@ -6,7 +6,7 @@ import { Toaster } from '@workspace/ui/components/sonner';
 import '@workspace/ui/globals.css';
 import { ReduxToolProvider, ThemeProvider } from '@/components/Providers';
 
-const baseUrl = process.env.BASE_URL ?? 'http://localhost';
+const baseUrl = process.env.WEB_BASE_URL ?? 'http://localhost';
 const SITE_NAME = 'Turborepo Starter';
 const SITE_DESCRIPTION = 'This is the Turborepo Starter web application.';
 
