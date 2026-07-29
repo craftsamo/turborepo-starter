@@ -6,7 +6,14 @@ import process from "node:process";
 
 import { COPILOT_SECRETS, parseArguments } from "./policy.mts";
 import type { SetupArguments } from "./policy.mts";
-import { api, preflight, repositoryRoot, runCommand } from "./lib.mts";
+import {
+  api,
+  ensureEnvironment,
+  environmentExists,
+  preflight,
+  repositoryRoot,
+  runCommand,
+} from "./lib.mts";
 import type { PreflightResult } from "./lib.mts";
 
 type Repository = PreflightResult["repository"];
@@ -154,13 +161,11 @@ export async function setupSecrets(args: SetupArguments): Promise<void> {
       }
     }
 
-    const environments =
-      target.type === "environment" ? listEnvironments(repository) : [];
-    const environmentExists =
+    const targetEnvironmentExists =
       target.type === "environment" &&
-      environments.some(({ name }) => name === target.name);
+      environmentExists(repository, target.name);
     if (target.type === "environment") {
-      if (!environmentExists) {
+      if (!targetEnvironmentExists) {
         console.log(`Environment will be created: ${target.name}`);
       }
       console.warn(
@@ -169,7 +174,7 @@ export async function setupSecrets(args: SetupArguments): Promise<void> {
     }
 
     const existing =
-      target.type === "environment" && !environmentExists
+      target.type === "environment" && !targetEnvironmentExists
         ? []
         : listSecretNames(repository, target);
     for (const name of names) {
@@ -184,12 +189,8 @@ export async function setupSecrets(args: SetupArguments): Promise<void> {
       console.log("Secret setup cancelled.");
       return;
     }
-    if (target.type === "environment" && !environmentExists) {
-      api<unknown>(
-        "PUT",
-        `/repos/${repository}/environments/${encodeURIComponent(target.name)}`,
-        {},
-      );
+    if (target.type === "environment") {
+      ensureEnvironment(repository, target.name);
     }
     for (const name of names) setSecret(repository, target, name);
     console.log("Secret setup completed.");

@@ -11,6 +11,11 @@ import {
   parseArguments,
   parseLabels,
 } from "../setup/github/policy.mts";
+import {
+  CommandError,
+  ensureEnvironment,
+  environmentExists,
+} from "../setup/github/lib.mts";
 
 describe("parseArguments", () => {
   it("uses interactive repository setup by default", () => {
@@ -327,6 +332,76 @@ describe("labels", () => {
           { name: "💬question", description: "Questions", color: "D876E3" },
         ]),
       /Merge their assignments manually/,
+    );
+  });
+});
+
+describe("deployment environments", () => {
+  const httpError = (status, message) =>
+    new CommandError("gh api", { stderr: `gh: ${message} (HTTP ${status})` });
+
+  const recorder = (respond) => {
+    const calls = [];
+    const request = (method, endpoint, body) => {
+      calls.push({ method, endpoint, body });
+      return respond(method);
+    };
+    return { calls, request };
+  };
+
+  it("creates a missing environment with a single upsert", () => {
+    const { calls, request } = recorder((method) => {
+      if (method === "GET") throw httpError(404, "Not Found");
+      return undefined;
+    });
+
+    assert.equal(ensureEnvironment("owner/repo", "production", request), true);
+    assert.deepEqual(calls, [
+      {
+        method: "GET",
+        endpoint: "/repos/owner/repo/environments/production",
+        body: undefined,
+      },
+      {
+        method: "PUT",
+        endpoint: "/repos/owner/repo/environments/production",
+        body: {},
+      },
+    ]);
+  });
+
+  it("leaves an existing environment untouched so protection rules survive", () => {
+    const { calls, request } = recorder(() => ({ name: "production" }));
+
+    assert.equal(ensureEnvironment("owner/repo", "production", request), false);
+    assert.deepEqual(
+      calls.map(({ method }) => method),
+      ["GET"],
+    );
+  });
+
+  it("propagates a non-404 lookup failure instead of overwriting", () => {
+    const { calls, request } = recorder(() => {
+      throw httpError(403, "Forbidden");
+    });
+
+    assert.throws(
+      () => ensureEnvironment("owner/repo", "production", request),
+      /Forbidden/,
+    );
+    assert.deepEqual(
+      calls.map(({ method }) => method),
+      ["GET"],
+    );
+  });
+
+  it("escapes the environment name in the endpoint path", () => {
+    const { calls, request } = recorder(() => ({}));
+
+    assert.equal(environmentExists("owner/repo", "staging/eu", request), true);
+    assert.equal(
+      calls[0].endpoint,
+      "/repos/owner/repo/environments/staging%2Feu",
     );
   });
 });
