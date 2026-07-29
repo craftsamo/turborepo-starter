@@ -86,8 +86,10 @@ values are entered directly through `gh secret set`; the Node.js setup process
 does not receive or log them.
 
 Existing Environments are offered as choices. A new Environment can be created
-after confirmation. Environment protection rules such as reviewers, deployment
-branches, and wait timers are outside this command's scope.
+after confirmation. Setting protection rules is outside this command's scope,
+but existing ones are preserved: an Environment that already exists is never
+re-sent to the API, so reviewers, deployment branches, and wait timers
+configured elsewhere survive a re-run.
 
 Jobs must declare an Environment to access its secrets:
 

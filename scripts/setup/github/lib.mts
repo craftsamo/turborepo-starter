@@ -11,6 +11,12 @@ export interface CommandErrorFields {
 
 export type ApiMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
+export type ApiRequest = <T = unknown>(
+  method: ApiMethod,
+  endpoint: string,
+  body?: unknown,
+) => T | undefined;
+
 export interface RunCommandOptions {
   inherit?: boolean | undefined;
   input?: string | undefined;
@@ -111,6 +117,53 @@ export function getRepositoryName(explicitRepository?: string): string {
     "--jq",
     ".nameWithOwner",
   ]);
+}
+
+/**
+ * Report whether a deployment environment already exists.
+ *
+ * Asks for the single environment by name instead of scanning the environment
+ * list: the list endpoint is paginated, so a repository with more environments
+ * than one page would report an existing environment as missing.
+ */
+export function environmentExists(
+  repository: string,
+  name: string,
+  request: ApiRequest = api,
+): boolean {
+  try {
+    request(
+      "GET",
+      `/repos/${repository}/environments/${encodeURIComponent(name)}`,
+    );
+    return true;
+  } catch (error) {
+    if (error instanceof CommandError && error.httpStatus === 404) return false;
+    throw error;
+  }
+}
+
+/**
+ * Create a deployment environment when it is missing, and return whether it was
+ * created.
+ *
+ * An existing environment is left untouched on purpose. `PUT /environments`
+ * is an upsert whose omitted properties are reset, so re-sending it would strip
+ * the protection rules (required reviewers, wait timer, branch policy) that a
+ * repository administrator configured out of band.
+ */
+export function ensureEnvironment(
+  repository: string,
+  name: string,
+  request: ApiRequest = api,
+): boolean {
+  if (environmentExists(repository, name, request)) return false;
+  request(
+    "PUT",
+    `/repos/${repository}/environments/${encodeURIComponent(name)}`,
+    {},
+  );
+  return true;
 }
 
 export function preflight(explicitRepository?: string): PreflightResult {
