@@ -48,6 +48,10 @@ yarn-error.log*
 .variables
 .opencode/package-lock.json
 
+# step outputs captured when running a workflow step locally
+# (e.g. GITHUB_OUTPUT=gh_output ./step.sh)
+gh_output
+
 # generated agent-skill links (created by scripts/link-agent-skills.mjs on install)
 /.agents/skills
 /.claude/skills
