@@ -1,0 +1,9 @@
+{
+  "name": "@workspace/playwright",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./index.ts",
+  "devDependencies": {
+    "@playwright/test": "^1.61.1"
+  }
+}

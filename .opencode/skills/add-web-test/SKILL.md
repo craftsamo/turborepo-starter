@@ -15,6 +15,11 @@ Add a Vitest + jsdom test for `apps/web` that renders components through the
 project's `customRender` wrapper (so router, Redux, and theme context are all
 present) and correctly handles async server components.
 
+**Boundary**: this layer verifies semantics and behavior only. jsdom computes
+no CSS layout — never assert layout, breakpoints, scrolling, or visual
+correctness here; that belongs to the Playwright layers (`add-e2e-test`
+skill: `e2e/layout.spec.ts` geometry invariants and `e2e/vrt.spec.ts` VRT).
+
 </Goal>
 
 <Scope>
@@ -82,6 +87,31 @@ present) and correctly handles async server components.
 
 </Steps>
 
+<WhatToAssert>
+
+What belongs in a jsdom test, by subject. Everything visual belongs to the
+Playwright layers (`add-e2e-test`) — jsdom computes no CSS layout, so a
+layout assertion here tests nothing.
+
+- **Component** (`_components/`, `@workspace/ui`): roles, ARIA attributes,
+  accessible names; the *semantic* difference between variants (e.g. a
+  `floating` nav renders `sr-only` labels, an active tab gets
+  `aria-current`); handler wiring (click/submit fires, dispatches); controlled
+  state transitions. DOM *order* is fine (`getAllByRole` sequence) — DOM
+  *position* is not.
+- **Page** (async server component): the `h1` and load-bearing copy; link
+  `href`s; semantic attributes the E2E layer anchors on (`data-mode`,
+  `data-slot`, `data-variant`); that awaited `params`/`searchParams` are
+  reflected in output.
+- **Slice / util / hook**: pure input→output — reducers, actions, selectors,
+  formatting; no DOM at all.
+- **Interaction** (form, counter, toast): the component-level behavior here
+  (state updates, callbacks, a11y of error states); the real end-to-end
+  wiring (route + store + toaster on a live page) belongs in the functional
+  E2E spec.
+
+</WhatToAssert>
+
 <Verify>
 
 - `cd apps/web && pnpm test -- path/to/test.test.tsx` — single file
@@ -101,5 +131,9 @@ present) and correctly handles async server components.
 - Do NOT add `matchMedia` / `IntersectionObserver` / `next/router` mocks
   per-test — they belong in `src/tests/vitest.setup.js`.
 - Do NOT put tests outside `src/tests/` — that's the configured glob.
+- Do NOT assert appearance or placement in jsdom: no `toHaveClass` for
+  styling, no layout/breakpoint/alignment/column-count claims, no full-tree
+  snapshots. Placement and looks are owned by `e2e/layout.spec.ts` (geometry)
+  and `e2e/vrt.spec.ts` (pixels) — see the `add-e2e-test` skill.
 
 </AntiPatterns>

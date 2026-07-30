@@ -1,0 +1,67 @@
+name: Update VRT baselines
+
+# Regenerates the visual-regression baseline images on the same platform that
+# compares them (Linux) and opens a PR with the result. Run this after landing
+# an intentional visual change, or once to seed the initial baselines.
+#
+# NOTE: PRs created with the default GITHUB_TOKEN do not trigger the Tests
+# workflow automatically; close/reopen the PR (or push an empty commit) if you
+# need the required checks to run on it.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  COREPACK_ENABLE_DOWNLOAD_PROMPT: 0
+
+jobs:
+  update-baselines:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Use Node.js 24.x
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24.x
+          package-manager-cache: false
+      - name: Enable Corepack
+        run: corepack enable
+      - name: Get pnpm store directory
+        id: pnpm-store
+        run: echo "dir=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-store.outputs.dir }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+      - run: pnpm install --frozen-lockfile
+      - name: Build web
+        run: npx turbo run build --filter=web
+      - name: Install Chromium
+        working-directory: apps/web
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Regenerate VRT baselines
+        working-directory: apps/web
+        env:
+          VRT_UPDATE: "1"
+        run: pnpm exec playwright test e2e/vrt.spec.ts --update-snapshots
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          add-paths: apps/web/e2e/**
+          branch: chore/update-vrt-baselines
+          commit-message: "test(web): update VRT baselines"
+          title: Update VRT baselines
+          body: |
+            Regenerated visual-regression baseline images via the
+            **Update VRT baselines** workflow (Linux/Chromium render).
+
+            Review the image diffs to confirm every change is intentional,
+            then merge to activate them as the new comparison baselines.
+          delete-branch: true

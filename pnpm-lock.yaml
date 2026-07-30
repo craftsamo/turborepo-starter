@@ -124,6 +124,9 @@ importers:
       '@workspace/eslint':
         specifier: workspace:*
         version: link:../../packages/eslint
+      '@workspace/playwright':
+        specifier: workspace:*
+        version: link:../../packages/playwright
       '@workspace/prettier':
         specifier: workspace:*
         version: link:../../packages/prettier
@@ -196,6 +199,12 @@ importers:
       typescript-eslint:
         specifier: ^8.15.0
         version: 8.61.1(@typescript/typescript6@6.0.2)(eslint@9.39.4(jiti@2.7.0))
+
+  packages/playwright:
+    devDependencies:
+      '@playwright/test':
+        specifier: ^1.61.1
+        version: 1.61.1
 
   packages/prettier:
     devDependencies:

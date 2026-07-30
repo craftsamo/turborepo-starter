@@ -45,6 +45,7 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@workspace/eslint": "workspace:*",
+    "@workspace/playwright": "workspace:*",
     "@workspace/prettier": "workspace:*",
     "@workspace/tsconfig": "workspace:*",
     "@workspace/types": "workspace:*",
