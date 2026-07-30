@@ -30,7 +30,9 @@ overrides:
   "fast-uri": "^3.1.4"
   "flatted": "^3.4.2"
   "handlebars": "^4.7.9"
-  "brace-expansion": "^2.1.2"
+  # GHSA-mh99-v99m-4gvg: minimatch 10 consumes brace-expansion 5's named API.
+  "brace-expansion": "^5.0.8"
+  "minimatch": "^10.2.6"
   "vite": "^7.3.2"
   "lodash": "^4.18.1"
   "tmp": "^0.2.4"
@@ -39,7 +41,6 @@ overrides:
   "tar": "^7.5.11"
   "rollup": "^4.59.0"
   "glob": "^10.5.0"
-  "minimatch": "^9.0.7"
   # Dependabot #3 (GHSA-qx2v-qp2m-jg93 / CVE-2026-41305): force next's bundled
   # postcss 8.4.31 up to a patched 8.5.x. Require 8.5.18 for the later path
   # disclosure fix shared by all consumers.
