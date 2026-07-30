@@ -51,6 +51,16 @@ jobs:
         env:
           VRT_UPDATE: "1"
         run: pnpm exec playwright test e2e/vrt.spec.ts --update-snapshots
+      - name: Upload Playwright artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vrt-baseline-artifacts
+          path: |
+            apps/web/playwright-report/
+            apps/web/test-results/
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Create pull request
         uses: peter-evans/create-pull-request@v7
         with:
