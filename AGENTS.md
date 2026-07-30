@@ -64,6 +64,28 @@ databases, temporary files, and external services. Keep side-effecting external
 checks in an opt-in `test:live` script; never include live tests in default or
 required CI commands.
 
+## Test Layer Responsibilities
+
+Each test layer owns a distinct failure class; put every assertion in the layer
+that can actually observe the failure it guards against:
+
+- **Vitest (jsdom)** — semantics and behavior only: roles, ARIA, copy,
+  interactions, reducers. jsdom computes no CSS layout, so these tests must
+  never claim layout or visual correctness.
+- **Playwright geometry invariants** (`e2e/layout.spec.ts` + the
+  `@workspace/playwright` helpers) — layout contracts measured in real
+  Chromium: no horizontal overflow, exactly one primary nav per viewport,
+  Screen-owned scrolling, chrome never covering content, full/snap sections
+  filling the screen.
+- **Playwright VRT** (`e2e/vrt.spec.ts`) — pixel comparison against committed
+  baselines per route x viewport x color scheme. Baselines render on Linux
+  (CI) only; regenerate them with the "Update VRT baselines" workflow.
+
+**Definition of done**: a change touching layout, chrome, breakpoints, or
+theming is not covered until a geometry invariant and/or VRT shot exercises
+it — passing functional tests alone prove nothing about layout. Follow the
+`add-e2e-test` skill when adding routes or browser apps.
+
 ## App- and Package-specific Guidelines
 
 For app- and package-specific guidelines, see @apps/web/AGENTS.md and

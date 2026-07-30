@@ -15,6 +15,11 @@ Add a Vitest + jsdom test for `apps/web` that renders components through the
 project's `customRender` wrapper (so router, Redux, and theme context are all
 present) and correctly handles async server components.
 
+**Boundary**: this layer verifies semantics and behavior only. jsdom computes
+no CSS layout — never assert layout, breakpoints, scrolling, or visual
+correctness here; that belongs to the Playwright layers (`add-e2e-test`
+skill: `e2e/layout.spec.ts` geometry invariants and `e2e/vrt.spec.ts` VRT).
+
 </Goal>
 
 <Scope>
