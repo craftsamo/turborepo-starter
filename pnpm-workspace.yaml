@@ -22,21 +22,31 @@ verifyDepsBeforeRun: false
 # The previous resolutions were flat (no parent>child scoping), so they map
 # directly to global pnpm `overrides`.
 overrides:
+  # Hono advisories: SDK 1.30 first permits the patched node-server 2.0 line.
+  "@hono/node-server": "^2.0.5"
+  "@modelcontextprotocol/sdk": "^1.30.0"
+  "hono": "^4.12.27"
+  # GHSA-4c8g-83qw-93j6 and GHSA-v2hh-gcrm-f6hx: require the later fix.
+  "fast-uri": "^3.1.4"
   "flatted": "^3.4.2"
   "handlebars": "^4.7.9"
-  "brace-expansion": "^2.0.3"
+  "brace-expansion": "^2.1.2"
   "vite": "^7.3.2"
   "lodash": "^4.18.1"
   "tmp": "^0.2.4"
-  "js-yaml": "^4.1.1"
+  "js-yaml": "^4.3.0"
   "qs": "^6.14.2"
   "tar": "^7.5.11"
   "rollup": "^4.59.0"
   "glob": "^10.5.0"
   "minimatch": "^9.0.7"
   # Dependabot #3 (GHSA-qx2v-qp2m-jg93 / CVE-2026-41305): force next's bundled
-  # postcss 8.4.31 up to a patched 8.5.x. Other consumers already use >=8.5.10.
-  "postcss": "^8.5.10"
+  # postcss 8.4.31 up to a patched 8.5.x. Require 8.5.18 for the later path
+  # disclosure fix shared by all consumers.
+  "postcss": "^8.5.18"
+  # GHSA-f88m-g3jw-g9cj: Next.js still requests sharp ^0.34.5, so force the
+  # patched 0.35.x line until Next.js raises its optional dependency range.
+  "sharp": "^0.35.0"
   # Dependabot #6 (GHSA-g7r4-m6w7-qqqr): patched in esbuild 0.28.1. vite@7 and
   # tsup@8 still declare esbuild "^0.27.0", so this override forces 0.28.x past
   # their range (vite@8 already accepts ^0.28, confirming API compatibility).
