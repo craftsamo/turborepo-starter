@@ -37,6 +37,9 @@ overrides:
   # Dependabot #3 (GHSA-qx2v-qp2m-jg93 / CVE-2026-41305): force next's bundled
   # postcss 8.4.31 up to a patched 8.5.x. Other consumers already use >=8.5.10.
   "postcss": "^8.5.10"
+  # GHSA-f88m-g3jw-g9cj: Next.js still requests sharp ^0.34.5, so force the
+  # patched 0.35.x line until Next.js raises its optional dependency range.
+  "sharp": "^0.35.0"
   # Dependabot #6 (GHSA-g7r4-m6w7-qqqr): patched in esbuild 0.28.1. vite@7 and
   # tsup@8 still declare esbuild "^0.27.0", so this override forces 0.28.x past
   # their range (vite@8 already accepts ^0.28, confirming API compatibility).
