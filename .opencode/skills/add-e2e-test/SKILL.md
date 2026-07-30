@@ -84,6 +84,48 @@ the root AGENTS.md.
 
 </Steps>
 
+<WhatToAssert>
+
+Each spec file has a distinct job; keep assertions in the right one:
+
+- **Functional spec** (`showcase.spec.ts`): user flows only — navigation,
+  URL changes, real store/toast/state wiring on a live page. Copy coverage
+  and per-variant semantics belong in Vitest (`add-web-test`), not here.
+- **Layout spec** (`layout.spec.ts`): geometry invariants only. At most one
+  copy assertion per route — the `h1` anchor that proves the page loaded.
+  If you are asserting text beyond that, it is in the wrong file.
+- **VRT spec** (`vrt.spec.ts`): appearance. The work goes into determinism:
+  a `ready` that resolves all streamed/async content, and `mask` for
+  anything inherently unstable (clocks, avatars, live data).
+
+**In-page layout** (component placement, spacing, grid collapse) is covered
+in two tiers:
+
+1. **VRT is the default owner.** A new route's `shots` entries cover its
+   internal arrangement automatically — per viewport and color scheme, so
+   breakpoint collapse regressions show up as image diffs. No extra work.
+2. **Promote critical contracts to geometry.** If a specific arrangement
+   breaking would make the page unusable (e.g. "cards form 2 columns at
+   desktop, 1 on mobile", "the CTA stays inside the viewport"), add a
+   route-specific `boundingBox` assertion in `layout.spec.ts` so the
+   contract has a name and a precise failure message.
+
+Rule of thumb: if a human seeing the broken screenshot would instantly say
+"don't merge", VRT suffices. If the regression might be mistaken for an
+intentional restyle in an image diff, pin it with a geometry assertion.
+
+Routing by change type:
+
+| Change | Touch |
+| --- | --- |
+| New route | `routes` in `layout.spec.ts` + `shots` in `vrt.spec.ts` |
+| New chrome / layout primitive | Helper in `@workspace/playwright` + specs |
+| New interaction flow | Functional spec (+ Vitest for component behavior) |
+| Critical in-page arrangement | Route-specific assertion in `layout.spec.ts` |
+| Style-only change | No new tests — refresh VRT baselines via the workflow |
+
+</WhatToAssert>
+
 <Verify>
 
 - `nps test.web.e2e.all` — all viewport projects (VRT skips off-Linux).

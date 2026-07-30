@@ -84,7 +84,9 @@ that can actually observe the failure it guards against:
 **Definition of done**: a change touching layout, chrome, breakpoints, or
 theming is not covered until a geometry invariant and/or VRT shot exercises
 it — passing functional tests alone prove nothing about layout. Follow the
-`add-e2e-test` skill when adding routes or browser apps.
+`add-e2e-test` skill when adding routes or browser apps. Per-subject
+assertion placement (component / page / slice / flow → which layer asserts
+what) is detailed in the `add-web-test` and `add-e2e-test` skills.
 
 ## App- and Package-specific Guidelines
 
