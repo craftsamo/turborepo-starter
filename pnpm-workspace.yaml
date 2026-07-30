@@ -22,6 +22,10 @@ verifyDepsBeforeRun: false
 # The previous resolutions were flat (no parent>child scoping), so they map
 # directly to global pnpm `overrides`.
 overrides:
+  # Hono advisories: SDK 1.30 first permits the patched node-server 2.0 line.
+  "@hono/node-server": "^2.0.5"
+  "@modelcontextprotocol/sdk": "^1.30.0"
+  "hono": "^4.12.27"
   "flatted": "^3.4.2"
   "handlebars": "^4.7.9"
   "brace-expansion": "^2.0.3"
