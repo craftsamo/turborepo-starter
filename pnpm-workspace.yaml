@@ -25,7 +25,7 @@ overrides:
   # Hono advisories: SDK 1.30 first permits the patched node-server 2.0 line.
   "@hono/node-server": "^2.0.5"
   "@modelcontextprotocol/sdk": "^1.30.0"
-  "hono": "^4.12.27"
+  "hono": "4.12.34"
   # GHSA-4c8g-83qw-93j6 and GHSA-v2hh-gcrm-f6hx: require the later fix.
   "fast-uri": "^3.1.4"
   "flatted": "^3.4.2"
