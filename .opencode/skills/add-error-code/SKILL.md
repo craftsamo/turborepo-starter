@@ -1,6 +1,7 @@
 ---
 name: add-error-code
-description: Use when adding a new ErrorCode to packages/constants, updating the ErrorMessage map, or adding a rate-limit tier. Covers the ErrorCode enum + ErrorMessage {log,notice} pairing rule, NodeErrorMessage, and rateLimitConfigs. Trigger keywords: "error code", "ErrorMessage", "rate limit config", "constants".
+description: |-
+  Use when adding a new ErrorCode to packages/constants, updating the ErrorMessage map, or adding a rate-limit tier. Covers the ErrorCode enum + ErrorMessage {log,notice} pairing rule, NodeErrorMessage, and rateLimitConfigs. Trigger keywords: "error code", "ErrorMessage", "rate limit config", "constants".
 license: MIT
 compatibility: opencode
 metadata:

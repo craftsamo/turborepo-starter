@@ -1,6 +1,7 @@
 ---
 name: nextjs-rsc-streaming
-description: Use when implementing React Server Component streaming in apps/web (Next.js 16 + React 19) — page-level Promise kickoff, Suspense boundaries with colocated *Skeleton fallbacks, use() in client components, redirect()/notFound() streamed through boundaries, and the loading.tsx-removal + top-loader pattern, plus streaming client sections that own mutating state (load more, pagination). FORESIGHT recipe: the starter does not currently use this; adopt when a page fetches data and you want progressive streaming. Trigger keywords: "RSC streaming", "Suspense", "use()", "Promise.all", "loading.tsx", "streaming", "React 19", "load more", "pagination".
+description: |-
+  Use when implementing React Server Component streaming in apps/web (Next.js 16 + React 19) — page-level Promise kickoff, Suspense boundaries with colocated *Skeleton fallbacks, use() in client components, redirect()/notFound() streamed through boundaries, and the loading.tsx-removal + top-loader pattern, plus streaming client sections that own mutating state (load more, pagination). FORESIGHT recipe: the starter does not currently use this; adopt when a page fetches data and you want progressive streaming. Trigger keywords: "RSC streaming", "Suspense", "use()", "Promise.all", "loading.tsx", "streaming", "React 19", "load more", "pagination".
 license: MIT
 compatibility: opencode
 metadata:

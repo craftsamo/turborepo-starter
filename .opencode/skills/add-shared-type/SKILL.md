@@ -1,6 +1,7 @@
 ---
 name: add-shared-type
-description: Use when adding a cross-package type to packages/types (e.g. a new Next.js App Router helper type, or a shared contract consumed by both apps/web and a future package). Covers the type-only package rules, ./web subpath exports, and PageProps/LayoutProps conventions. Trigger keywords: "shared type", "PageProps", "LayoutProps", "SearchParams", "@workspace/types/web".
+description: |-
+  Use when adding a cross-package type to packages/types (e.g. a new Next.js App Router helper type, or a shared contract consumed by both apps/web and a future package). Covers the type-only package rules, ./web subpath exports, and PageProps/LayoutProps conventions. Trigger keywords: "shared type", "PageProps", "LayoutProps", "SearchParams", "@workspace/types/web".
 license: MIT
 compatibility: opencode
 metadata:

@@ -1,6 +1,7 @@
 ---
 name: sync-upstream
-description: Use when incorporating upstream changes into this fork via git rebase and resolving the resulting conflicts (取り込む / リベース / 追従). Covers fetch upstream, a backup tag, the rebase ours/theirs swap, the three conflict buckets (textual / type-ripple / silent drift), a coupling audit for fork-only surfaces, nps verification, and the two landing paths (direct-to-main vs follow-up PR). Trigger keywords: "upstream", "rebase", "sync upstream", "merge conflict", "fork", "取り込む", "リベース", "追従".
+description: |-
+  Use when incorporating upstream changes into this fork via git rebase and resolving the resulting conflicts (取り込む / リベース / 追従). Covers fetch upstream, a backup tag, the rebase ours/theirs swap, the three conflict buckets (textual / type-ripple / silent drift), a coupling audit for fork-only surfaces, nps verification, and the two landing paths (direct-to-main vs follow-up PR). Trigger keywords: "upstream", "rebase", "sync upstream", "merge conflict", "fork", "取り込む", "リベース", "追従".
 license: MIT
 compatibility: opencode
 metadata:

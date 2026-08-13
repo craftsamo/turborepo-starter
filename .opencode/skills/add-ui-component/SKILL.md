@@ -1,6 +1,7 @@
 ---
 name: add-ui-component
-description: Use when adding a new shared React primitive (component, hook, or utility) to packages/ui. Covers shadcn "new-york" style, Radix primitives, CVA variants, Tailwind v4, and subpath exports. Trigger keywords: "add component", "new ui primitive", "shadcn add", "Radix", "CVA variant".
+description: |-
+  Use when adding a new shared React primitive (component, hook, or utility) to packages/ui. Covers shadcn "new-york" style, Radix primitives, CVA variants, Tailwind v4, and subpath exports. Trigger keywords: "add component", "new ui primitive", "shadcn add", "Radix", "CVA variant".
 license: MIT
 compatibility: opencode
 metadata:

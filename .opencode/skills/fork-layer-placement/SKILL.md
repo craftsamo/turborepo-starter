@@ -1,6 +1,7 @@
 ---
 name: fork-layer-placement
-description: Use when deciding WHICH repo/layer of a fork chain a shared change should live in — a new opencode skill, a shared package, a CI workflow, a convention, or a config ("upstream or fork?", "which layer?", "どっちに実装?", "どこに置く?"). Covers building the fork-lineage tree, the owns-it + common-ancestor rule, generic-to-root vs tech-to-its-layer, sibling forks, repo vs global, and the no-duplicate / no-delete-commit migration rule. Trigger keywords: "which repo", "which layer", "where to put", "upstream or fork", "fork chain", "placement", "どっちに実装", "どこに置く".
+description: |-
+  Use when deciding WHICH repo/layer of a fork chain a shared change should live in — a new opencode skill, a shared package, a CI workflow, a convention, or a config ("upstream or fork?", "which layer?", "どっちに実装?", "どこに置く?"). Covers building the fork-lineage tree, the owns-it + common-ancestor rule, generic-to-root vs tech-to-its-layer, sibling forks, repo vs global, and the no-duplicate / no-delete-commit migration rule. Trigger keywords: "which repo", "which layer", "where to put", "upstream or fork", "fork chain", "placement", "どっちに実装", "どこに置く".
 license: MIT
 compatibility: opencode
 metadata:

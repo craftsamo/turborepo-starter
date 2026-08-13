@@ -1,6 +1,7 @@
 ---
 name: nextjs-server-action
-description: Use when implementing a Next.js Server Action in apps/web with React 19 useActionState and Sonner toast feedback. Covers the two-tier 'use server' architecture (route action.ts + src/lib/api SDK), the ActionResult<T> shape, inline toast wrapper with stable id + mutation lock, optimistic-on-success derived render, direct-await pattern for non-form actions, revalidateTag(tag, 'max') cache invalidation, and the notice/log error split. FORESIGHT recipe: the starter does not currently use server actions; adopt when a form or button needs to mutate server state with progressive feedback. Trigger keywords: "server action", "use server", "useActionState", "ActionResult", "Sonner", "toast", "revalidateTag", "form mutation", "logout action".
+description: |-
+  Use when implementing a Next.js Server Action in apps/web with React 19 useActionState and Sonner toast feedback. Covers the two-tier 'use server' architecture (route action.ts + src/lib/api SDK), the ActionResult<T> shape, inline toast wrapper with stable id + mutation lock, optimistic-on-success derived render, direct-await pattern for non-form actions, revalidateTag(tag, 'max') cache invalidation, and the notice/log error split. FORESIGHT recipe: the starter does not currently use server actions; adopt when a form or button needs to mutate server state with progressive feedback. Trigger keywords: "server action", "use server", "useActionState", "ActionResult", "Sonner", "toast", "revalidateTag", "form mutation", "logout action".
 license: MIT
 compatibility: opencode
 metadata:

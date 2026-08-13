@@ -1,6 +1,7 @@
 ---
 name: add-web-test
-description: Use when adding a Vitest test for apps/web (components, pages, slices, utils). Covers the customRender wrapper (RouterContext + ReduxToolProvider + ThemeProvider), vitest.setup.js global mocks, awaiting async server components before render, and test file placement under src/tests. Trigger keywords: "vitest test", "jsdom", "customRender", "testing library", "test web".
+description: |-
+  Use when adding a Vitest test for apps/web (components, pages, slices, utils). Covers the customRender wrapper (RouterContext + ReduxToolProvider + ThemeProvider), vitest.setup.js global mocks, awaiting async server components before render, and test file placement under src/tests. Trigger keywords: "vitest test", "jsdom", "customRender", "testing library", "test web".
 license: MIT
 compatibility: opencode
 metadata:

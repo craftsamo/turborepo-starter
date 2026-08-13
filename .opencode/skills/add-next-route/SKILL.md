@@ -1,6 +1,7 @@
 ---
 name: add-next-route
-description: Use when adding a new Next.js App Router route or route group to apps/web (page.tsx, layout.tsx, loading.tsx, route groups). Covers async server components, PageProps/LayoutProps from @workspace/types/web, awaiting Promise params/searchParams, route-local _components/_utils, and the _components/NotFound 404 pieces. Trigger keywords: "new route", "page.tsx", "layout.tsx", "App Router", "route group", "Next 16".
+description: |-
+  Use when adding a new Next.js App Router route or route group to apps/web (page.tsx, layout.tsx, loading.tsx, route groups). Covers async server components, PageProps/LayoutProps from @workspace/types/web, awaiting Promise params/searchParams, route-local _components/_utils, and the _components/NotFound 404 pieces. Trigger keywords: "new route", "page.tsx", "layout.tsx", "App Router", "route group", "Next 16".
 license: MIT
 compatibility: opencode
 metadata:

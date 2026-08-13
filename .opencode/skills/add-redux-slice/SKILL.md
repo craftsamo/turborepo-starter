@@ -1,6 +1,7 @@
 ---
 name: add-redux-slice
-description: Use when adding a new Redux Toolkit slice to apps/web (e.g. a counter, cart, or feature state). Covers createSlice in store/slices, default-exporting the reducer, named-exporting actions, registering in store/index.ts, and using the typed hooks useAppDispatch/useAppSelector. Trigger keywords: "Redux slice", "createSlice", "useAppDispatch", "useAppSelector", "store reducer".
+description: |-
+  Use when adding a new Redux Toolkit slice to apps/web (e.g. a counter, cart, or feature state). Covers createSlice in store/slices, default-exporting the reducer, named-exporting actions, registering in store/index.ts, and using the typed hooks useAppDispatch/useAppSelector. Trigger keywords: "Redux slice", "createSlice", "useAppDispatch", "useAppSelector", "store reducer".
 license: MIT
 compatibility: opencode
 metadata:

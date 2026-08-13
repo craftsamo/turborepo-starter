@@ -1,6 +1,7 @@
 ---
 name: add-e2e-test
-description: Use when adding or updating Playwright E2E coverage for a browser app — functional flows, layout geometry invariants (overflow, chrome, scrolling, snap), or visual regression (VRT) baselines — and when wiring a new route or a new browser app into the E2E safety net. Covers the @workspace/playwright config factory and helpers, the layout.spec.ts / vrt.spec.ts patterns, Linux-only VRT baselines, and the "Update VRT baselines" workflow. Trigger keywords: "e2e", "playwright", "layout test", "geometry invariant", "VRT", "visual regression", "screenshot test", "baseline".
+description: |-
+  Use when adding or updating Playwright E2E coverage for a browser app — functional flows, layout geometry invariants (overflow, chrome, scrolling, snap), or visual regression (VRT) baselines — and when wiring a new route or a new browser app into the E2E safety net. Covers the @workspace/playwright config factory and helpers, the layout.spec.ts / vrt.spec.ts patterns, Linux-only VRT baselines, and the "Update VRT baselines" workflow. Trigger keywords: "e2e", "playwright", "layout test", "geometry invariant", "VRT", "visual regression", "screenshot test", "baseline".
 license: MIT
 compatibility: opencode
 metadata:

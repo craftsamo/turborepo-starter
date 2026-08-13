@@ -1,6 +1,7 @@
 ---
 name: edit-middleware
-description: Use when adding or editing Next.js middleware in apps/web (rate limiting, auth, proxy/rewrite). Covers the chain() composition in proxy.ts, the NextProxyFactory pattern, ratelimit.ts, the config matcher, and registering factories in top-to-bottom execution order. Trigger keywords: "middleware", "NextProxy", "chain", "proxy.ts", "rate limit", "ratelimit".
+description: |-
+  Use when adding or editing Next.js middleware in apps/web (rate limiting, auth, proxy/rewrite). Covers the chain() composition in proxy.ts, the NextProxyFactory pattern, ratelimit.ts, the config matcher, and registering factories in top-to-bottom execution order. Trigger keywords: "middleware", "NextProxy", "chain", "proxy.ts", "rate limit", "ratelimit".
 license: MIT
 compatibility: opencode
 metadata:
