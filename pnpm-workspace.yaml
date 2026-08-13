@@ -28,6 +28,7 @@ overrides:
   "hono": "4.12.34"
   # GHSA-4c8g-83qw-93j6 and GHSA-v2hh-gcrm-f6hx: require the later fix.
   "fast-uri": "^3.1.5"
+  "ip-address": "10.3.1"
   "flatted": "^3.4.2"
   "handlebars": "^4.7.9"
   "brace-expansion": "^2.1.2"
