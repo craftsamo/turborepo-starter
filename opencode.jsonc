@@ -1,9 +1,10 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "instructions": [
-    "docs/instructions/**/*.md",
-    "apps/**/AGENTS.md",
-    "packages/**/AGENTS.md"
+    "apps/web/AGENTS.md",
+    "packages/constants/AGENTS.md",
+    "packages/types/AGENTS.md",
+    "packages/ui/AGENTS.md"
   ],
   "permission": {
     "edit": "ask",

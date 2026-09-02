@@ -7,6 +7,19 @@ This is a monorepo with TypeScript, Turbo, and pnpm workspaces.
 1. **Session title**: begin with verb (e.g., `Add ...`, `Fix ...`), max 30 chars
 2. **Language**: respond in user's language
 
+## Instruction Files
+
+List instruction files explicitly in `opencode.jsonc`; do not use a glob that
+expands to multiple files. OpenCode resolves them concurrently and concatenates
+them in completion order, so glob expansion can reorder the prompt prefix
+between turns and invalidate the Anthropic prompt cache. A measurement on
+2026-09-02 found 65% full cache misses and a 46M/32M cache write/read ratio in
+this repository, compared with 4% and 0.04 in a single-file repository.
+
+Do not glob `packages/**/AGENTS.md`: it traverses workspace symlinks under
+`packages/*/node_modules/@workspace/*`, loading four duplicate copies (about
+24 KB).
+
 ## Skill Routing
 
 When asked to update this fork from the repository configured as the `upstream`
