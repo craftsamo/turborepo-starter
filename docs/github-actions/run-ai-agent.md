@@ -18,6 +18,20 @@ CI-only agents defined in `.github/opencode/`. The job copies that directory
 into its own `XDG_CONFIG_HOME`, so the agents never appear in local OpenCode
 sessions, while the repository's `AGENTS.md` and skills still apply.
 
+```
+.github/opencode/
+├── agents/            permissions per agent; the body stays empty
+├── instructions/      common.md plus one file per agent
+├── plugins/           instructions.ts appends the instructions
+├── skills/            CI-only skills
+└── models.json        default model candidates
+```
+
+Each agent keeps OpenCode's built-in prompt, including its per-model
+variants, and `plugins/instructions.ts` appends `instructions/common.md` and
+`instructions/<agent>.md` to it. An agent file with a prompt body would replace
+the built-in prompt instead.
+
 ### Process
 
 1. **Trigger**: A comment starting with `/oc` or `/opencode` from a user with
@@ -199,6 +213,9 @@ OpenCode loads `.ts` and `.js` plugins from these directories:
 | `.opencode/plugins/`        | CI agents and local sessions |
 | `.github/opencode/plugins/` | CI agents only               |
 
+`.github/opencode/plugins/instructions.ts` belongs to the workflow; keep it
+next to any plugins you add.
+
 A plugin is trusted code, not something the agent is allowed to use:
 
 - It runs inside the OpenCode process during the run step, with the provider
@@ -269,8 +286,10 @@ access to the keys.
 
 ## Customizing
 
-- **Agents**: Edit `.github/opencode/agents/<name>.md`. The Markdown body is
-  the agent's system prompt and the frontmatter holds its permissions. Keep new
+- **Instructions**: Edit `.github/opencode/instructions/<name>.md` for one
+  agent, or `common.md` for all of them.
+- **Permissions**: Edit the frontmatter of `.github/opencode/agents/<name>.md`
+  and keep its body empty. Keep new
   rules as `allow` or `ask` (`deny` on core tools makes the free tier refuse
   the request; only `execute` and `browser` are denied), and keep the path
   rules after any new `allow` rule, because the last matching rule wins. Use

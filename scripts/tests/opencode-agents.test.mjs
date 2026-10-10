@@ -1,7 +1,7 @@
 // Guards the security model of the CI agents in .github/opencode/agents/.
 // See docs/github-actions/run-ai-agent.md (Security) for why each rule exists.
 import assert from "node:assert/strict";
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
@@ -44,7 +44,14 @@ function parseAgent(file) {
     rules.push(fields);
   }
   const mode = /^mode:\s*(\S+)/m.exec(frontmatter)?.[1];
-  return { file, name: file.replace(/\.md$/, ""), mode, body, rules };
+  return {
+    file,
+    name: file.replace(/\.md$/, ""),
+    mode,
+    frontmatter,
+    body,
+    rules,
+  };
 }
 
 const agents = readdirSync(agentsDir)
@@ -114,9 +121,18 @@ describe("CI agents", () => {
         (rule) => rule.action === "shell" && rule.effect === "allow",
       );
 
-      it("is a primary agent with a prompt", () => {
+      // An empty body keeps OpenCode's built-in prompt; the CI instructions
+      // come from instructions/<name>.md through plugins/instructions.ts.
+      it("is a primary agent that keeps the built-in prompt", () => {
         assert.equal(agent.mode, "primary");
-        assert.ok(agent.body.trim().length > 0);
+        assert.equal(agent.body.trim(), "");
+        assert.ok(!/^model:/m.test(agent.frontmatter), "pins a model");
+      });
+
+      it("has CI instructions", () => {
+        assert.ok(
+          existsSync(path.join(configDir, "instructions", `${agent.name}.md`)),
+        );
       });
 
       it("starts by sending everything to ask", () => {
@@ -229,6 +245,25 @@ describe("CI agents", () => {
       }
     });
   }
+});
+
+describe("CI instructions", () => {
+  it("ship the shared instructions and the plugin that adds them", () => {
+    assert.ok(existsSync(path.join(configDir, "instructions", "common.md")));
+    assert.ok(existsSync(path.join(configDir, "plugins", "instructions.ts")));
+  });
+
+  it("only exist for CI agents", () => {
+    const names = readdirSync(path.join(configDir, "instructions"))
+      .filter((file) => file.endsWith(".md"))
+      .map((file) => file.replace(/\.md$/, ""))
+      .filter((name) => name !== "common")
+      .sort();
+    assert.deepEqual(
+      names,
+      agents.map((agent) => agent.name),
+    );
+  });
 });
 
 describe("default models", () => {
