@@ -4,148 +4,175 @@
 
 ## Prerequisites
 
-- Comment created on an issue or pull request containing `/oc` or `/opencode`
-  command
-- GitHub Copilot authentication configured (optional, for Copilot model)
-- Repository must have `id-token: write`, `contents: read`,
-  `pull-requests: write`, and `issues: write` permissions
+- A comment on an issue or pull request that starts with `/oc` or `/opencode`
+- The commenter is an owner, member, or collaborator of the repository
+- Nothing else: the default models are free and need no secrets
 
 ## How It Works
 
-The workflow automatically triggers when a comment with `/oc` or `/opencode`
-command is posted on an issue or pull request. It uses the
-[OpenCode GitHub Action](https://github.com/sst/opencode) to run AI-powered code
-tasks.
+The workflow runs the [OpenCode](https://opencode.ai) V2 CLI headlessly with
+CI-only agents defined in `.github/opencode/`. The job copies that directory
+into its own `XDG_CONFIG_HOME`, so the agents never appear in local OpenCode
+sessions, while the repository's `AGENTS.md` and skills still apply.
 
 ### Process
 
-1. **Trigger**: Comment created containing `/oc` or `/opencode` command
-2. **Filter**: Check if comment matches command pattern
-3. **Checkout**: Clone repository to access codebase
-4. **Authenticate**: Set up GitHub Copilot authentication (if configured)
-5. **Execute**: Run OpenCode agent with specified model
-6. **Report**: Post results as comment on the issue/PR
+1. **Trigger**: A comment starting with `/oc` or `/opencode` from a user with
+   write access
+2. **Checkout**: The default branch, without persisted credentials
+3. **Prepare**: Parse the command, add a 👀 reaction, fetch the issue or pull
+   request context, and fetch the pull request as `refs/opencode/head` (with
+   its base as `refs/opencode/base`)
+4. **Run**: Install the pinned `@opencode/cli` and run the agent, trying each
+   model candidate in order
+5. **Publish**: Post the answer as a comment, or post a pull request review
+   with inline comments for `review`
 
-### Available Commands
+The scripts live in `scripts/ci/opencode/`. Their parsing and decision logic
+is covered by `nps test.scripts`; `main.mts`, which only wires `gh`, `git`,
+and `opencode` together, is exercised by running the workflow.
 
-| Command                  | Description                                   | PR Conversation | PR File Review | Issue |
-| ------------------------ | --------------------------------------------- | :-------------: | :------------: | :---: |
-| `/oc review`             | Review the PR for code style, typos, and bugs |       ✅        |       ❌       |  ❌   |
-| `/oc issue`              | Analyze issue and create implementation plan  |       ❌        |       ❌       |  ✅   |
-| `/oc task <instruction>` | Execute a task with commits                   |       ✅        |       ✅       |  ✅   |
+### Commands
 
-#### Command Details
+| Command                    | Description                                       | Issue | PR  |
+| -------------------------- | ------------------------------------------------- | :---: | :-: |
+| `/oc plan <instruction>`   | Investigate and propose a plan                    |  ✅   | ✅  |
+| `/oc debug <instruction>`  | Diagnose a bug or failure and find the root cause |  ✅   | ✅  |
+| `/oc review <instruction>` | Review the pull request with inline comments      |  ❌   | ✅  |
+| `/oc <instruction>`        | Same as `plan`                                    |  ✅   | ✅  |
+| `/oc`                      | `review` on a pull request, `plan` on an issue    |  ✅   | ✅  |
 
-**`/oc review`**
+The instruction is optional for every agent and narrows what the agent looks
+at. All agents are read-only: they cannot edit files, run builds or tests, or
+call GitHub. `build` is reserved for a future write-enabled agent and is
+rejected for now.
 
-- Reviews the PR for compliance with project guidelines
-- Creates review comments on specific lines
-- Read-only operation (no file modifications)
-- Only available in PR conversation tab
-- Any arguments after `review` are ignored
-
-**`/oc issue`**
-
-- Analyzes issue content and creates implementation plan
-- Explores codebase to understand relevant code
-- Posts analysis as a comment on the issue
-- Read-only operation (no file modifications)
-- Only available on issues
-- Any arguments after `issue` are ignored
-
-**`/oc task <instruction>`**
-
-- Executes the specified task and commits changes
-- On PR: Commits directly to the PR branch
-- On Issue: Creates a new branch and PR with `Closes #<issue_number>`
+Commands also work in pull request review comments. There, `plan` and `debug`
+reply in the thread and see the commented lines.
 
 #### Usage Examples
 
 ```
 /oc review
-/oc issue
-/oc task Add unit tests for the login function
-/oc task Fix the typo in README.md
+/oc review focus on error handling
+/oc debug the login page returns 500 after the last deploy
+/oc how should we split this issue into tasks?
 ```
 
-Both `/oc` and `/opencode` prefixes are supported.
+## Models
 
-### AI Model
+Each run resolves a list of model candidates and uses the first one that
+answers:
 
-The workflow uses dynamic model configuration based on repository variables:
+1. `OPENCODE_MODEL_<AGENT>` (`OPENCODE_MODEL_PLAN`, `_REVIEW`, `_DEBUG`)
+2. `OPENCODE_MODEL`
+3. The defaults in `.github/opencode/models.json`
 
-| Variable             | Default Value       | Description                    |
-| -------------------- | ------------------- | ------------------------------ |
-| `AI_PROVIDER_ID`     | `github-copilot`    | AI model provider              |
-| `AI_MODEL_ID`        | `gpt-5-mini`        | Default model for all commands |
-| `AI_REVIEW_MODEL_ID` | `AI_MODEL_ID` value | Model for `/oc review`         |
-| `AI_ISSUE_MODEL_ID`  | `AI_MODEL_ID` value | Model for `/oc issue`          |
-| `AI_TASK_MODEL_ID`   | `AI_MODEL_ID` value | Model for `/oc task`           |
+Set the variables under **Settings > Secrets and variables > Variables**. A
+value is one model ID or a comma-separated list in `provider/model` or
+`provider/model#variant` form, for example `anthropic/claude-sonnet-5-5#high`
+or `openai/gpt-5.5,opencode/space-bunny-free`. Variant names differ per model;
+an unknown variant fails the run with an error instead of being ignored.
 
-**Default Model**: `github-copilot/gpt-5-mini`
+A candidate is skipped when OpenCode cannot reach it, for example a paid model
+without a key. The defaults also skip a free model that refuses the request.
+A configured model that fails for any other reason stops the run and reports
+the error, so a broken setup is never hidden behind a different model.
 
-**Fallback Order**: Command-specific model → `AI_MODEL_ID` → `gpt-5-mini`
+### Default Models
 
-The model can be customized by setting repository variables in GitHub repository
-settings.
+`models.json` lists free [OpenCode Zen](https://opencode.ai/docs/zen/) models
+whose providers neither retain nor train on prompts, in priority order:
 
-### Authentication
+| Model                               | Data policy (per the Zen docs) |
+| ----------------------------------- | ------------------------------ |
+| `opencode/space-bunny-free`         | No retention, no training      |
+| `opencode/longcat-2.5-preview-free` | No retention, no training      |
+| `opencode/step-5-preview-free`      | No retention, no training      |
 
-The "Write opencode GitHub Copilot auth" step is **only required** when using
-the `github-copilot` model:
+Other free models such as `opencode/big-pickle` are left out because their
+providers may use prompts to improve their models. Free models are offered for
+a limited time, so review the list when a free model is retired or the Zen
+data policies change, and update `checkedAt`. A model you set in a variable is
+always used as configured, regardless of its data policy.
 
-- **Secrets**: `COPILOT_ACCESS_TOKEN`, `COPILOT_REFRESH_TOKEN`
-- **Location**: `$XDG_DATA_HOME/opencode/auth.json` (generated in the workflow)
-- **Workflow env**: `XDG_DATA_HOME=/tmp/xdg-data`
-- **Content**: Runtime-generated OAuth entry for `github-copilot`
-- **Conditional**: Only runs when both secrets are not empty
+## Providers
 
-To use GitHub Copilot model:
+Add a provider's API key as a repository secret to use its models. The run
+step passes these secrets to OpenCode and nothing else:
 
-1. Run `/connect` locally and authenticate GitHub Copilot in OpenCode.
-2. Open your local `~/.local/share/opencode/auth.json`.
-3. Copy `github-copilot.access` into the `COPILOT_ACCESS_TOKEN` repository
-   secret.
-4. Copy `github-copilot.refresh` into the `COPILOT_REFRESH_TOKEN` repository
-   secret.
+| Secret               | Provider                              |
+| -------------------- | ------------------------------------- |
+| `OPENCODE_API_KEY`   | OpenCode Zen (paid models) and Go     |
+| `OPENAI_API_KEY`     | OpenAI                                |
+| `ANTHROPIC_API_KEY`  | Anthropic (a key from Claude Console) |
+| `OPENROUTER_API_KEY` | OpenRouter                            |
 
-The workflow generates `$XDG_DATA_HOME/opencode/auth.json` before running the
-action with the following structure:
+Subscription logins are not supported:
 
-```json
-{
-  "github-copilot": {
-    "type": "oauth",
-    "access": "<COPILOT_ACCESS_TOKEN>",
-    "refresh": "<COPILOT_REFRESH_TOKEN>",
-    "expires": 0
-  }
-}
-```
+- **GitHub Copilot**: OpenCode signs in through an interactive device login,
+  and GitHub only sanctions Copilot in Actions for its own Copilot CLI.
+- **ChatGPT Plus/Pro**: OpenAI directs automation to API keys, and the login
+  token rotates, which ephemeral runners cannot keep.
+- **Claude Pro/Max**: Anthropic does not permit third-party tools to use
+  subscription credentials.
 
-`GITHUB_TOKEN` is still passed to the action for GitHub API operations. GitHub
-Copilot model authentication comes from the generated `auth.json` file.
+Cloud providers such as Amazon Bedrock or Google Vertex AI work by adding an
+OIDC login step and their environment variables to the run step.
 
-If using other models, this step is skipped and the workflow runs without GitHub
-Copilot authentication.
+## Security
+
+- **Read-only by rejection**: Every agent permission that is not explicitly
+  allowed resolves to `ask`, which a non-interactive run rejects. Only reading
+  files inside the repository and read-only git commands are allowed. Rules
+  are `ask` rather than `deny` because the OpenCode free tier rejects requests
+  whose core tools (edit, shell, and so on) were trimmed by deny rules. The
+  workflow never passes `--auto`.
+- **No network**: Code Mode (`execute`) can call `fetch` and is not stopped by
+  `ask`, so it is denied, together with the desktop `browser` tools. Web fetch
+  and web search resolve to `ask` and are rejected.
+- **No reads outside the repository**: Given a path outside the working tree,
+  `git diff` and `git blame --contents` read arbitrary files, including the
+  process environment that holds the provider keys. `git diff` is therefore
+  only allowed from `refs/opencode/*`, and git commands containing absolute,
+  parent, or home paths, quotes, `$`, or file-writing and external-content
+  flags (including git's abbreviations of them) are refused.
+- **Trusted config**: The checkout is always the default branch, and pull
+  request content is only read through git refs, so a pull request cannot
+  change the agents or permissions used to review it.
+- **Least privilege per step**: The GitHub token is only available to the
+  prepare and publish steps. The run step has the provider keys but no GitHub
+  token, and no credential is written to `.git/config`.
+- **Output hygiene**: API key values are masked in anything posted back, and
+  `@mentions` outside code blocks are broken so injected text cannot ping
+  people or teams.
 
 ### Permissions
 
-The workflow operates with different permissions based on the command:
+| Permission      | Level | Purpose                                 |
+| --------------- | ----- | --------------------------------------- |
+| `contents`      | read  | Check out the repository and fetch refs |
+| `issues`        | write | Comment and react on issues             |
+| `pull-requests` | write | Comment, react, and post reviews on PRs |
 
-**Base Permissions:**
+## Customizing
 
-| Permission      | Level | Purpose                               |
-| --------------- | ----- | ------------------------------------- |
-| `id-token`      | write | OIDC token for authentication         |
-| `contents`      | read  | Read repository code and files        |
-| `pull-requests` | write | Read/write PR details and comments    |
-| `issues`        | write | Read/write issue details and comments |
+- **Agents**: Edit `.github/opencode/agents/<name>.md`. The Markdown body is
+  the agent's system prompt and the frontmatter holds its permissions. Keep new
+  rules as `allow` or `ask` (`deny` on core tools makes the free tier refuse
+  the request; only `execute` and `browser` are denied), and keep the path
+  rules after any
+  new `allow` rule, because the last matching rule wins. Use only `*` as a
+  wildcard in patterns: a backslash does not match literally, and `git *\*`
+  matches every git command.
+- **Default models**: Edit `.github/opencode/models.json`.
+- **OpenCode version**: Change `OPENCODE_VERSION` in the workflow.
 
-**Command-specific Restrictions:**
+## Known Limitations
 
-| Command      | File Edit | File Write | Bash Commands            |
-| ------------ | :-------: | :--------: | ------------------------ |
-| `/oc review` |    ❌     |     ❌     | `gh api*`, `gh pr diff*` |
-| `/oc issue`  |    ❌     |     ❌     | `gh api*`                |
-| `/oc task`   |    ✅     |     ✅     | `gh*`, `git*`            |
+- Review comments on pull requests from forks get a read-only token from
+  GitHub, so the workflow cannot reply there. Comment on the conversation tab
+  instead.
+- Members whose organization membership is private may not be recognized as
+  members; make the membership public or add them as collaborators.
+- A run stops after 15 minutes per model; the job stops after 30 minutes.
