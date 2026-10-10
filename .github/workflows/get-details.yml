@@ -90,34 +90,43 @@ jobs:
           echo "repo_owner=$repo_owner" >> $GITHUB_OUTPUT
           echo "repo_owner_lowercase=$repo_owner_lowercase" >> $GITHUB_OUTPUT
 
+      # Branch names may contain quotes, `$`, or `;`, so they reach the
+      # scripts through environment variables, never inline expressions.
       - name: Get ref name
         id: ref
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
           ## If the trigger is a pull request, the method of obtaining the branch name is different
-          if [ "${{ github.event_name }}" == 'pull_request' ]; then
-            ref_name=$(echo '${{ github.event.pull_request.head.ref }}' | tr '[:upper:]' '[:lower:]')
-            ref_name_lowercase=$(echo "$ref_name" | tr '/' '-')
-
-            echo "ref_name=$ref_name" >> $GITHUB_OUTPUT
-            echo "ref_name_lowercase=$ref_name_lowercase" >> $GITHUB_OUTPUT
+          if [ "$EVENT_NAME" == 'pull_request' ]; then
+            ref_name=$(printf '%s' "$HEAD_REF" | tr '[:upper:]' '[:lower:]')
           else
-            ref_name=$(echo '${{ github.ref_name }}' | tr '[:upper:]' '[:lower:]')
-            ref_name_lowercase=$(echo "$ref_name" | tr '/' '-')
-
-            echo "ref_name=$ref_name" >> $GITHUB_OUTPUT
-            echo "ref_name_lowercase=$ref_name_lowercase" >> $GITHUB_OUTPUT
+            ref_name=$(printf '%s' "$REF_NAME" | tr '[:upper:]' '[:lower:]')
           fi
+          ref_name_lowercase=$(printf '%s' "$ref_name" | tr '/' '-')
+
+          echo "ref_name=$ref_name" >> "$GITHUB_OUTPUT"
+          echo "ref_name_lowercase=$ref_name_lowercase" >> "$GITHUB_OUTPUT"
 
       - name: Generate repository details
         id: generate-repo-details
+        env:
+          REPO_NAME: ${{ steps.name-and-owner.outputs.repo_name }}
+          REPO_NAME_LOWERCASE: ${{ steps.name-and-owner.outputs.repo_name_lowercase }}
+          REPO_OWNER: ${{ steps.name-and-owner.outputs.repo_owner }}
+          REPO_OWNER_LOWERCASE: ${{ steps.name-and-owner.outputs.repo_owner_lowercase }}
+          REF_NAME: ${{ steps.ref.outputs.ref_name }}
+          REF_NAME_LOWERCASE: ${{ steps.ref.outputs.ref_name_lowercase }}
         run: |
           repo_details=$(jq -n \
-            --arg repo_name "${{ steps.name-and-owner.outputs.repo_name }}" \
-            --arg repo_name_lowercase "${{ steps.name-and-owner.outputs.repo_name_lowercase }}" \
-            --arg repo_owner "${{ steps.name-and-owner.outputs.repo_owner }}" \
-            --arg repo_owner_lowercase "${{ steps.name-and-owner.outputs.repo_owner_lowercase }}" \
-            --arg ref_name "${{ steps.ref.outputs.ref_name }}" \
-            --arg ref_name_lowercase "${{ steps.ref.outputs.ref_name_lowercase }}" \
+            --arg repo_name "$REPO_NAME" \
+            --arg repo_name_lowercase "$REPO_NAME_LOWERCASE" \
+            --arg repo_owner "$REPO_OWNER" \
+            --arg repo_owner_lowercase "$REPO_OWNER_LOWERCASE" \
+            --arg ref_name "$REF_NAME" \
+            --arg ref_name_lowercase "$REF_NAME_LOWERCASE" \
             '{ 
                 "repo_name": $repo_name, 
                 "repo_name_lowercase": $repo_name_lowercase, 
@@ -127,5 +136,5 @@ jobs:
                 "ref_name_lowercase": $ref_name_lowercase
             }' | jq -c .
           )
-          echo "details=$repo_details" >> $GITHUB_OUTPUT
-          echo $repo_details
+          echo "details=$repo_details" >> "$GITHUB_OUTPUT"
+          echo "$repo_details"
