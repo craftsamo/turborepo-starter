@@ -186,6 +186,22 @@ describe("buildReviewPayload", () => {
     );
   });
 
+  it("drops a range that spans two hunks", () => {
+    const payload = buildReviewPayload(
+      {
+        summary: "",
+        findings: [
+          { path: "src/a.ts", line: 21, startLine: 3, body: "Across hunks" },
+        ],
+      },
+      commentableLines(diff),
+      options,
+    );
+    assert.deepEqual(payload.comments, [
+      { path: "src/a.ts", line: 21, side: "RIGHT", body: "Across hunks" },
+    ]);
+  });
+
   it("encodes link paths and keeps multi-line bodies intact", () => {
     const payload = buildReviewPayload(
       {

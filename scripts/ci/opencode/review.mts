@@ -161,6 +161,18 @@ function isCommentable(
   return lines.get(path)?.has(line) ?? false;
 }
 
+function isRangeCommentable(
+  lines: Map<string, Set<number>>,
+  path: string,
+  start: number,
+  end: number,
+): boolean {
+  for (let line = start; line <= end; line += 1) {
+    if (!isCommentable(lines, path, line)) return false;
+  }
+  return true;
+}
+
 function permalink(base: string, finding: ReviewFinding): string {
   const path = finding.path.split("/").map(encodeURIComponent).join("/");
   const anchor = finding.startLine
@@ -195,9 +207,11 @@ export function buildReviewPayload(
       side: "RIGHT",
       body: finding.body,
     };
+    // GitHub rejects the whole review when a range spans hunks, and lines
+    // between two hunks are outside the diff.
     if (
       finding.startLine &&
-      isCommentable(lines, finding.path, finding.startLine)
+      isRangeCommentable(lines, finding.path, finding.startLine, finding.line)
     ) {
       comment.start_line = finding.startLine;
       comment.start_side = "RIGHT";
