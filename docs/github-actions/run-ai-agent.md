@@ -173,6 +173,21 @@ Subscription logins are not supported:
 Cloud providers such as Amazon Bedrock or Google Vertex AI work by adding an
 OIDC login step and their environment variables to the run step.
 
+## Skills
+
+Every agent may load any skill. A skill only adds its instructions to the
+context; a command it suggests still goes through the agent's shell rules, so
+steps such as running tests are rejected and the agent works without them.
+
+| Location                          | Loaded by                    |
+| --------------------------------- | ---------------------------- |
+| `.opencode/skills/` (and mirrors) | CI agents and local sessions |
+| `.github/opencode/skills/`        | CI agents only               |
+
+Put CI-specific guidance, such as how to write a good `build` summary for your
+project, in `.github/opencode/skills/<name>/SKILL.md`. Do not add other
+Markdown files directly in that directory: each one becomes a skill.
+
 ## Security
 
 - **Allowed or rejected**: Every agent permission that is not explicitly
@@ -230,6 +245,9 @@ OIDC login step and their environment variables to the run step.
   only `*` as a wildcard in patterns: a backslash does not match literally, and
   `git *\*` matches every git command.
 - **Default models**: Edit `.github/opencode/models.json`.
+- **Skills**: Add them under `.github/opencode/skills/` for CI only, or under
+  `.opencode/skills/` to share them with local sessions. See
+  [Skills](#skills).
 - **OpenCode version**: Change `OPENCODE_VERSION` in `opencode-agent.yml`.
 - **Tests workflow**: `build` starts `tests.yml`; change `TESTS_WORKFLOW` in
   `scripts/ci/opencode/main.mts` if yours is named differently.

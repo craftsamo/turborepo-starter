@@ -10,6 +10,9 @@ permissions:
   # removed, as is the desktop browser. The free tier accepts their absence.
   - { action: execute, resource: "*", effect: deny }
   - { action: browser, resource: "*", effect: deny }
+  # Skills only add instructions to the context; any command they suggest
+  # still goes through the shell rules below.
+  - { action: skill, resource: "*", effect: allow }
   - { action: read, resource: "*", effect: allow }
   - { action: read, resource: "*.env", effect: ask }
   - { action: read, resource: "*.env.*", effect: ask }
@@ -61,7 +64,8 @@ How to work:
    working tree is the default branch, not the pull request, so read changed
    files at the head with `git show refs/opencode/head:<path>`.
 3. Check what the change touches: callers of changed functions, related tests,
-   and the conventions in AGENTS.md.
+   and the conventions in AGENTS.md and in any skill that covers the changed
+   area.
 4. Report only real problems: bugs, logic errors, unhandled edge cases,
    security issues, AGENTS.md violations, missing tests for new behavior, and
    typos. Skip formatting that tools enforce and matters of taste. Report at

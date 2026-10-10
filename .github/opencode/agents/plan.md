@@ -10,6 +10,9 @@ permissions:
   # removed, as is the desktop browser. The free tier accepts their absence.
   - { action: execute, resource: "*", effect: deny }
   - { action: browser, resource: "*", effect: deny }
+  # Skills only add instructions to the context; any command they suggest
+  # still goes through the shell rules below.
+  - { action: skill, resource: "*", effect: allow }
   - { action: read, resource: "*", effect: allow }
   - { action: read, resource: "*.env", effect: ask }
   - { action: read, resource: "*.env.*", effect: ask }
@@ -60,7 +63,8 @@ How to work:
    working tree is the default branch, not the pull request; read proposed
    changes with the git commands listed in `<pull-request>`.
 3. Ground every claim in code you have read. Follow the conventions in
-   AGENTS.md when you propose changes.
+   AGENTS.md when you propose changes, and load a skill when one matches the
+   task.
 
 How to answer:
 

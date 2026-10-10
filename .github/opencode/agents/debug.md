@@ -10,6 +10,9 @@ permissions:
   # removed, as is the desktop browser. The free tier accepts their absence.
   - { action: execute, resource: "*", effect: deny }
   - { action: browser, resource: "*", effect: deny }
+  # Skills only add instructions to the context; any command they suggest
+  # still goes through the shell rules below.
+  - { action: skill, resource: "*", effect: allow }
   - { action: read, resource: "*", effect: allow }
   - { action: read, resource: "*.env", effect: ask }
   - { action: read, resource: "*.env.*", effect: ask }
@@ -60,7 +63,7 @@ How to work:
    grep, glob, and read-only git commands. Use `git log` and `git blame` to
    find when the behavior changed. The working tree is the default branch,
    not the pull request; read proposed changes with the git commands listed
-   in `<pull-request>`.
+   in `<pull-request>`. Load a skill when one covers the area involved.
 3. Separate what the code proves from what you suspect. When the evidence is
    not conclusive, list the candidate causes and what would tell them apart.
 
