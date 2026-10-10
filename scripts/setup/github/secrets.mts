@@ -4,7 +4,7 @@ import type { Interface } from "node:readline/promises";
 import { fileURLToPath } from "node:url";
 import process from "node:process";
 
-import { COPILOT_SECRETS, parseArguments } from "./policy.mts";
+import { parseArguments, PROVIDER_SECRETS } from "./policy.mts";
 import type { SetupArguments } from "./policy.mts";
 import {
   api,
@@ -33,8 +33,7 @@ interface SecretApiResponse {
 }
 
 type SecretTarget =
-  | { type: "repository" }
-  | { type: "environment"; name: string };
+  { type: "repository" } | { type: "environment"; name: string };
 
 async function ask(
   question: string,
@@ -147,13 +146,20 @@ export async function setupSecrets(args: SetupArguments): Promise<void> {
       names = [validateSecretName(args.secretName)];
       target = await chooseSecretTarget(repository, args, readline);
     } else {
-      const useCopilotPreset = await confirm(
-        "Configure Copilot credentials",
+      const useProviderPreset = await confirm(
+        "Configure AI provider API keys for the OpenCode workflow",
         true,
         readline,
       );
-      if (useCopilotPreset) {
-        names = COPILOT_SECRETS;
+      if (useProviderPreset) {
+        names = [];
+        for (const name of PROVIDER_SECRETS) {
+          if (await confirm(`Set ${name}`, false, readline)) names.push(name);
+        }
+        if (names.length === 0) {
+          console.log("No provider keys selected.");
+          return;
+        }
         target = { type: "repository" };
       } else {
         names = [validateSecretName(await ask("Secret name", "", readline))];
