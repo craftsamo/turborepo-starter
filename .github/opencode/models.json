@@ -1,0 +1,10 @@
+{
+  "source": "https://opencode.ai/docs/zen/",
+  "checkedAt": "2026-10-10",
+  "policy": "Free OpenCode Zen models whose providers neither retain nor train on prompts. Order is the priority order.",
+  "candidates": [
+    "opencode/space-bunny-free",
+    "opencode/longcat-2.5-preview-free",
+    "opencode/step-5-preview-free"
+  ]
+}
