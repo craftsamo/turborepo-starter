@@ -35,6 +35,7 @@ overrides:
   "ip-address": "^10.7.1"
   "proxy-addr": "^2.0.8"
   "source-map-js": "^1.2.2"
+  "postcss-selector-parser": "^7.1.6"
   "undici": "^7.29.1"
   "flatted": "^3.4.2"
   "handlebars": "^4.7.9"
