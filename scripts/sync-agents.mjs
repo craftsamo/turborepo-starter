@@ -115,8 +115,10 @@ function parseAgent(filePath) {
   }
 
   let frontmatter;
+  let rules;
   try {
     frontmatter = parseFrontmatterMap(match[1]);
+    rules = normalizePermissions(frontmatter);
   } catch (error) {
     console.warn(`[sync-agents] ${basename(filePath)}: invalid frontmatter (${error.message}); skipping.`);
     return null;
@@ -131,28 +133,73 @@ function parseAgent(filePath) {
     name: basename(filePath, ".md"),
     description: String(frontmatter.description),
     body: match[2].trim(),
-    capabilities: deriveCapabilities(frontmatter.permission ?? {}),
-    reasoningEffort: frontmatter.options?.reasoningEffort,
+    capabilities: deriveCapabilities(rules),
+    reasoningEffort: modelVariant(frontmatter.model) ?? frontmatter.options?.reasoningEffort,
   };
 }
 
-// Rounds opencode's permission map down to coarse per-capability booleans.
-// A capability counts as enabled when any of its patterns is `allow` or `ask`
-// (`ask` still surfaces the tool; only a blanket `deny` removes it).
-function deriveCapabilities(permission) {
-  const fallback = permission["*"] ?? "allow";
-  const enabled = (key) => {
-    const value = permission[key] ?? fallback;
-    const actions = typeof value === "object" && value !== null ? Object.values(value) : [value];
-    return actions.some((action) => action === "allow" || action === "ask");
+// The `#variant` suffix of a `provider/model#variant` reference.
+function modelVariant(model) {
+  if (typeof model !== "string") return undefined;
+  const index = model.indexOf("#");
+  return index === -1 ? undefined : model.slice(index + 1) || undefined;
+}
+
+// Normalizes both permission shapes into one ordered rule list. V2 uses a
+// `permissions` array of { action, resource, effect }; the V1 `permission` map
+// (still accepted by opencode) is flattened in key order. V1 action names are
+// renamed to their V2 equivalents.
+const ACTION_ALIASES = { bash: "shell", task: "subagent", write: "edit", patch: "edit" };
+const EFFECTS = new Set(["allow", "ask", "deny"]);
+
+function normalizePermissions(frontmatter) {
+  const rules = [];
+  if (Array.isArray(frontmatter.permissions)) {
+    for (const rule of frontmatter.permissions) {
+      const { action, resource, effect } = rule;
+      if (typeof action !== "string" || typeof resource !== "string" || !EFFECTS.has(effect)) {
+        throw new Error("each permissions entry needs action, resource, and effect (allow|ask|deny)");
+      }
+      rules.push({ action: ACTION_ALIASES[action] ?? action, resource, effect });
+    }
+  } else if (frontmatter.permission && typeof frontmatter.permission === "object") {
+    for (const [action, value] of Object.entries(frontmatter.permission)) {
+      const name = ACTION_ALIASES[action] ?? action;
+      if (typeof value === "object" && value !== null) {
+        for (const [resource, effect] of Object.entries(value)) rules.push({ action: name, resource, effect });
+      } else {
+        rules.push({ action: name, resource: "*", effect: value });
+      }
+    }
+  }
+  return rules;
+}
+
+// Rounds the ordered rules (last match wins; opencode's base policy allows
+// everything) down to coarse per-capability booleans. A capability counts as
+// enabled when any of its patterns is `allow` or `ask` after the last blanket
+// `deny` (`ask` still surfaces the tool; only a blanket `deny` removes it).
+function deriveCapabilities(rules) {
+  const enabled = (capability) => {
+    let on = true;
+    for (const { action, resource, effect } of rules) {
+      if (action === "*") {
+        if (resource === "*") on = effect !== "deny";
+      } else if (action === capability) {
+        if (effect !== "deny") on = true;
+        else if (resource === "*") on = false;
+      }
+    }
+    return on;
   };
   return {
     read: enabled("read"),
     grep: enabled("grep"),
     glob: enabled("glob"),
-    list: enabled("list"),
+    // V2 has no `list` action: directories are listed through `read`.
+    list: enabled("list") || enabled("read"),
     edit: enabled("edit"),
-    bash: enabled("bash"),
+    bash: enabled("shell"),
     webfetch: enabled("webfetch"),
     websearch: enabled("websearch"),
   };
@@ -195,46 +242,78 @@ function yamlScalar(value) {
 //
 // Minimal parser for the YAML subset this repo's agent frontmatter actually
 // uses, so the script stays dependency-free (the script-tests CI job runs
-// without an install step): nested maps via 2-space indentation, bare or
+// without an install step): nested maps via 2-space indentation, lists of
+// maps (`- key: value` items, as in the V2 `permissions` array), bare or
 // double-quoted keys, and bare / double-quoted / single-quoted scalar values.
-// Lists, block scalars, flow collections, and anchors are NOT supported —
-// parsing throws, and the caller skips that agent with a warning instead of
-// emitting a wrong conversion.
+// Lists of scalars, block scalars, flow collections, and anchors are NOT
+// supported — parsing throws, and the caller skips that agent with a warning
+// instead of emitting a wrong conversion.
 
 function parseFrontmatterMap(text) {
-  const root = {};
-  const stack = [{ indent: -1, value: root }];
-  const lines = text.split(/\r?\n/);
-
-  for (let i = 0; i < lines.length; i++) {
-    const lineNo = i + 1;
-    const line = lines[i];
+  const lines = [];
+  text.split(/\r?\n/).forEach((line, i) => {
     const trimmed = line.trim();
-    if (trimmed === "" || trimmed.startsWith("#")) continue;
-
+    if (trimmed === "" || trimmed.startsWith("#")) return;
     const indent = line.length - line.trimStart().length;
-    if (indent % 2 !== 0) throw new Error(`odd indentation at line ${lineNo}`);
-    if (trimmed === "-" || trimmed.startsWith("- ")) {
-      throw new Error(`lists are not supported (line ${lineNo})`);
-    }
+    if (indent % 2 !== 0) throw new Error(`odd indentation at line ${i + 1}`);
+    lines.push({ indent, text: trimmed, lineNo: i + 1 });
+  });
 
-    const { key, rest } = splitKey(trimmed, lineNo);
+  if (lines.length === 0) return {};
+  const [value, next] = parseBlock(lines, 0, lines[0].indent);
+  if (next < lines.length) {
+    throw new Error(`unexpected indentation at line ${lines[next].lineNo}`);
+  }
+  return value;
+}
 
-    while (stack.length > 1 && indent <= stack[stack.length - 1].indent) {
-      stack.pop();
-    }
-    const parent = stack[stack.length - 1].value;
+function isListItem(text) {
+  return text === "-" || text.startsWith("- ");
+}
 
-    if (rest === "") {
-      const child = {};
-      parent[key] = child;
-      stack.push({ indent, value: child });
+function parseBlock(lines, start, indent) {
+  return isListItem(lines[start].text) ? parseList(lines, start, indent) : parseMap(lines, start, indent);
+}
+
+function parseMap(lines, start, indent) {
+  const map = {};
+  let i = start;
+  while (i < lines.length && lines[i].indent === indent && !isListItem(lines[i].text)) {
+    const { text, lineNo } = lines[i];
+    const { key, rest } = splitKey(text, lineNo);
+    i++;
+    if (rest !== "") {
+      map[key] = parseScalar(rest, lineNo);
+    } else if (i < lines.length && lines[i].indent > indent) {
+      [map[key], i] = parseBlock(lines, i, lines[i].indent);
     } else {
-      parent[key] = parseScalar(rest, lineNo);
+      map[key] = {};
     }
   }
+  if (i < lines.length && lines[i].indent > indent) {
+    throw new Error(`unexpected indentation at line ${lines[i].lineNo}`);
+  }
+  return [map, i];
+}
 
-  return root;
+function parseList(lines, start, indent) {
+  const list = [];
+  let i = start;
+  while (i < lines.length && lines[i].indent === indent && isListItem(lines[i].text)) {
+    const { text, lineNo } = lines[i];
+    const item = text.slice(1).trimStart();
+    // The item's first key sits after the dash; re-seat it at its real column
+    // so parseMap collects the continuation keys of the same item.
+    const itemIndent = indent + (text.length - item.length);
+    if (item === "" || !/^("(?:[^"\\]|\\.)*"|[^:"'\s][^:"']*?)\s*:(\s|$)/.test(item)) {
+      throw new Error(`lists of scalars are not supported (line ${lineNo})`);
+    }
+    lines[i] = { indent: itemIndent, text: item, lineNo };
+    let map;
+    [map, i] = parseMap(lines, i, itemIndent);
+    list.push(map);
+  }
+  return [list, i];
 }
 
 function splitKey(entry, lineNo) {

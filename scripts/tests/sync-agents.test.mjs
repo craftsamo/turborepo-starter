@@ -234,6 +234,113 @@ Edge body.
     }
   });
 
+  it("converts native V2 permissions arrays and #variant models", () => {
+    const v2Path = join(root, ".opencode/agents/v2.md");
+    writeFileSync(
+      v2Path,
+      `---
+description: "V2 fixture."
+mode: subagent
+model: openai/gpt-fixture#xhigh
+permissions:
+  - action: "*"
+    resource: "*"
+    effect: deny
+  - action: read
+    resource: "*"
+    effect: allow
+  - action: read
+    resource: "*.env"
+    effect: deny
+  - action: shell
+    resource: "*"
+    effect: deny
+  - action: shell
+    resource: git diff *
+    effect: allow
+---
+
+V2 body.
+`,
+    );
+
+    try {
+      runSync(root);
+      const claude = readFileSync(join(root, ".claude/agents/v2.md"), "utf8");
+      assert.match(claude, /^tools: Read, Glob, Bash$/m);
+      assert.doesNotMatch(claude, /^model:/m);
+      const codex = readFileSync(join(root, ".codex/agents/v2.toml"), "utf8");
+      assert.match(codex, /^sandbox_mode = "read-only"$/m);
+      assert.match(codex, /^model_reasoning_effort = "xhigh"$/m);
+      assert.match(readFileSync(join(root, ".gemini/agents/v2.md"), "utf8"), /- list_directory/);
+    } finally {
+      rmSync(v2Path, { force: true });
+      runSync(root);
+    }
+  });
+
+  it("treats a trailing blanket deny as disabling the capability (last match wins)", () => {
+    const orderPath = join(root, ".opencode/agents/order.md");
+    writeFileSync(
+      orderPath,
+      `---
+description: "Order fixture."
+permissions:
+  - action: edit
+    resource: "*"
+    effect: allow
+  - action: edit
+    resource: "*"
+    effect: deny
+  - action: shell
+    resource: "*"
+    effect: ask
+---
+
+Order body.
+`,
+    );
+
+    try {
+      runSync(root);
+      const claude = readFileSync(join(root, ".claude/agents/order.md"), "utf8");
+      assert.doesNotMatch(claude, /Edit/);
+      assert.match(claude, /Bash/);
+    } finally {
+      rmSync(orderPath, { force: true });
+      runSync(root);
+    }
+  });
+
+  it("skips agents with an incomplete permissions entry", () => {
+    const badPath = join(root, ".opencode/agents/bad-rule.md");
+    writeFileSync(
+      badPath,
+      `---
+description: "Bad rule."
+permissions:
+  - action: read
+    effect: allow
+---
+
+Body.
+`,
+    );
+
+    try {
+      const { status, stderr } = spawnSync(process.execPath, [scriptPath], {
+        env: { ...process.env, SYNC_AGENTS_ROOT: root },
+        encoding: "utf8",
+      });
+      assert.equal(status, 0);
+      assert.match(stderr, /bad-rule\.md: invalid frontmatter/);
+      assert.ok(!existsSync(join(root, ".claude/agents/bad-rule.md")));
+    } finally {
+      rmSync(badPath, { force: true });
+      runSync(root);
+    }
+  });
+
   it("skips agents using unsupported YAML syntax instead of misconverting", () => {
     const brokenPath = join(root, ".opencode/agents/broken.md");
     writeFileSync(
