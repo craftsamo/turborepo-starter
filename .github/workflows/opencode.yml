@@ -16,11 +16,12 @@ jobs:
   # requests get one.
   route:
     # Only people with write access can run the agent and spend the model
-    # budget.
+    # budget. A quote reply puts the command after the quote, so this is a
+    # coarse filter; the route step decides whether it is a command.
     if: >-
       github.event.comment.user.type != 'Bot' &&
-      (startsWith(github.event.comment.body, '/oc') ||
-       startsWith(github.event.comment.body, '/opencode')) &&
+      (contains(github.event.comment.body, '/oc') ||
+       contains(github.event.comment.body, '/opencode')) &&
       contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)
     runs-on: ubuntu-latest
     timeout-minutes: 5

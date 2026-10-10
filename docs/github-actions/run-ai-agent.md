@@ -56,8 +56,15 @@ The instruction is optional for every agent and narrows what the agent looks
 at. `plan`, `review`, and `debug` are read-only: they cannot edit files, run
 builds or tests, or call GitHub.
 
-Commands also work in pull request review comments. There, `plan`, `build`,
-and `debug` reply in the thread and see the commented lines.
+A command is about where it is written, so a short instruction is enough:
+
+- **Review comments**: on a line or as a reply in a review thread, for example
+  under a `review` finding. The agent gets the commented lines and the earlier
+  comments of the thread as the subject of the request, and `plan`, `build`,
+  and `debug` reply in the thread.
+- **Quote replies**: in an issue or pull request conversation, quote a comment
+  and put the command after the quote. The quoted text becomes the subject of
+  the request.
 
 #### Build
 

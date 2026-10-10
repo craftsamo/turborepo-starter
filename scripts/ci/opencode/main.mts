@@ -275,6 +275,24 @@ function prepare(): void {
       author: login(comment.user),
       body: String(comment.body ?? ""),
     }));
+  // A command in a review thread usually answers its first comment, such as
+  // a review finding, so the whole thread goes into the prompt.
+  const threadId = event.reviewThread?.rootCommentId;
+  const threadComments: CommentInfo[] =
+    threadId === undefined
+      ? []
+      : apiPages<Json>(
+          `/repos/${repository}/pulls/${event.number}/comments?per_page=100`,
+        )
+          .filter(
+            (comment) =>
+              comment.id !== event.commentId &&
+              (comment.id === threadId || comment.in_reply_to_id === threadId),
+          )
+          .map((comment) => ({
+            author: login(comment.user),
+            body: String(comment.body ?? ""),
+          }));
 
   let pull: PullInfo | undefined;
   let headSha = run("git", ["rev-parse", "HEAD"]).trim();
@@ -372,6 +390,7 @@ function prepare(): void {
   const prompt = buildPrompt({
     agent: command.agent,
     instruction: command.instruction,
+    quote: command.quote,
     repository,
     event,
     issue: {
@@ -382,6 +401,7 @@ function prepare(): void {
     },
     pull,
     comments,
+    threadComments,
     permalinkBase: meta.permalinkBase,
   });
 

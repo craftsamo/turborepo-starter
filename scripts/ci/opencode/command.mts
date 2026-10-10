@@ -4,7 +4,8 @@ export type AgentName = (typeof AGENTS)[number];
 export type Target = "issue" | "pull_request" | "pull_request_review_comment";
 
 export type ParsedCommand =
-  { kind: "ignore" } | { kind: "run"; agent: AgentName; instruction: string };
+  | { kind: "ignore" }
+  | { kind: "run"; agent: AgentName; instruction: string; quote: string };
 
 export type CommandCheck = { ok: true } | { ok: false; message: string };
 
@@ -18,8 +19,28 @@ export function isPullRequestTarget(target: Target): boolean {
   return target !== "issue";
 }
 
+// GitHub's "Quote reply" puts the quoted text first, so the command may follow
+// a leading block of "> " lines. The quote is what "this" refers to.
+function splitQuote(body: string): { quote: string; text: string } {
+  const lines = body.split("\n");
+  const quoted: string[] = [];
+  let index = 0;
+  for (; index < lines.length; index += 1) {
+    const line = lines[index] ?? "";
+    if (/^\s*>/.test(line)) {
+      quoted.push(line.replace(/^\s*> ?/, ""));
+    } else if (line.trim() !== "") {
+      break;
+    }
+  }
+  return {
+    quote: quoted.join("\n").trim(),
+    text: lines.slice(index).join("\n").trimStart(),
+  };
+}
+
 export function parseCommand(body: string, target: Target): ParsedCommand {
-  const text = body.trimStart();
+  const { quote, text } = splitQuote(body);
   const prefix = PREFIX.exec(text);
   if (!prefix) return { kind: "ignore" };
 
@@ -28,7 +49,12 @@ export function parseCommand(body: string, target: Target): ParsedCommand {
   const keyword = first.toLowerCase();
 
   if (isAgentName(keyword)) {
-    return { kind: "run", agent: keyword, instruction: others.join("").trim() };
+    return {
+      kind: "run",
+      agent: keyword,
+      instruction: others.join("").trim(),
+      quote,
+    };
   }
 
   if (rest === "") {
@@ -36,10 +62,11 @@ export function parseCommand(body: string, target: Target): ParsedCommand {
       kind: "run",
       agent: isPullRequestTarget(target) ? "review" : "plan",
       instruction: "",
+      quote,
     };
   }
 
-  return { kind: "run", agent: "plan", instruction: rest };
+  return { kind: "run", agent: "plan", instruction: rest, quote };
 }
 
 export function usage(target: Target): string {

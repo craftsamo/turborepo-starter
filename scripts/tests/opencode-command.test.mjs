@@ -18,11 +18,13 @@ describe("parseCommand", () => {
       kind: "run",
       agent: "debug",
       instruction: "why?",
+      quote: "",
     });
     assert.deepEqual(parseCommand("/oc debug why?", "issue"), {
       kind: "run",
       agent: "debug",
       instruction: "why?",
+      quote: "",
     });
   });
 
@@ -33,6 +35,7 @@ describe("parseCommand", () => {
         kind: "run",
         agent: "review",
         instruction: "focus on\nsecurity",
+        quote: "",
       },
     );
   });
@@ -42,6 +45,28 @@ describe("parseCommand", () => {
       kind: "run",
       agent: "plan",
       instruction: "fix the login bug",
+      quote: "",
+    });
+  });
+
+  it("reads a command that follows a quote reply and keeps the quote", () => {
+    assert.deepEqual(
+      parseCommand(
+        "> **Bug**: off by one\n>\n> ```js\n> i <= n\n> ```\n\n/oc build これを修正してください",
+        "pull_request",
+      ),
+      {
+        kind: "run",
+        agent: "build",
+        instruction: "これを修正してください",
+        quote: "**Bug**: off by one\n\n```js\ni <= n\n```",
+      },
+    );
+  });
+
+  it("ignores quotes that are not followed by a command", () => {
+    assert.deepEqual(parseCommand("> /oc build\n\nnot now", "issue"), {
+      kind: "ignore",
     });
   });
 
@@ -59,6 +84,7 @@ describe("parseCommand", () => {
       kind: "run",
       agent: "build",
       instruction: "add tests",
+      quote: "",
     });
   });
 });

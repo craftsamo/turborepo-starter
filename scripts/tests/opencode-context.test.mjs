@@ -174,5 +174,46 @@ describe("buildPrompt", () => {
     assert.match(prompt, /type: issue/);
     assert.doesNotMatch(prompt, /<pull-request>|<review-thread>/);
     assert.match(prompt, /<description>\n\(empty\)\n<\/description>/);
+    assert.doesNotMatch(prompt, /The request was written about/);
+  });
+
+  it("names the line, thread, and quote a request was written about", () => {
+    const prompt = buildPrompt({
+      agent: "build",
+      instruction: "Apply the suggestion",
+      quote: "**Bug**: off by one",
+      repository: "o/r",
+      event: {
+        target: "pull_request_review_comment",
+        number: 9,
+        commentId: 2,
+        commentBody: "",
+        reviewThread: {
+          rootCommentId: 1,
+          path: "a.ts",
+          line: 3,
+          diffHunk: "@@",
+        },
+      },
+      issue,
+      comments: [],
+      threadComments: [
+        { author: "github-actions", body: "**Bug**: `<=` should be `<`" },
+      ],
+      permalinkBase: "https://github.com/o/r/blob/sha",
+    });
+
+    assert.match(
+      prompt,
+      /<\/request>\n\nThe request was written about the commented lines in <review-thread>, and the <thread-comment> entries before it in that thread, and the <quoted-text> it quotes\. Treat them as the subject of the request unless it says otherwise\./,
+    );
+    assert.match(
+      prompt,
+      /<review-thread>\nThe request was written in a review thread/,
+    );
+    assert.match(
+      prompt,
+      /<thread-comment author="@github-actions">\n\*\*Bug\*\*: `<=` should be `<`\n<\/thread-comment>\n<quoted-text>\n\*\*Bug\*\*: off by one\n<\/quoted-text>\n<\/untrusted-content>/,
+    );
   });
 });
