@@ -14,11 +14,7 @@ repository by calling the reusable `get-details.yml` workflow.
 
 ### Inputs
 
-Optional input parameter:
-
-| Parameter           | Type   | Options                                                      | Default | Description                      |
-| ------------------- | ------ | ------------------------------------------------------------ | ------- | -------------------------------- |
-| `github_event_name` | choice | `workflow_dispatch`, `pull_request`, `push`, `issue_comment` | (none)  | Type of GitHub event to simulate |
+None. The branch selected in **Run workflow** is reported as the ref name.
 
 ### Output
 
