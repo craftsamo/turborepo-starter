@@ -3,14 +3,14 @@ name: Display details
 on:
   workflow_dispatch:
     inputs:
-      guthub_event_name:
+      github_event_name:
         type: choice
         options:
           - "workflow_dispatch"
           - pull_request
           - push
           - issue_comment
-        description: Type of Github Action event
+        description: Type of GitHub Actions event
         required: false
 
 jobs:
