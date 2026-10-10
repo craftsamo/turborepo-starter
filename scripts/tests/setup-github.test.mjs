@@ -129,7 +129,7 @@ describe("repository settings", () => {
 });
 
 describe("Actions settings", () => {
-  it("uses selected actions with a read-only default token", () => {
+  it("uses selected actions with a read-only default token that can open PRs", () => {
     const settings = buildActionsSettings();
 
     assert.deepEqual(settings.permissions, {
@@ -147,7 +147,7 @@ describe("Actions settings", () => {
     ]);
     assert.deepEqual(settings.workflow, {
       default_workflow_permissions: "read",
-      can_approve_pull_request_reviews: false,
+      can_approve_pull_request_reviews: true,
     });
   });
 

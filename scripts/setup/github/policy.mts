@@ -351,9 +351,11 @@ export function buildActionsSettings({
       verified_allowed: false,
       patterns_allowed: [...ALLOWED_ACTION_PATTERNS],
     },
+    // `/oc build` opens pull requests with GITHUB_TOKEN. GitHub ties creating
+    // and approving into this one setting; the workflow never approves.
     workflow: {
       default_workflow_permissions: "read",
-      can_approve_pull_request_reviews: false,
+      can_approve_pull_request_reviews: true,
     },
   };
 }

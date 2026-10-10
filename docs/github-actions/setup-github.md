@@ -59,8 +59,13 @@ protection without weakening stricter existing protection.
 ## Actions Permissions
 
 Setup enables Actions with a read-only default `GITHUB_TOKEN` and permits only
-GitHub-owned actions plus the third-party actions used by this starter. It does
-not enable Actions to create or approve pull requests.
+GitHub-owned actions plus the third-party actions used by this starter.
+
+It also allows Actions to create pull requests, which `/oc build` needs to open
+one from an issue. GitHub grants creating and approving pull requests through
+the same setting. The OpenCode workflow only posts comment reviews and never
+approves, and the managed Ruleset requires no approvals. If you require
+approvals, keep in mind that a workflow could approve a pull request.
 
 If an existing repository requires actions to be pinned to full commit SHAs,
 setup preserves that requirement and stops before applying changes because the
@@ -98,9 +103,3 @@ jobs:
   deploy:
     environment: production
 ```
-
-## Known Limitation
-
-The existing `/oc task` workflow mode requests a read-only contents token, so it
-cannot push a branch or create a pull request. Repository setup intentionally
-does not broaden that workflow permission.
