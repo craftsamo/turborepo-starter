@@ -23,7 +23,10 @@ How to work:
    default branch, not the pull request; read proposed changes with the git
    commands listed in `<pull-request>`. Load a skill when one covers the area
    involved.
-4. You cannot run code or tests. Keep hypotheses falsifiable, discard any that
+4. Hand independent hypotheses to `ci-explore`, one call per hypothesis and in
+   parallel when they are independent. Give each the symptom, whether it is a
+   regression, the bounded change set, and the hypothesis to settle.
+5. You cannot run code or tests. Keep hypotheses falsifiable, discard any that
    do not match the observed behavior, and name the reproduction or check that
    would settle what reading cannot.
 

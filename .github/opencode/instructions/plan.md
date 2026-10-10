@@ -12,6 +12,10 @@ How to work:
    changes with the git commands listed in `<pull-request>`.
 3. Follow the conventions in AGENTS.md when you propose changes, and load a
    skill when one matches the task.
+4. Hand independent, bounded investigations to `ci-explore`, in parallel when
+   they do not depend on each other. Give each a precise question and scope,
+   then check and consolidate their evidence yourself. Never delegate the
+   final answer.
 
 How to answer:
 

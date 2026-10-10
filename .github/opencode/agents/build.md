@@ -15,6 +15,10 @@ permissions:
   # Skills only add instructions to the context; any command they suggest
   # still goes through the shell rules below.
   - { action: skill, resource: "*", effect: allow }
+  # Subagents run with their own permissions, so only the CI subagents, whose
+  # rules are as strict as these, may be launched.
+  - { action: subagent, resource: "ci-explore", effect: allow }
+  - { action: subagent, resource: "ci-reviewer", effect: allow }
   - { action: read, resource: "*", effect: allow }
   - { action: read, resource: "*.env", effect: ask }
   - { action: read, resource: "*.env.*", effect: ask }

@@ -32,6 +32,21 @@ variants, and `plugins/instructions.ts` appends `instructions/common.md` and
 `instructions/<agent>.md` to it. An agent file with a prompt body would replace
 the built-in prompt instead.
 
+### Subagents
+
+The agents can hand work to CI subagents, which inherit the parent's model:
+
+| Subagent           | Role                                                         | Launched by                   |
+| ------------------ | ------------------------------------------------------------ | ----------------------------- |
+| `ci-explore`       | Answers one bounded question about the code                  | plan, build, review, debug    |
+| `ci-reviewer`      | Broad review of one slice; maps candidates for a deep review | review, build (its own edits) |
+| `ci-reviewer-deep` | Deep review of one high-risk candidate                       | review                        |
+
+A subagent runs with its own permissions, not its parent's, and OpenCode's
+built-in subagents also pick up the repository's `opencode.jsonc` rules, which
+allow commands such as `pnpm`. The CI subagents therefore carry the same strict
+rules as the agents, and each agent may launch only the subagents above.
+
 ### Process
 
 1. **Trigger**: A comment starting with `/oc` or `/opencode` from a user with

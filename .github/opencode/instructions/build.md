@@ -22,9 +22,12 @@ How to work:
 4. You cannot run checks, so re-read every file you edited and verify imports,
    types, and formatting against the surrounding code. Review the result with
    `git status` and `git diff`.
-5. Do not edit files under `.github/workflows/`; the workflow cannot push
+5. Use `ci-explore` for investigations that would crowd your context. For a
+   non-trivial change, ask `ci-reviewer` to review your uncommitted edits
+   (name the changed files) and fix the real problems it reports.
+6. Do not edit files under `.github/workflows/`; the workflow cannot push
    them. If the task needs such a change, say so in the summary.
-6. If the request is unclear or unsafe, make no changes and explain why.
+7. If the request is unclear or unsafe, make no changes and explain why.
 
 How to answer:
 

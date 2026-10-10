@@ -56,8 +56,8 @@ function parseAgent(file) {
 
 const agents = readdirSync(agentsDir)
   .filter((file) => file.endsWith(".md"))
-  .sort()
-  .map(parseAgent);
+  .map(parseAgent)
+  .sort((a, b) => (a.name < b.name ? -1 : 1));
 
 const READ_ONLY_GIT = [
   "log",
@@ -99,18 +99,28 @@ const NEVER_ALLOWED = [
   "browser",
   "webfetch",
   "websearch",
-  "subagent",
   "external_directory",
 ];
+// Subagents use their own permissions, not their parent's, so each parent may
+// launch only these, and subagents launch none.
+const SUBAGENT_CALLS = {
+  plan: ["ci-explore"],
+  build: ["ci-explore", "ci-reviewer"],
+  review: ["ci-explore", "ci-reviewer", "ci-reviewer-deep"],
+  debug: ["ci-explore"],
+};
+const SUBAGENTS = [...new Set(Object.values(SUBAGENT_CALLS).flat())].sort();
+// Uncommitted edits exist only in build's working tree.
+const SEES_OWN_EDITS = ["build", "ci-reviewer"];
 
 const lastIndex = (rules, predicate) => rules.findLastIndex(predicate);
 const firstIndex = (rules, predicate) => rules.findIndex(predicate);
 
 describe("CI agents", () => {
-  it("match the agents the /oc command accepts", () => {
+  it("are the /oc agents and the CI subagents", () => {
     assert.deepEqual(
       agents.map((agent) => agent.name),
-      [...AGENTS].sort(),
+      [...AGENTS, ...SUBAGENTS].sort(),
     );
   });
 
@@ -123,10 +133,21 @@ describe("CI agents", () => {
 
       // An empty body keeps OpenCode's built-in prompt; the CI instructions
       // come from instructions/<name>.md through plugins/instructions.ts.
-      it("is a primary agent that keeps the built-in prompt", () => {
-        assert.equal(agent.mode, "primary");
+      it("keeps the built-in prompt and the parent's model", () => {
+        const primary = AGENTS.includes(agent.name);
+        assert.equal(agent.mode, primary ? "primary" : "subagent");
         assert.equal(agent.body.trim(), "");
         assert.ok(!/^model:/m.test(agent.frontmatter), "pins a model");
+      });
+
+      it("launches only its CI subagents", () => {
+        const launched = rules
+          .filter(
+            (rule) => rule.action === "subagent" && rule.effect === "allow",
+          )
+          .map((rule) => rule.resource)
+          .sort();
+        assert.deepEqual(launched, SUBAGENT_CALLS[agent.name] ?? []);
       });
 
       it("has CI instructions", () => {
@@ -156,7 +177,7 @@ describe("CI agents", () => {
         );
       });
 
-      it("never allows network, subagents, or outside directories", () => {
+      it("never allows network or outside directories", () => {
         for (const rule of rules) {
           if (rule.effect !== "allow") continue;
           assert.ok(
@@ -186,10 +207,9 @@ describe("CI agents", () => {
             `allows shell ${resource}`,
           );
           if (subcommand === "diff") {
-            const forms =
-              agent.name === "build"
-                ? [...PR_DIFF, ...OWN_EDITS_DIFF]
-                : PR_DIFF;
+            const forms = SEES_OWN_EDITS.includes(agent.name)
+              ? [...PR_DIFF, ...OWN_EDITS_DIFF]
+              : PR_DIFF;
             assert.ok(forms.includes(resource), `allows shell ${resource}`);
           }
         }

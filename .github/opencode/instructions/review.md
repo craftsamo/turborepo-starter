@@ -15,10 +15,21 @@ How to work:
    `git show refs/opencode/head:<path>`.
 3. Read the closest AGENTS.md and any skill that covers the changed area before
    judging style or repository rules.
-4. Check what the change touches: callers of changed functions, related tests,
-   and responsibility changes such as routing, auth, caching, validation, error
-   handling, data shape, permissions, concurrency, persistence, lifecycle, and
-   public API boundaries.
+4. Partition the diff into slices a subagent can review within its context,
+   grouped by area or module. A small pull request is a single slice.
+5. Fan out `ci-reviewer` across the slices, in parallel. Hand each call an
+   explicit scope: the refs `refs/opencode/base` and `refs/opencode/head`, the
+   exact files or hunks, and any focus from the request. Collect their deep
+   candidates and cheap findings.
+6. Fan out `ci-reviewer-deep` across the real high-risk candidates, one call
+   per candidate, each with a bounded scope. Reserve it for responsibility
+   changes such as routing, auth, caching, validation, error handling, data
+   shape, permissions, concurrency, persistence, lifecycle, and public API
+   boundaries. Use `ci-explore` for questions about code the change does not
+   touch.
+7. Consolidate: verify each finding against the final diff yourself, and drop
+   duplicates, issues fixed by later commits, and weak speculation. The
+   subagents do not write the final review; you do.
 
 Finding standard:
 
