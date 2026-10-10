@@ -24,7 +24,8 @@ sessions, while the repository's `AGENTS.md` and skills still apply.
 ├── instructions/      common.md plus one file per agent
 ├── plugins/           instructions.ts appends the instructions
 ├── skills/            CI-only skills
-└── models.json        default model candidates
+├── models.json        default model candidates
+└── opencode.json      provider settings (OpenRouter data policy)
 ```
 
 Each agent keeps OpenCode's built-in prompt, including its per-model
@@ -166,20 +167,44 @@ the error, so a broken setup is never hidden behind a different model.
 
 ### Default Models
 
-`models.json` lists free [OpenCode Zen](https://opencode.ai/docs/zen/) models
-whose providers neither retain nor train on prompts, in priority order:
+`models.json` lists free models whose providers neither retain nor train on
+prompts, in priority order:
 
-| Model                               | Data policy (per the Zen docs) |
-| ----------------------------------- | ------------------------------ |
-| `opencode/space-bunny-free`         | No retention, no training      |
-| `opencode/longcat-2.5-preview-free` | No retention, no training      |
-| `opencode/step-5-preview-free`      | No retention, no training      |
+| Model                                    | Data policy                                    |
+| ---------------------------------------- | ---------------------------------------------- |
+| `opencode/space-bunny-free`              | No retention, no training (per the Zen docs)   |
+| `opencode/longcat-2.5-preview-free`      | No retention, no training (per the Zen docs)   |
+| `opencode/step-5-preview-free`           | No retention, no training (per the Zen docs)   |
+| `openrouter/apodex/apodex-1.1-mini:free` | Zero data retention, enforced on every request |
 
 Other free models such as `opencode/big-pickle` are left out because their
 providers may use prompts to improve their models. Free models are offered for
-a limited time, so review the list when a free model is retired or the Zen
-data policies change, and update `checkedAt`. A model you set in a variable is
+a limited time, so review the list when a free model is retired or a data
+policy changes, and update `checkedAt`. A model you set in a variable is
 always used as configured, regardless of its data policy.
+
+### OpenRouter Free Models
+
+The OpenRouter candidate is a fallback for when the Zen models are retired or
+refuse the request, and it is tried only when the `OPENROUTER_API_KEY` secret
+is set. `.github/opencode/opencode.json` adds `zdr: true` and
+`data_collection: "deny"` to every OpenRouter request, including models set in
+a variable, so OpenRouter only routes to endpoints that keep no prompts. When
+no such endpoint is available, the request fails instead of falling back to
+one that logs prompts.
+
+- **Limits**: free models allow 20 requests per minute and 50 per day, or
+  1,000 per day once the account has bought at least 10 credits. Every agent
+  step is one request and subagents add their own, so a single run can use
+  dozens; plan on buying credits before relying on it.
+- **Finding candidates**: free endpoints with zero data retention are listed
+  by `https://openrouter.ai/api/v1/endpoints/zdr` (entries priced at 0 that
+  support `tools`). Only add IDs ending in `:free`: a model that is merely
+  priced at 0 for now starts charging when its price changes. Declare each one
+  under `providers.openrouter.models` in `opencode.json` as well.
+- **Without a key**: a variable that names an OpenRouter model fails with
+  `No cookie auth credentials found` (401), because `opencode.json` enables the
+  provider.
 
 ## Providers
 

@@ -80,7 +80,25 @@ export function resolveModelSource(
       };
     }
   }
-  return { origin: "default", models: [...defaults.candidates] };
+  return {
+    origin: "default",
+    models: defaults.candidates.filter((model) => hasCredentials(model, env)),
+  };
+}
+
+// Providers whose default candidates need a key. Their CI config in
+// .github/opencode/opencode.json activates them even without one, so a
+// keyless request would fail with 401 instead of moving on.
+const PROVIDER_KEYS: Record<string, string> = {
+  openrouter: "OPENROUTER_API_KEY",
+};
+
+function hasCredentials(
+  model: string,
+  env: Record<string, string | undefined>,
+): boolean {
+  const key = PROVIDER_KEYS[model.slice(0, model.indexOf("/"))];
+  return !key || Boolean(env[key]?.trim());
 }
 
 // `provider.no-route`: the model or variant is not reachable with the current

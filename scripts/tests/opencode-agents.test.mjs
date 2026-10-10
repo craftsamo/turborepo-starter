@@ -335,8 +335,37 @@ describe("default models", () => {
       readFileSync(path.join(configDir, "models.json"), "utf8"),
     );
     assert.ok(models.candidates.length > 0);
-    assert.ok(
-      models.candidates.every((model) => model.startsWith("opencode/")),
+    for (const model of models.candidates) {
+      assert.ok(
+        /^opencode\/\S+-free$/.test(model) ||
+          /^openrouter\/\S+:free$/.test(model),
+        `${model} is not a free model`,
+      );
+    }
+  });
+
+  // Free OpenRouter endpoints may log or train on prompts; only
+  // zero-data-retention endpoints are acceptable.
+  it("restricts OpenRouter to zero-data-retention endpoints", () => {
+    const config = JSON.parse(
+      readFileSync(path.join(configDir, "opencode.json"), "utf8"),
     );
+    const openrouter = config.providers.openrouter;
+    assert.deepEqual(openrouter.body.provider, {
+      zdr: true,
+      data_collection: "deny",
+    });
+    const models = parseDefaultModels(
+      readFileSync(path.join(configDir, "models.json"), "utf8"),
+    );
+    for (const model of models.candidates) {
+      if (!model.startsWith("openrouter/")) continue;
+      const id = model.slice("openrouter/".length);
+      assert.ok(id in openrouter.models, `${id} is not declared`);
+      assert.ok(
+        !("body" in openrouter.models[id]),
+        `${id} overrides the provider body`,
+      );
+    }
   });
 });

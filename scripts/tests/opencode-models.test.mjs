@@ -98,6 +98,38 @@ describe("resolveModelSource", () => {
       models: defaults.candidates,
     });
   });
+
+  it("skips default candidates whose provider key is missing", () => {
+    const withOpenRouter = {
+      ...defaults,
+      candidates: [...defaults.candidates, "openrouter/x/y:free"],
+    };
+    assert.deepEqual(
+      resolveModelSource("plan", {}, withOpenRouter).models,
+      defaults.candidates,
+    );
+    assert.deepEqual(
+      resolveModelSource("plan", { OPENROUTER_API_KEY: " " }, withOpenRouter)
+        .models,
+      defaults.candidates,
+    );
+    assert.deepEqual(
+      resolveModelSource("plan", { OPENROUTER_API_KEY: "k" }, withOpenRouter)
+        .models,
+      withOpenRouter.candidates,
+    );
+  });
+
+  it("keeps a configured model even without its key", () => {
+    assert.deepEqual(
+      resolveModelSource(
+        "plan",
+        { OPENCODE_MODEL: "openrouter/x/y:free" },
+        defaults,
+      ).models,
+      ["openrouter/x/y:free"],
+    );
+  });
 });
 
 describe("shouldTryNextModel", () => {
