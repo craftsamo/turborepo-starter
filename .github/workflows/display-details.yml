@@ -2,23 +2,11 @@ name: Display details
 
 on:
   workflow_dispatch:
-    inputs:
-      github_event_name:
-        type: choice
-        options:
-          - "workflow_dispatch"
-          - pull_request
-          - push
-          - issue_comment
-        description: Type of GitHub Actions event
-        required: false
 
 jobs:
   execute-get-details:
     name: Execute get details workflow
     uses: ./.github/workflows/get-details.yml
-    with:
-      event_name: ${{ inputs.github_event_name }}
 
   view-details:
     name: Execute get details workflow

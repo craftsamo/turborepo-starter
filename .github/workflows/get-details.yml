@@ -2,10 +2,6 @@ name: Get details
 
 on:
   workflow_call:
-    inputs:
-      event_name:
-        type: string
-        required: false
     outputs:
       project_name:
         value: ${{ jobs.get-project.outputs.name }}
