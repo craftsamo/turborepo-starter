@@ -18,8 +18,8 @@ nps setup.github
 ```
 
 The wizard reads the current GitHub configuration, asks for optional metadata
-and AI variables, and displays every planned change before confirmation. A
-cancelled run does not apply changes.
+and OpenCode model variables, and displays every planned change before
+confirmation. A cancelled run does not apply changes.
 
 The setup manages:
 
@@ -28,7 +28,9 @@ The setup manages:
 - GitHub Actions permissions and selected-action allowlist
 - Labels from `.github/labels.yml`
 - A `Starter: protect main` Ruleset
-- Optional repository description, homepage, topics, and AI variables
+- Optional repository description, homepage, topics, and OpenCode model
+  variables (`OPENCODE_MODEL` and `OPENCODE_MODEL_<AGENT>`, checked in the
+  format the workflow accepts)
 
 ## Dry Run and Defaults
 
@@ -39,7 +41,7 @@ nps "setup.github --dry-run --defaults"
 nps "setup.github --defaults --yes"
 ```
 
-`--defaults` skips optional metadata and AI variable prompts. `--yes` skips the
+`--defaults` skips optional metadata and model variable prompts. `--yes` skips the
 final confirmation. Use `--repo owner/repository` to target a repository other
 than the current Git remote.
 
@@ -59,8 +61,13 @@ protection without weakening stricter existing protection.
 ## Actions Permissions
 
 Setup enables Actions with a read-only default `GITHUB_TOKEN` and permits only
-GitHub-owned actions plus the third-party actions used by this starter. It does
-not enable Actions to create or approve pull requests.
+GitHub-owned actions plus the third-party actions used by this starter.
+
+It also allows Actions to create pull requests, which `/oc build` needs to open
+one from an issue. GitHub grants creating and approving pull requests through
+the same setting. The OpenCode workflow only posts comment reviews and never
+approves, and the managed Ruleset requires no approvals. If you require
+approvals, keep in mind that a workflow could approve a pull request.
 
 If an existing repository requires actions to be pinned to full commit SHAs,
 setup preserves that requirement and stops before applying changes because the
@@ -68,11 +75,17 @@ starter currently uses tag references.
 
 ## Secrets
 
-Configure Copilot credentials as Repository secrets:
+Configure AI provider API keys for the OpenCode workflow as Repository
+secrets. The command asks for each of `OPENCODE_API_KEY`, `OPENAI_API_KEY`,
+`ANTHROPIC_API_KEY`, and `OPENROUTER_API_KEY`; set only the providers you use:
 
 ```sh
 nps setup.github.secrets
 ```
+
+Repositories set up before the OpenCode V2 workflow may still have the old
+`AI_*` variables and `COPILOT_*` secrets. Nothing reads them anymore; remove
+them with `gh variable delete <name>` and `gh secret delete <name>`.
 
 Configure a custom Repository or Environment secret:
 
@@ -98,9 +111,3 @@ jobs:
   deploy:
     environment: production
 ```
-
-## Known Limitation
-
-The existing `/oc task` workflow mode requests a read-only contents token, so it
-cannot push a branch or create a pull request. Repository setup intentionally
-does not broaden that workflow permission.

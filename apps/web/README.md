@@ -75,4 +75,4 @@ For more details, see [package-scripts](../../package-scripts.js).
 
 For detailed code style guidelines, naming conventions, and component architecture, see:
 
-- [CODE_STYLE.md](../../docs/instructions/CODE_STYLE.md)
+- [AGENTS.md](AGENTS.md)

@@ -5,14 +5,15 @@ import path from "node:path";
 import process from "node:process";
 import type { Interface } from "node:readline/promises";
 
+import { parseModelList } from "../../ci/opencode/models.mts";
 import {
-  AI_VARIABLES,
   buildActionsSettings,
   buildBranchProtection,
   buildMainRuleset,
   buildRepositorySettings,
   diffLabels,
   diffObject,
+  MODEL_VARIABLES,
   parseArguments,
   parseLabels,
   REPOSITORY_RULESET_NAME,
@@ -47,12 +48,12 @@ interface MetadataResult {
   currentTopics: string[] | undefined;
 }
 
-interface ExistingAiVariable {
+interface ExistingVariable {
   name: string;
   value: string;
 }
 
-interface AiVariableChange extends ExistingAiVariable {
+interface VariableChange extends ExistingVariable {
   current: string;
 }
 
@@ -184,12 +185,32 @@ function printLabelDiff(changes: LabelDiff): void {
   }
 }
 
-async function getAiVariableChanges(
+// Asks until the value is empty or a model list the workflow accepts, so a
+// typo surfaces here instead of in a failed agent run.
+async function askModelList(
+  name: string,
+  current: string,
+  readline: Interface,
+): Promise<string> {
+  for (;;) {
+    const value = await ask(name, current, readline);
+    if (!value) return value;
+    try {
+      parseModelList(value, name);
+      return value;
+    } catch (error) {
+      console.error((error as Error).message);
+    }
+  }
+}
+
+async function getModelVariableChanges(
   repository: string,
   readline: Interface,
-): Promise<AiVariableChange[]> {
-  if (!(await confirm("Configure optional AI variables", false, readline)))
-    return [];
+): Promise<VariableChange[]> {
+  const question =
+    "Configure optional OpenCode model variables (provider/model#variant)";
+  if (!(await confirm(question, false, readline))) return [];
   const existing = JSON.parse(
     runCommand("gh", [
       "variable",
@@ -199,15 +220,15 @@ async function getAiVariableChanges(
       "--json",
       "name,value",
     ]),
-  ) as ExistingAiVariable[];
+  ) as ExistingVariable[];
   const byName = new Map(
     existing.map((variable) => [variable.name, variable.value]),
   );
-  const changes: AiVariableChange[] = [];
+  const changes: VariableChange[] = [];
 
-  for (const name of AI_VARIABLES) {
+  for (const name of MODEL_VARIABLES) {
     const current = byName.get(name) ?? "";
-    const value = await ask(name, current, readline);
+    const value = await askModelList(name, current, readline);
     if (value && value !== current) changes.push({ name, current, value });
   }
   return changes;
@@ -474,9 +495,9 @@ export async function setupRepository(args: SetupArguments): Promise<void> {
     const metadataResult: MetadataResult = args.defaults
       ? { metadata: {}, topics: undefined, currentTopics: undefined }
       : await collectMetadata(state, readline!);
-    const aiVariables: AiVariableChange[] = args.defaults
+    const modelVariables: VariableChange[] = args.defaults
       ? []
-      : await getAiVariableChanges(repository, readline!);
+      : await getModelVariableChanges(repository, readline!);
     const repositorySettings = buildRepositorySettings(metadataResult.metadata);
     const repositoryChanges = diffObject(state, repositorySettings);
     const actionsState = getActionsState(repository);
@@ -515,8 +536,8 @@ export async function setupRepository(args: SetupArguments): Promise<void> {
       );
     }
     printDiff(
-      "AI variables",
-      aiVariables.map((variable) => ({
+      "OpenCode model variables",
+      modelVariables.map((variable) => ({
         key: variable.name,
         current: variable.current || undefined,
         desired: variable.value,
@@ -555,7 +576,7 @@ export async function setupRepository(args: SetupArguments): Promise<void> {
       });
     }
     applyActionsSettings(repository, actionsSettings);
-    for (const variable of aiVariables) {
+    for (const variable of modelVariables) {
       runCommand("gh", [
         "variable",
         "set",

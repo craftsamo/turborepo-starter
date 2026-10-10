@@ -1,151 +1,368 @@
 # Run AI Agent Workflow
 
-**File**: `.github/workflows/opencode.yml`
+**Files**: `.github/workflows/opencode.yml`,
+`.github/workflows/opencode-agent.yml`
 
 ## Prerequisites
 
-- Comment created on an issue or pull request containing `/oc` or `/opencode`
-  command
-- GitHub Copilot authentication configured (optional, for Copilot model)
-- Repository must have `id-token: write`, `contents: read`,
-  `pull-requests: write`, and `issues: write` permissions
+- A comment on an issue or pull request that starts with `/oc` or `/opencode`
+- The commenter is an owner, member, or collaborator of the repository
+- For `/oc build` on issues: Actions may create pull requests (set by
+  `nps setup.github`)
+- Nothing else: the default models are free and need no secrets
 
 ## How It Works
 
-The workflow automatically triggers when a comment with `/oc` or `/opencode`
-command is posted on an issue or pull request. It uses the
-[OpenCode GitHub Action](https://github.com/sst/opencode) to run AI-powered code
-tasks.
+The workflow runs the [OpenCode](https://opencode.ai) V2 CLI headlessly with
+CI-only agents defined in `.github/opencode/`. The job copies that directory
+into its own `XDG_CONFIG_HOME`, so the agents never appear in local OpenCode
+sessions, while the repository's `AGENTS.md` and skills still apply.
+
+```
+.github/opencode/
+├── agents/            permissions per agent; the body stays empty
+├── instructions/      common.md plus one file per agent
+├── plugins/           instructions.ts appends the instructions
+├── skills/            CI-only skills
+├── models.json        default model candidates
+└── opencode.json      provider settings (OpenRouter data policy)
+```
+
+Each agent keeps OpenCode's built-in prompt, including its per-model
+variants, and `plugins/instructions.ts` appends `instructions/common.md` and
+`instructions/<agent>.md` to it. An agent file with a prompt body would replace
+the built-in prompt instead.
+
+### Subagents
+
+The agents can hand work to CI subagents, which inherit the parent's model:
+
+| Subagent           | Role                                                         | Launched by                   |
+| ------------------ | ------------------------------------------------------------ | ----------------------------- |
+| `ci-explore`       | Answers one bounded question about the code                  | plan, build, review, debug    |
+| `ci-reviewer`      | Broad review of one slice; maps candidates for a deep review | review, build (its own edits) |
+| `ci-reviewer-deep` | Deep review of one high-risk candidate                       | review                        |
+| `ci-worker`        | Applies well-specified, mechanical edits                     | build only                    |
+
+A subagent runs with its own permissions, not its parent's, and OpenCode's
+built-in subagents also pick up the repository's `opencode.jsonc` rules, which
+allow commands such as `pnpm`. The CI subagents therefore carry the same strict
+rules as the agents, and each agent may launch only the subagents above.
+`ci-worker` can edit files, so only `build` may launch it: `build` works in a
+separate clone, while the other agents run in the checkout whose scripts the
+publish step runs with the GitHub token.
 
 ### Process
 
-1. **Trigger**: Comment created containing `/oc` or `/opencode` command
-2. **Filter**: Check if comment matches command pattern
-3. **Checkout**: Clone repository to access codebase
-4. **Authenticate**: Set up GitHub Copilot authentication (if configured)
-5. **Execute**: Run OpenCode agent with specified model
-6. **Report**: Post results as comment on the issue/PR
+1. **Trigger**: A comment starting with `/oc` or `/opencode` from a user with
+   write access
+2. **Route**: A job without write access reads which agent the comment asks
+   for. `build` runs in a job that can push; every other agent runs in a job
+   that cannot. Both call the reusable `opencode-agent.yml`.
+3. **Checkout**: The default branch, without persisted credentials
+4. **Prepare**: Validate the command, add a 👀 reaction, fetch the issue or
+   pull request context, and fetch the pull request as `refs/opencode/head`
+   (with its base as `refs/opencode/base`). For `build`, also create a separate
+   clone to work in: the pull request's branch, or a new
+   `opencode/issue-<number>-<run>-<attempt>` branch from the default branch.
+5. **Run**: Install the pinned `@opencode/cli` and run the agent, trying each
+   model candidate in order
+6. **Publish**: Post the answer as a comment, or a pull request review with
+   inline comments for `review`. For `build`, commit the edits, push them, open
+   a pull request when the branch is new, and start the Tests workflow.
 
-### Available Commands
+The scripts live in `scripts/ci/opencode/`. Their parsing and decision logic
+is covered by `nps test.scripts`; `main.mts`, which only wires `gh`, `git`,
+and `opencode` together, is exercised by running the workflow.
 
-| Command                  | Description                                   | PR Conversation | PR File Review | Issue |
-| ------------------------ | --------------------------------------------- | :-------------: | :------------: | :---: |
-| `/oc review`             | Review the PR for code style, typos, and bugs |       ✅        |       ❌       |  ❌   |
-| `/oc issue`              | Analyze issue and create implementation plan  |       ❌        |       ❌       |  ✅   |
-| `/oc task <instruction>` | Execute a task with commits                   |       ✅        |       ✅       |  ✅   |
+### Commands
 
-#### Command Details
+| Command                    | Description                                       | Issue | PR  |
+| -------------------------- | ------------------------------------------------- | :---: | :-: |
+| `/oc plan <instruction>`   | Investigate and propose a plan                    |  ✅   | ✅  |
+| `/oc build <instruction>`  | Make the change and commit it                     |  ✅   | ✅  |
+| `/oc debug <instruction>`  | Diagnose a bug or failure and find the root cause |  ✅   | ✅  |
+| `/oc review <instruction>` | Review the pull request with inline comments      |  ❌   | ✅  |
+| `/oc <instruction>`        | Same as `plan`                                    |  ✅   | ✅  |
+| `/oc`                      | `review` on a pull request, `plan` on an issue    |  ✅   | ✅  |
 
-**`/oc review`**
+The instruction is optional for every agent and narrows what the agent looks
+at. `plan`, `review`, and `debug` are read-only: they cannot edit files, run
+builds or tests, or call GitHub.
 
-- Reviews the PR for compliance with project guidelines
-- Creates review comments on specific lines
-- Read-only operation (no file modifications)
-- Only available in PR conversation tab
-- Any arguments after `review` are ignored
+A command is about where it is written, so a short instruction is enough:
 
-**`/oc issue`**
+- **Review comments**: on a line or as a reply in a review thread, for example
+  under a `review` finding. The agent gets the commented lines and the earlier
+  comments of the thread as the subject of the request, and `plan`, `build`,
+  and `debug` reply in the thread.
+- **Quote replies**: in an issue or pull request conversation, quote a comment
+  and put the command after the quote. The quoted text becomes the subject of
+  the request.
 
-- Analyzes issue content and creates implementation plan
-- Explores codebase to understand relevant code
-- Posts analysis as a comment on the issue
-- Read-only operation (no file modifications)
-- Only available on issues
-- Any arguments after `issue` are ignored
+#### Build
 
-**`/oc task <instruction>`**
+`build` edits files and the workflow commits them:
 
-- Executes the specified task and commits changes
-- On PR: Commits directly to the PR branch
-- On Issue: Creates a new branch and PR with `Closes #<issue_number>`
+- **On an issue**: pushes a new branch and opens a pull request that closes
+  the issue.
+- **On a pull request**: commits to the pull request's branch. Pull requests
+  from forks are refused, because the workflow cannot push to them.
+
+The agent can read and edit files and run read-only git commands, nothing
+else. It cannot install packages or run builds, linters, or tests, because
+those execute code it wrote next to the job's credentials. Instead, the
+workflow starts the Tests workflow on the pushed branch, since pushes and pull
+requests made with `GITHUB_TOKEN` do not trigger workflows themselves. When
+Tests fails, comment `/oc build fix the failing checks` on the pull request.
+
+That dispatched run is not attached to the pull request, so it does not count
+toward the `Required checks` status that protects `main`. To get a regular
+pull request run:
+
+- **New pull request from an issue**: GitHub holds its workflow run for
+  approval; approve it on the pull request.
+- **Commit pushed to an existing pull request**: close and reopen the pull
+  request.
+
+The build's reply repeats these steps. Pushing with a GitHub App or personal
+access token instead of `GITHUB_TOKEN` would trigger the pull request workflows
+directly, at the cost of managing that credential.
+
+The agent ends with a pull request title, a Conventional Commits message, and a
+summary. Changes to `.github/workflows/` are refused, because `GITHUB_TOKEN`
+cannot push them.
 
 #### Usage Examples
 
 ```
 /oc review
-/oc issue
-/oc task Add unit tests for the login function
-/oc task Fix the typo in README.md
+/oc review focus on error handling
+/oc build add unit tests for parseMaxChangedLines
+/oc debug the login page returns 500 after the last deploy
+/oc how should we split this issue into tasks?
 ```
 
-Both `/oc` and `/opencode` prefixes are supported.
+## Models
 
-### AI Model
+Each run resolves a list of model candidates and uses the first one that
+answers:
 
-The workflow uses dynamic model configuration based on repository variables:
+1. `OPENCODE_MODEL_<AGENT>` (`OPENCODE_MODEL_PLAN`, `_BUILD`, `_REVIEW`,
+   `_DEBUG`)
+2. `OPENCODE_MODEL`
+3. The defaults in `.github/opencode/models.json`
 
-| Variable             | Default Value       | Description                    |
-| -------------------- | ------------------- | ------------------------------ |
-| `AI_PROVIDER_ID`     | `github-copilot`    | AI model provider              |
-| `AI_MODEL_ID`        | `gpt-5-mini`        | Default model for all commands |
-| `AI_REVIEW_MODEL_ID` | `AI_MODEL_ID` value | Model for `/oc review`         |
-| `AI_ISSUE_MODEL_ID`  | `AI_MODEL_ID` value | Model for `/oc issue`          |
-| `AI_TASK_MODEL_ID`   | `AI_MODEL_ID` value | Model for `/oc task`           |
+Set the variables with `nps setup.github`, which checks the format, or under
+**Settings > Secrets and variables > Variables**. A
+value is one model ID or a comma-separated list in `provider/model` or
+`provider/model#variant` form, for example `anthropic/claude-sonnet-5-5#high`
+or `openai/gpt-5.5,opencode/space-bunny-free`. Variant names differ per model;
+an unknown variant fails the run with an error instead of being ignored.
 
-**Default Model**: `github-copilot/gpt-5-mini`
+A candidate is skipped when OpenCode cannot reach it, for example a paid model
+without a key. The defaults also skip a free model that refuses the request.
+A configured model that fails for any other reason stops the run and reports
+the error, so a broken setup is never hidden behind a different model.
 
-**Fallback Order**: Command-specific model → `AI_MODEL_ID` → `gpt-5-mini`
+### Default Models
 
-The model can be customized by setting repository variables in GitHub repository
-settings.
+`models.json` lists free models whose providers neither retain nor train on
+prompts, in priority order:
 
-### Authentication
+| Model                                    | Data policy                                    |
+| ---------------------------------------- | ---------------------------------------------- |
+| `opencode/space-bunny-free`              | No retention, no training (per the Zen docs)   |
+| `opencode/longcat-2.5-preview-free`      | No retention, no training (per the Zen docs)   |
+| `opencode/step-5-preview-free`           | No retention, no training (per the Zen docs)   |
+| `openrouter/apodex/apodex-1.1-mini:free` | Zero data retention, enforced on every request |
 
-The "Write opencode GitHub Copilot auth" step is **only required** when using
-the `github-copilot` model:
+Other free models such as `opencode/big-pickle` are left out because their
+providers may use prompts to improve their models. Free models are offered for
+a limited time, so review the list when a free model is retired or a data
+policy changes, and update `checkedAt`. A model you set in a variable is
+always used as configured, regardless of its data policy.
 
-- **Secrets**: `COPILOT_ACCESS_TOKEN`, `COPILOT_REFRESH_TOKEN`
-- **Location**: `$XDG_DATA_HOME/opencode/auth.json` (generated in the workflow)
-- **Workflow env**: `XDG_DATA_HOME=/tmp/xdg-data`
-- **Content**: Runtime-generated OAuth entry for `github-copilot`
-- **Conditional**: Only runs when both secrets are not empty
+### OpenRouter Free Models
 
-To use GitHub Copilot model:
+The OpenRouter candidate is a fallback for when the Zen models are retired or
+refuse the request, and it is tried only when the `OPENROUTER_API_KEY` secret
+is set. `.github/opencode/opencode.json` adds `zdr: true` and
+`data_collection: "deny"` to every OpenRouter request, including models set in
+a variable, so OpenRouter only routes to endpoints that keep no prompts. When
+no such endpoint is available, the request fails instead of falling back to
+one that logs prompts.
 
-1. Run `/connect` locally and authenticate GitHub Copilot in OpenCode.
-2. Open your local `~/.local/share/opencode/auth.json`.
-3. Copy `github-copilot.access` into the `COPILOT_ACCESS_TOKEN` repository
-   secret.
-4. Copy `github-copilot.refresh` into the `COPILOT_REFRESH_TOKEN` repository
-   secret.
+- **Limits**: free models allow 20 requests per minute and 50 per day, or
+  1,000 per day once the account has bought at least 10 credits. Every agent
+  step is one request and subagents add their own, so a single run can use
+  dozens; plan on buying credits before relying on it.
+- **Finding candidates**: free endpoints with zero data retention are listed
+  by `https://openrouter.ai/api/v1/endpoints/zdr` (entries priced at 0 that
+  support `tools`). Only add IDs ending in `:free`: a model that is merely
+  priced at 0 for now starts charging when its price changes. Declare each one
+  under `providers.openrouter.models` in `opencode.json` as well.
+- **Without a key**: a variable that names an OpenRouter model fails with
+  `No cookie auth credentials found` (401), because `opencode.json` enables the
+  provider.
 
-The workflow generates `$XDG_DATA_HOME/opencode/auth.json` before running the
-action with the following structure:
+## Providers
 
-```json
-{
-  "github-copilot": {
-    "type": "oauth",
-    "access": "<COPILOT_ACCESS_TOKEN>",
-    "refresh": "<COPILOT_REFRESH_TOKEN>",
-    "expires": 0
-  }
-}
-```
+Add a provider's API key as a repository secret to use its models, with
+`nps setup.github.secrets` or in the repository settings. The run step passes
+these secrets to OpenCode and nothing else:
 
-`GITHUB_TOKEN` is still passed to the action for GitHub API operations. GitHub
-Copilot model authentication comes from the generated `auth.json` file.
+| Secret               | Provider                              |
+| -------------------- | ------------------------------------- |
+| `OPENCODE_API_KEY`   | OpenCode Zen (paid models) and Go     |
+| `OPENAI_API_KEY`     | OpenAI                                |
+| `ANTHROPIC_API_KEY`  | Anthropic (a key from Claude Console) |
+| `OPENROUTER_API_KEY` | OpenRouter                            |
 
-If using other models, this step is skipped and the workflow runs without GitHub
-Copilot authentication.
+Subscription logins are not supported:
+
+- **GitHub Copilot**: OpenCode signs in through an interactive device login,
+  and GitHub only sanctions Copilot in Actions for its own Copilot CLI.
+- **ChatGPT Plus/Pro**: OpenAI directs automation to API keys, and the login
+  token rotates, which ephemeral runners cannot keep.
+- **Claude Pro/Max**: Anthropic does not permit third-party tools to use
+  subscription credentials.
+
+Cloud providers such as Amazon Bedrock or Google Vertex AI work by adding an
+OIDC login step and their environment variables to the run step.
+
+## Skills and Plugins
+
+### Skills
+
+Every agent may load any skill. A skill only adds its instructions to the
+context; a command it suggests still goes through the agent's shell rules, so
+steps such as running tests are rejected and the agent works without them.
+
+| Location                          | Loaded by                    |
+| --------------------------------- | ---------------------------- |
+| `.opencode/skills/` (and mirrors) | CI agents and local sessions |
+| `.github/opencode/skills/`        | CI agents only               |
+
+Put CI-specific guidance, such as how to write a good `build` summary for your
+project, in `.github/opencode/skills/<name>/SKILL.md`. Do not add other
+Markdown files directly in that directory: each one becomes a skill.
+
+### Plugins
+
+OpenCode loads `.ts` and `.js` plugins from these directories:
+
+| Location                    | Loaded by                    |
+| --------------------------- | ---------------------------- |
+| `.opencode/plugins/`        | CI agents and local sessions |
+| `.github/opencode/plugins/` | CI agents only               |
+
+`.github/opencode/plugins/instructions.ts` belongs to the workflow; keep it
+next to any plugins you add.
+
+A plugin is trusted code, not something the agent is allowed to use:
+
+- It runs inside the OpenCode process during the run step, with the provider
+  API keys and network access.
+- Its tools are not checked against the agent's permission rules, and its
+  hooks can change permission decisions other than `deny`. A plugin can
+  therefore widen what an agent may do.
+- For `build` on a pull request, the plugins on the pull request's branch
+  load.
+
+Review plugin changes as carefully as workflow changes. To give agents a tool,
+register it with `options: { codemode: false }`: by default plugin tools are
+only reachable through Code Mode, which the agents cannot use.
+
+npm plugins listed under `plugins` in an OpenCode config are not supported in
+CI. OpenCode installs them in the background on first start, so a fresh runner
+may run the agent before they load, and they would add third-party code with
+access to the keys.
+
+## Security
+
+- **Allowed or rejected**: Every agent permission that is not explicitly
+  allowed resolves to `ask`, which a non-interactive run rejects. Agents may
+  read files inside the repository and run read-only git commands; `build` may
+  also edit files inside its working tree. Rules are `ask` rather than `deny`
+  because the OpenCode free tier rejects requests whose core tools (edit,
+  shell, and so on) were trimmed by deny rules. The workflow never passes
+  `--auto`.
+- **No code execution**: No agent can run builds, tests, package managers,
+  commits, or pushes, so nothing an agent writes runs during the job. The only
+  repository code that runs is the plugins you add, which are trusted (see
+  [Plugins](#plugins)).
+- **No network**: Code Mode (`execute`) can call `fetch` and is not stopped by
+  `ask`, so it is denied, together with the desktop `browser` tools. Web fetch
+  and web search resolve to `ask` and are rejected.
+- **No reads outside the repository**: Given a path outside the working tree,
+  `git diff` and `git blame --contents` read arbitrary files, including the
+  process environment that holds the provider keys. `git diff` is therefore
+  only allowed against `refs/opencode/*` (and, for `build`, for its own edits),
+  and git commands containing absolute, parent, or home paths, quotes, `$`, or
+  file-writing and external-content flags (including git's abbreviations of
+  them) are refused.
+- **Trusted config**: The checkout is always the default branch, and the
+  `build` agent edits a separate clone, so a pull request cannot change the
+  scripts or the read-only agents' permissions. For `build` on a pull request,
+  the branch's own `.opencode/` config applies; fork pull requests are refused
+  for that reason too.
+- **Untouchable git setup**: The clone's git directory lives outside the tree
+  the agent edits, and the agent cannot create or change any `.git` path. The
+  publish step passes that git directory explicitly with hooks and fsmonitor
+  turned off, so nothing the agent wrote runs while the token is present.
+- **Least privilege**: Only `build` runs with write access to contents. The
+  GitHub token is only available to the prepare and publish steps; the run
+  step has the provider keys but no GitHub token, and no credential is written
+  to `.git/config`.
+- **Output hygiene**: API key values are masked in anything posted back, and
+  `@mentions` outside code blocks are broken so injected text cannot ping
+  people or teams.
 
 ### Permissions
 
-The workflow operates with different permissions based on the command:
+| Permission      | `plan`, `review`, `debug` | `build` | Purpose                                    |
+| --------------- | :-----------------------: | :-----: | ------------------------------------------ |
+| `contents`      |           read            |  write  | Check out, fetch refs, and push the branch |
+| `issues`        |           write           |  write  | Comment and react on issues                |
+| `pull-requests` |           write           |  write  | Comment, review, and open pull requests    |
+| `actions`       |             —             |  write  | Start the Tests workflow                   |
 
-**Base Permissions:**
+## Customizing
 
-| Permission      | Level | Purpose                               |
-| --------------- | ----- | ------------------------------------- |
-| `id-token`      | write | OIDC token for authentication         |
-| `contents`      | read  | Read repository code and files        |
-| `pull-requests` | write | Read/write PR details and comments    |
-| `issues`        | write | Read/write issue details and comments |
+- **Instructions**: Edit `.github/opencode/instructions/<name>.md` for one
+  agent, or `common.md` for all of them.
+- **Permissions**: Edit the frontmatter of `.github/opencode/agents/<name>.md`
+  and keep its body empty. Keep new
+  rules as `allow` or `ask` (`deny` on core tools makes the free tier refuse
+  the request; only `execute` and `browser` are denied), and keep the path
+  rules after any new `allow` rule, because the last matching rule wins. Use
+  only `*` as a wildcard in patterns: a backslash does not match literally, and
+  `git *\*` matches every git command.
+- **Agent names**: Do not define an agent with a CI agent's name (`plan`,
+  `build`, `review`, `debug`, or a `ci-` subagent) in `.opencode/agents/` or
+  the repository's `opencode.jsonc`. OpenCode merges it over the CI agent, and
+  its model and permission rules win. The scripts tests check this.
+- **Default models**: Edit `.github/opencode/models.json`.
+- **Skills and plugins**: Add them under `.github/opencode/skills/` and
+  `.github/opencode/plugins/` for CI only, or under `.opencode/` to share them
+  with local sessions. See [Skills and Plugins](#skills-and-plugins).
+- **OpenCode version**: Change `OPENCODE_VERSION` in `opencode-agent.yml`.
+- **Tests workflow**: `build` starts `tests.yml`; change `TESTS_WORKFLOW` in
+  `scripts/ci/opencode/main.mts` if yours is named differently.
 
-**Command-specific Restrictions:**
+## Known Limitations
 
-| Command      | File Edit | File Write | Bash Commands            |
-| ------------ | :-------: | :--------: | ------------------------ |
-| `/oc review` |    ❌     |     ❌     | `gh api*`, `gh pr diff*` |
-| `/oc issue`  |    ❌     |     ❌     | `gh api*`                |
-| `/oc task`   |    ✅     |     ✅     | `gh*`, `git*`            |
+- Review comments on pull requests from forks get a read-only token from
+  GitHub, so the workflow cannot reply there. Comment on the conversation tab
+  instead.
+- Commands in review comments do not run while the pull request has merge
+  conflicts. GitHub starts workflows for review comments from the pull
+  request's merge commit, which does not exist until the conflicts are
+  resolved. Resolve them first, or comment on the conversation tab, quoting the
+  review comment to keep it as the subject.
+- Members whose organization membership is private may not be recognized as
+  members; make the membership public or add them as collaborators.
+- A `build` commit is not checked before it is pushed; the Tests workflow
+  reports on it afterwards. When the agent run fails, its edits are discarded.
+- A run stops after 15 minutes per model; the job stops after 30 minutes.

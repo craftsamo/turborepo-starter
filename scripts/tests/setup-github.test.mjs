@@ -8,8 +8,10 @@ import {
   buildRepositorySettings,
   diffLabels,
   diffObject,
+  MODEL_VARIABLES,
   parseArguments,
   parseLabels,
+  PROVIDER_SECRETS,
 } from "../setup/github/policy.mts";
 import {
   CommandError,
@@ -129,7 +131,7 @@ describe("repository settings", () => {
 });
 
 describe("Actions settings", () => {
-  it("uses selected actions with a read-only default token", () => {
+  it("uses selected actions with a read-only default token that can open PRs", () => {
     const settings = buildActionsSettings();
 
     assert.deepEqual(settings.permissions, {
@@ -143,11 +145,10 @@ describe("Actions settings", () => {
       "dorny/paths-filter@*",
       "release-drafter/release-drafter@*",
       "micnncim/action-label-syncer@*",
-      "sst/opencode/github@*",
     ]);
     assert.deepEqual(settings.workflow, {
       default_workflow_permissions: "read",
-      can_approve_pull_request_reviews: false,
+      can_approve_pull_request_reviews: true,
     });
   });
 
@@ -157,6 +158,27 @@ describe("Actions settings", () => {
         .sha_pinning_required,
       true,
     );
+  });
+});
+
+describe("OpenCode workflow settings", () => {
+  it("offers the model variables the workflow reads", () => {
+    assert.deepEqual(MODEL_VARIABLES, [
+      "OPENCODE_MODEL",
+      "OPENCODE_MODEL_PLAN",
+      "OPENCODE_MODEL_BUILD",
+      "OPENCODE_MODEL_REVIEW",
+      "OPENCODE_MODEL_DEBUG",
+    ]);
+  });
+
+  it("offers the provider key secrets the workflow passes on", () => {
+    assert.deepEqual(PROVIDER_SECRETS, [
+      "OPENCODE_API_KEY",
+      "OPENAI_API_KEY",
+      "ANTHROPIC_API_KEY",
+      "OPENROUTER_API_KEY",
+    ]);
   });
 });
 

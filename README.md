@@ -156,30 +156,34 @@ such as `LOG_LEVEL`, keeps its bare name.
 
 ### GitHub Actions Variables
 
+The OpenCode workflow (`/oc` comments) runs on free models with no setup.
 Configure these optional variables through `nps setup.github` or under
-**Settings > Secrets and variables > Variables**:
+**Settings > Secrets and variables > Variables** to choose other models:
 
-| Variable             | Default                    |
-| -------------------- | -------------------------- |
-| `AI_PROVIDER_ID`     | github-copilot             |
-| `AI_MODEL_ID`        | gpt-5-mini                 |
-| `AI_REVIEW_MODEL_ID` | `AI_MODEL_ID` → gpt-5-mini |
-| `AI_ISSUE_MODEL_ID`  | `AI_MODEL_ID` → gpt-5-mini |
-| `AI_TASK_MODEL_ID`   | `AI_MODEL_ID` → gpt-5-mini |
+| Variable                | Default                                       |
+| ----------------------- | --------------------------------------------- |
+| `OPENCODE_MODEL`        | Free models in `.github/opencode/models.json` |
+| `OPENCODE_MODEL_PLAN`   | `OPENCODE_MODEL`                              |
+| `OPENCODE_MODEL_BUILD`  | `OPENCODE_MODEL`                              |
+| `OPENCODE_MODEL_REVIEW` | `OPENCODE_MODEL`                              |
+| `OPENCODE_MODEL_DEBUG`  | `OPENCODE_MODEL`                              |
+
+Values are `provider/model` or `provider/model#variant`, optionally
+comma-separated, for example `anthropic/claude-sonnet-5-5#high`.
 
 ### GitHub Actions Secrets
 
-For GitHub Copilot authentication, run `nps setup.github.secrets` or add the
-following Repository secrets under **Settings > Secrets and variables >
-Secrets**:
+To use a provider's models, run `nps setup.github.secrets` or add its API key
+as a Repository secret under **Settings > Secrets and variables > Secrets**:
 
-| Secret                  | Default |
-| ----------------------- | ------- |
-| `COPILOT_ACCESS_TOKEN`  | ""      |
-| `COPILOT_REFRESH_TOKEN` | ""      |
+| Secret               | Provider                              |
+| -------------------- | ------------------------------------- |
+| `OPENCODE_API_KEY`   | OpenCode Zen (paid models) and Go     |
+| `OPENAI_API_KEY`     | OpenAI                                |
+| `ANTHROPIC_API_KEY`  | Anthropic (a key from Claude Console) |
+| `OPENROUTER_API_KEY` | OpenRouter                            |
 
-For details on how to set up GitHub Copilot authentication, see
-[Run AI Agent Workflow](docs/github-actions/run-ai-agent.md).
+For details, see [Run AI Agent Workflow](docs/github-actions/run-ai-agent.md).
 
 ## 📦 Available Commands
 
@@ -235,7 +239,7 @@ project standards.
 | **Display Details** | Manual dispatch  | Displays project, apps, and repository information                     |
 | **Release Drafter** | Push/PR to main  | Creates and updates draft releases with categorized changes            |
 | **Tests**           | Push/PR to main  | Runs tests for affected apps and packages                              |
-| **Run AI Agent**    | Issue/PR comment | Executes AI-powered code tasks via `/oc` or `/opencode` commands       |
+| **Run AI Agent**    | Issue/PR comment | Plans, builds, reviews, or debugs via `/oc` or `/opencode` commands    |
 
 ### Documentation
 

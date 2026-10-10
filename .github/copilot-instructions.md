@@ -13,7 +13,6 @@ the code you are changing before making edits.
   - `packages/ui/AGENTS.md`
   - `packages/types/AGENTS.md`
   - `packages/constants/AGENTS.md`
-- **Workflows / processes**: `docs/instructions/**/*.md`.
 
 Nested `AGENTS.md` files refine the root — the closer the file, the higher its
 priority.

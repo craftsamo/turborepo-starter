@@ -1,0 +1,55 @@
+name: OpenCode agent
+
+# Runs one /oc request. Called by opencode.yml, whose calling job sets the
+# token permissions: read-only agents get no write access to contents.
+
+on:
+  workflow_call:
+
+env:
+  OPENCODE_VERSION: 2.0.26
+
+jobs:
+  agent:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      # The default branch supplies the scripts and agent config, so a pull
+      # request can never change the permissions its own run uses.
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Use Node.js 24.x
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24.x
+          package-manager-cache: false
+      - name: Prepare request
+        id: prepare
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/ci/opencode/main.mts prepare
+      - name: Install OpenCode
+        if: steps.prepare.outputs.agent != ''
+        run: npm install --global "@opencode/cli@${OPENCODE_VERSION}"
+      # No GitHub token in this step: the agent only reads and edits files.
+      - name: Run agent
+        if: steps.prepare.outputs.agent != ''
+        env:
+          OPENCODE_MODEL: ${{ vars.OPENCODE_MODEL }}
+          OPENCODE_MODEL_PLAN: ${{ vars.OPENCODE_MODEL_PLAN }}
+          OPENCODE_MODEL_BUILD: ${{ vars.OPENCODE_MODEL_BUILD }}
+          OPENCODE_MODEL_REVIEW: ${{ vars.OPENCODE_MODEL_REVIEW }}
+          OPENCODE_MODEL_DEBUG: ${{ vars.OPENCODE_MODEL_DEBUG }}
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: node scripts/ci/opencode/main.mts run
+      - name: Publish result
+        if: always() && steps.prepare.outputs.agent != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/ci/opencode/main.mts publish

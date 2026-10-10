@@ -1,3 +1,7 @@
+import { AGENTS } from "../../ci/opencode/command.mts";
+import { agentVariable } from "../../ci/opencode/models.mts";
+import { SECRET_VARIABLES } from "../../ci/opencode/output.mts";
+
 export type SetupMode = "setup" | "secrets";
 
 export interface SetupArguments {
@@ -229,22 +233,14 @@ export interface RulesetInput {
 const REPOSITORY_RULESET_NAME = "Starter: protect main";
 const REQUIRED_CHECK = "Required checks";
 
-export const AI_VARIABLES = [
-  "AI_PROVIDER_ID",
-  "AI_MODEL_ID",
-  "AI_REVIEW_MODEL_ID",
-  "AI_ISSUE_MODEL_ID",
-  "AI_TASK_MODEL_ID",
-];
-export const COPILOT_SECRETS = [
-  "COPILOT_ACCESS_TOKEN",
-  "COPILOT_REFRESH_TOKEN",
-];
+// The OpenCode workflow's model variables and provider key secrets, taken
+// from the workflow scripts so the two never drift apart.
+export const MODEL_VARIABLES = ["OPENCODE_MODEL", ...AGENTS.map(agentVariable)];
+export const PROVIDER_SECRETS: readonly string[] = SECRET_VARIABLES;
 const ALLOWED_ACTION_PATTERNS = [
   "dorny/paths-filter@*",
   "release-drafter/release-drafter@*",
   "micnncim/action-label-syncer@*",
-  "sst/opencode/github@*",
 ];
 const LABEL_RENAMES = new Map([["💬quesion", "💬question"]]);
 
@@ -351,9 +347,11 @@ export function buildActionsSettings({
       verified_allowed: false,
       patterns_allowed: [...ALLOWED_ACTION_PATTERNS],
     },
+    // `/oc build` opens pull requests with GITHUB_TOKEN. GitHub ties creating
+    // and approving into this one setting; the workflow never approves.
     workflow: {
       default_workflow_permissions: "read",
-      can_approve_pull_request_reviews: false,
+      can_approve_pull_request_reviews: true,
     },
   };
 }
