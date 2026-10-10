@@ -1,3 +1,5 @@
+import { extractJsonBlock } from "./output.mts";
+
 export interface ReviewFinding {
   path: string;
   line: number;
@@ -106,18 +108,6 @@ export function commentableLines(diff: string): Map<string, Set<number>> {
     }
   }
   return result;
-}
-
-// JSON strings cannot hold raw newlines, so a line holding only ``` always
-// closes the block, even when a finding body quotes a ```suggestion fence.
-function extractJsonBlock(text: string): string | undefined {
-  const lines = text.split("\n");
-  const start = lines.findLastIndex((line) => /^\s*```json\b/.test(line));
-  if (start === -1) return undefined;
-  const end = lines.findIndex(
-    (line, index) => index > start && /^\s*```\s*$/.test(line),
-  );
-  return lines.slice(start + 1, end === -1 ? undefined : end).join("\n");
 }
 
 function toFinding(value: unknown): ReviewFinding | undefined {

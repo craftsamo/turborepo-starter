@@ -73,6 +73,19 @@ export function parseRunOutput(jsonl: string): RunOutcome {
   return error ? { text, error } : { text };
 }
 
+// Agents that return structured results end with a fenced json block. JSON
+// strings cannot hold raw newlines, so a line holding only ``` always closes
+// the block, even when a string inside quotes a ```suggestion fence.
+export function extractJsonBlock(text: string): string | undefined {
+  const lines = text.split("\n");
+  const start = lines.findLastIndex((line) => /^\s*```json\b/.test(line));
+  if (start === -1) return undefined;
+  const end = lines.findIndex(
+    (line, index) => index > start && /^\s*```\s*$/.test(line),
+  );
+  return lines.slice(start + 1, end === -1 ? undefined : end).join("\n");
+}
+
 export const SECRET_VARIABLES = [
   "OPENCODE_API_KEY",
   "OPENAI_API_KEY",
