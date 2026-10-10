@@ -1,42 +1,87 @@
 ---
 description: "Lightweight read-only review subagent for broad PR scans: project conventions, AGENTS.md violations, obvious bugs, missing tests, and low-cost regressions. Prefer invoking through the built-in task tool."
 mode: subagent
-model: openai/gpt-5.6-terra
+model: openai/gpt-5.6-terra#medium
 hidden: true
-options:
-  reasoningEffort: medium
-permission:
-  "*": deny
-  glob: allow
-  grep: allow
-  read:
-    "*": allow
-    "**/.env": deny
-    "**/.env.*": deny
-    "**/*.env": deny
-    "**/.env.example": allow
-    "**/.env.sample": allow
-  list: allow
-  edit: deny
-  external_directory: allow
-  task: deny
-  bash:
-    "*": deny
-    "git status*": allow
-    "git diff*": allow
-    "git show*": allow
-    "git log*": allow
-    "git blame*": allow
-    "git ls-files*": allow
-    "git rev-parse*": allow
-    "git merge-base*": allow
-    "git branch --show-current": allow
-    "git remote -v": allow
-    "git remote get-url*": allow
-    "gh pr view*": allow
-    "gh pr diff*": allow
-    "gh pr list*": allow
-    "gh repo view*": allow
+permissions:
+  - action: "*"
+    resource: "*"
+    effect: deny
+  - action: external_directory
+    resource: "*"
+    effect: allow
+  - action: glob
+    resource: "*"
+    effect: allow
+  - action: grep
+    resource: "*"
+    effect: allow
+  - action: read
+    resource: "*"
+    effect: allow
+  - action: read
+    resource: "*.env"
+    effect: deny
+  - action: read
+    resource: "*.env.*"
+    effect: deny
+  - action: read
+    resource: "*.env.example"
+    effect: allow
+  - action: read
+    resource: "*.env.sample"
+    effect: allow
+  - action: edit
+    resource: "*"
+    effect: deny
+  - action: shell
+    resource: "*"
+    effect: deny
+  - action: shell
+    resource: "git status*"
+    effect: allow
+  - action: shell
+    resource: "git diff*"
+    effect: allow
+  - action: shell
+    resource: "git show*"
+    effect: allow
+  - action: shell
+    resource: "git log*"
+    effect: allow
+  - action: shell
+    resource: "git blame*"
+    effect: allow
+  - action: shell
+    resource: "git ls-files*"
+    effect: allow
+  - action: shell
+    resource: "git rev-parse*"
+    effect: allow
+  - action: shell
+    resource: "git merge-base*"
+    effect: allow
+  - action: shell
+    resource: "git branch --show-current"
+    effect: allow
+  - action: shell
+    resource: "git remote -v"
+    effect: allow
+  - action: shell
+    resource: "git remote get-url*"
+    effect: allow
+  - action: shell
+    resource: "gh pr view*"
+    effect: allow
+  - action: shell
+    resource: "gh pr diff*"
+    effect: allow
+  - action: shell
+    resource: "gh pr list*"
+    effect: allow
+  - action: shell
+    resource: "gh repo view*"
+    effect: allow
 ---
 
 You are a lightweight, read-only code review subagent. Your output is consumed by
