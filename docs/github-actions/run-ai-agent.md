@@ -173,7 +173,9 @@ Subscription logins are not supported:
 Cloud providers such as Amazon Bedrock or Google Vertex AI work by adding an
 OIDC login step and their environment variables to the run step.
 
-## Skills
+## Skills and Plugins
+
+### Skills
 
 Every agent may load any skill. A skill only adds its instructions to the
 context; a command it suggests still goes through the agent's shell rules, so
@@ -188,6 +190,34 @@ Put CI-specific guidance, such as how to write a good `build` summary for your
 project, in `.github/opencode/skills/<name>/SKILL.md`. Do not add other
 Markdown files directly in that directory: each one becomes a skill.
 
+### Plugins
+
+OpenCode loads `.ts` and `.js` plugins from these directories:
+
+| Location                    | Loaded by                    |
+| --------------------------- | ---------------------------- |
+| `.opencode/plugins/`        | CI agents and local sessions |
+| `.github/opencode/plugins/` | CI agents only               |
+
+A plugin is trusted code, not something the agent is allowed to use:
+
+- It runs inside the OpenCode process during the run step, with the provider
+  API keys and network access.
+- Its tools are not checked against the agent's permission rules, and its
+  hooks can change permission decisions other than `deny`. A plugin can
+  therefore widen what an agent may do.
+- For `build` on a pull request, the plugins on the pull request's branch
+  load.
+
+Review plugin changes as carefully as workflow changes. To give agents a tool,
+register it with `options: { codemode: false }`: by default plugin tools are
+only reachable through Code Mode, which the agents cannot use.
+
+npm plugins listed under `plugins` in an OpenCode config are not supported in
+CI. OpenCode installs them in the background on first start, so a fresh runner
+may run the agent before they load, and they would add third-party code with
+access to the keys.
+
 ## Security
 
 - **Allowed or rejected**: Every agent permission that is not explicitly
@@ -198,7 +228,9 @@ Markdown files directly in that directory: each one becomes a skill.
   shell, and so on) were trimmed by deny rules. The workflow never passes
   `--auto`.
 - **No code execution**: No agent can run builds, tests, package managers,
-  commits, or pushes, so nothing an agent writes runs during the job.
+  commits, or pushes, so nothing an agent writes runs during the job. The only
+  repository code that runs is the plugins you add, which are trusted (see
+  [Plugins](#plugins)).
 - **No network**: Code Mode (`execute`) can call `fetch` and is not stopped by
   `ask`, so it is denied, together with the desktop `browser` tools. Web fetch
   and web search resolve to `ask` and are rejected.
@@ -245,9 +277,9 @@ Markdown files directly in that directory: each one becomes a skill.
   only `*` as a wildcard in patterns: a backslash does not match literally, and
   `git *\*` matches every git command.
 - **Default models**: Edit `.github/opencode/models.json`.
-- **Skills**: Add them under `.github/opencode/skills/` for CI only, or under
-  `.opencode/skills/` to share them with local sessions. See
-  [Skills](#skills).
+- **Skills and plugins**: Add them under `.github/opencode/skills/` and
+  `.github/opencode/plugins/` for CI only, or under `.opencode/` to share them
+  with local sessions. See [Skills and Plugins](#skills-and-plugins).
 - **OpenCode version**: Change `OPENCODE_VERSION` in `opencode-agent.yml`.
 - **Tests workflow**: `build` starts `tests.yml`; change `TESTS_WORKFLOW` in
   `scripts/ci/opencode/main.mts` if yours is named differently.
