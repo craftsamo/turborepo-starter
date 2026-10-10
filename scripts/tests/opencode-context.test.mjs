@@ -82,6 +82,15 @@ describe("defaultInstruction", () => {
     assert.match(defaultInstruction("plan", "issue"), /this issue/);
     assert.match(defaultInstruction("plan", "pull_request"), /pull request/);
     assert.match(defaultInstruction("debug", "issue"), /root cause/);
+    assert.match(defaultInstruction("build", "issue"), /Implement/);
+    assert.match(
+      defaultInstruction("build", "pull_request"),
+      /review feedback/,
+    );
+    assert.match(
+      defaultInstruction("build", "pull_request_review_comment"),
+      /review thread/,
+    );
   });
 });
 

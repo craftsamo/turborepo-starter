@@ -54,7 +54,7 @@ describe("parseCommand", () => {
     assert.equal(parseCommand("/opencode", "issue").agent, "plan");
   });
 
-  it("keeps build reserved instead of treating it as plan text", () => {
+  it("reads build as an agent keyword", () => {
     assert.deepEqual(parseCommand("/oc build add tests", "issue"), {
       kind: "run",
       agent: "build",
@@ -64,16 +64,18 @@ describe("parseCommand", () => {
 });
 
 describe("checkCommand", () => {
-  it("accepts read-only agents in every context", () => {
+  it("accepts plan, debug, and build in every context", () => {
     for (const target of [
       "issue",
       "pull_request",
       "pull_request_review_comment",
     ]) {
-      assert.deepEqual(
-        checkCommand({ kind: "run", agent: "plan", instruction: "" }, target),
-        { ok: true },
-      );
+      for (const agent of ["plan", "debug", "build"]) {
+        assert.deepEqual(
+          checkCommand({ kind: "run", agent, instruction: "" }, target),
+          { ok: true },
+        );
+      }
     }
   });
 
@@ -85,20 +87,16 @@ describe("checkCommand", () => {
     assert.equal(result.ok, false);
     assert.match(result.message, /only works on pull requests/);
   });
-
-  it("rejects agents that are not available yet", () => {
-    const result = checkCommand(
-      { kind: "run", agent: "build", instruction: "x" },
-      "issue",
-    );
-    assert.equal(result.ok, false);
-    assert.match(result.message, /`build` is not available yet/);
-  });
 });
 
 describe("usage", () => {
   it("only lists review on pull requests", () => {
     assert.doesNotMatch(usage("issue"), /`review`/);
     assert.match(usage("pull_request"), /`review`/);
+  });
+
+  it("describes where build commits", () => {
+    assert.match(usage("issue"), /`build`: .*new branch.*pull request/);
+    assert.match(usage("pull_request"), /`build`: .*this pull request/);
   });
 });

@@ -118,6 +118,11 @@ export function defaultInstruction(agent: AgentName, target: Target): string {
       return "Review this pull request.";
     case "debug":
       return "Find the root cause of the problem described here.";
+    case "build":
+      if (target === "issue") return "Implement what this issue asks for.";
+      return target === "pull_request_review_comment"
+        ? "Address the feedback in this review thread."
+        : "Address the open review feedback on this pull request.";
     default:
       return target === "issue"
         ? "Analyze this issue and propose an implementation plan."

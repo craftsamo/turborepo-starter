@@ -1,7 +1,8 @@
 // Entry point for .github/workflows/opencode.yml:
+//   route    print which agent the comment asks for (no credentials)
 //   prepare  parse the comment, fetch context, write the prompt (GH_TOKEN)
 //   run      run the agent with the model candidates (provider keys only)
-//   publish  post the answer or review back to GitHub (GH_TOKEN)
+//   publish  post the answer, review, or build commit to GitHub (GH_TOKEN)
 import { execFileSync, spawnSync } from "node:child_process";
 import {
   appendFileSync,
@@ -14,6 +15,13 @@ import {
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import {
+  buildBranchName,
+  fallbackBuildSummary,
+  parseBuildOutput,
+  pullRequestBody,
+  workflowChanges,
+} from "./build.mts";
 import {
   checkCommand,
   isPullRequestTarget,
@@ -56,6 +64,15 @@ const root = path.resolve(
 const configDir = path.join(root, ".github", "opencode");
 const RUN_TIMEOUT_MS = 15 * 60 * 1000;
 const MAX_COMMENT = 60_000;
+const TESTS_WORKFLOW = "tests.yml";
+const BOT_NAME = "github-actions[bot]";
+const BOT_EMAIL = "41898282+github-actions[bot]@users.noreply.github.com";
+// A dispatched Tests run is not attached to the pull request, so it cannot
+// satisfy required checks; these say how to get a pull_request run.
+const REQUIRED_CHECKS_ON_NEW_PR =
+  "To run the required checks on the pull request, approve its workflow run that is waiting for approval.";
+const REQUIRED_CHECKS_ON_PUSH =
+  "To run the required checks on this commit, close and reopen the pull request.";
 
 interface Destination {
   repository: string;
@@ -64,12 +81,40 @@ interface Destination {
   threadId?: number | undefined;
 }
 
+// Where a build commits: the working tree the agent edits, its git directory
+// (kept outside the tree, out of the agent's reach), and the branch it is
+// pushed to. `baseBranch` is set when the branch is new and needs a PR.
+interface BuildTarget {
+  workTree: string;
+  gitDir: string;
+  branch: string;
+  baseBranch?: string | undefined;
+}
+
+// Git for the build clone. The explicit git dir ignores the tree's .git
+// pointer, and hooks and fsmonitor stay off, so nothing the agent wrote runs
+// while the token is in the environment.
+function buildGitArgs(build: BuildTarget): string[] {
+  return [
+    "--git-dir",
+    build.gitDir,
+    "--work-tree",
+    build.workTree,
+    "-c",
+    "core.hooksPath=/dev/null",
+    "-c",
+    "core.fsmonitor=false",
+  ];
+}
+
 interface Meta extends Destination {
   agent: AgentName;
   target: Target;
+  instruction: string;
   permalinkBase: string;
   headSha: string;
   runUrl: string;
+  build?: BuildTarget | undefined;
 }
 
 type Json = Record<string, unknown>;
@@ -122,19 +167,20 @@ function apiPages<T>(endpoint: string): T[] {
   return pages.flat();
 }
 
-// Fetch with the workflow token through gh so no credential is ever written
-// to .git/config, where the agent could read it.
-function gitFetch(refspecs: string[]): void {
-  run("git", [
+// Authenticate git with the workflow token through gh so no credential is
+// ever written to .git/config, where the agent could read it.
+function gitWithToken(args: string[]): string {
+  return run("git", [
     "-c",
     "credential.helper=",
     "-c",
     "credential.helper=!gh auth git-credential",
-    "fetch",
-    "--no-tags",
-    "origin",
-    ...refspecs,
+    ...args,
   ]);
+}
+
+function gitFetch(refspecs: string[]): void {
+  gitWithToken(["fetch", "--no-tags", "origin", ...refspecs]);
 }
 
 function limit(text: string): string {
@@ -183,18 +229,29 @@ function login(user: unknown): string {
   return typeof value === "string" ? value : "ghost";
 }
 
-function prepare(): void {
+function readCommand() {
   const event = readEvent(
     requireEnv("GITHUB_EVENT_NAME"),
     readJson<unknown>(requireEnv("GITHUB_EVENT_PATH")),
   );
-  const command = event
-    ? parseCommand(event.commentBody, event.target)
-    : undefined;
-  if (!event || !command || command.kind === "ignore") {
+  if (!event) return undefined;
+  const command = parseCommand(event.commentBody, event.target);
+  return command.kind === "run" ? { event, command } : undefined;
+}
+
+// Lets the workflow pick the job, and with it the token permissions, before
+// any credential is in play. prepare validates the command afterwards.
+function route(): void {
+  setOutput("agent", readCommand()?.command.agent ?? "");
+}
+
+function prepare(): void {
+  const request = readCommand();
+  if (!request) {
     setOutput("agent", "");
     return;
   }
+  const { event, command } = request;
 
   const repository = requireEnv("GITHUB_REPOSITORY");
   const destination: Destination = {
@@ -208,7 +265,6 @@ function prepare(): void {
     setOutput("agent", "");
     return;
   }
-  react(repository, event.target, event.commentId);
 
   const issue = api<Json>("GET", `/repos/${repository}/issues/${event.number}`);
   const comments: CommentInfo[] = apiPages<Json>(
@@ -222,10 +278,24 @@ function prepare(): void {
 
   let pull: PullInfo | undefined;
   let headSha = run("git", ["rev-parse", "HEAD"]).trim();
+  let build: BuildTarget | undefined;
+  const workTree = path.join(workDir(), "worktree");
+  const gitDir = path.join(workDir(), "build.git");
   if (isPullRequestTarget(event.target)) {
     const pr = api<Json>("GET", `/repos/${repository}/pulls/${event.number}`);
     const base = pr.base as Json;
     const head = pr.head as Json;
+    if (command.agent === "build") {
+      if ((head.repo as Json | null)?.full_name !== repository) {
+        reply(
+          destination,
+          "`build` cannot push to pull requests from forks. Ask the author to make the change, or use `/oc plan` for a proposal.",
+        );
+        setOutput("agent", "");
+        return;
+      }
+      build = { workTree, gitDir, branch: String(head.ref) };
+    }
     gitFetch([
       `+refs/pull/${event.number}/head:${HEAD_REF}`,
       `+refs/heads/${String(base.ref)}:${BASE_REF}`,
@@ -246,6 +316,46 @@ function prepare(): void {
         deletions: Number(file.deletions),
       })),
     };
+  } else if (command.agent === "build") {
+    build = {
+      workTree,
+      gitDir,
+      branch: buildBranchName(
+        event.number,
+        requireEnv("GITHUB_RUN_ID"),
+        process.env.GITHUB_RUN_ATTEMPT ?? "1",
+      ),
+      baseBranch: run("git", ["rev-parse", "--abbrev-ref", "HEAD"]).trim(),
+    };
+  }
+  react(repository, event.target, event.commentId);
+
+  // The agent edits a separate clone, so the scripts and agent config the
+  // later steps run stay the default branch's. Its git directory sits outside
+  // the tree, where the agent cannot edit it.
+  if (build) {
+    run("git", [
+      "clone",
+      "--quiet",
+      "--shared",
+      "--no-checkout",
+      "--separate-git-dir",
+      build.gitDir,
+      root,
+      build.workTree,
+    ]);
+    const git = buildGitArgs(build);
+    if (!build.baseBranch) {
+      run("git", [
+        ...git,
+        "fetch",
+        "--quiet",
+        root,
+        `+${HEAD_REF}:${HEAD_REF}`,
+        `+${BASE_REF}:${BASE_REF}`,
+      ]);
+    }
+    run("git", [...git, "checkout", "--quiet", "--detach", headSha]);
   }
 
   const server = process.env.GITHUB_SERVER_URL ?? "https://github.com";
@@ -253,6 +363,8 @@ function prepare(): void {
     ...destination,
     agent: command.agent,
     target: event.target,
+    instruction: command.instruction,
+    build,
     permalinkBase: `${server}/${repository}/blob/${headSha}`,
     headSha,
     runUrl: `${server}/${repository}/actions/runs/${requireEnv("GITHUB_RUN_ID")}`,
@@ -284,17 +396,24 @@ function runOpenCode(
   model: string,
   prompt: string,
   xdg: string,
+  cwd: string,
 ): RunOutcome {
   // Unset secrets reach the step as empty strings; drop them so OpenCode
   // treats those providers as unconfigured.
-  const env: NodeJS.ProcessEnv = { ...process.env, XDG_CONFIG_HOME: xdg };
+  // OpenCode takes its project directory from PWD, which spawn does not
+  // update, so it must follow cwd or the agent works in the parent's checkout.
+  const env: NodeJS.ProcessEnv = {
+    ...process.env,
+    PWD: cwd,
+    XDG_CONFIG_HOME: xdg,
+  };
   for (const name of SECRET_VARIABLES) {
     if (!env[name]) delete env[name];
   }
 
   console.log(`::group::opencode run --agent ${agent} --model ${model}`);
   const child = spawnSync("opencode", buildRunArgs(agent, model), {
-    cwd: root,
+    cwd,
     encoding: "utf8",
     env,
     input: prompt,
@@ -341,8 +460,9 @@ function runAgent(): void {
     const source = resolveModelSource(meta.agent, process.env, defaults);
     const xdg = path.join(dir, "xdg");
     cpSync(configDir, path.join(xdg, "opencode"), { recursive: true });
+    const cwd = meta.build?.workTree ?? root;
     result = runWithFallback(source, (model) =>
-      runOpenCode(meta.agent, model, prompt, xdg),
+      runOpenCode(meta.agent, model, prompt, xdg, cwd),
     );
   } catch (error) {
     result = { ok: false, text: "", error: String(error), tried: [] };
@@ -402,6 +522,132 @@ function formatFailure(agent: AgentName, error: string, foot: string): string {
   return `OpenCode could not complete \`${agent}\`.\n\n\`\`\`text\n${detail}\n\`\`\`\n\n${foot}`;
 }
 
+// Pushes and PRs made with GITHUB_TOKEN start no workflows; workflow_dispatch
+// is the exception, so the Tests workflow is started explicitly.
+function dispatchTests(repository: string, ref: string): string {
+  try {
+    api(
+      "POST",
+      `/repos/${repository}/actions/workflows/${TESTS_WORKFLOW}/dispatches`,
+      { ref },
+    );
+    return `Started the Tests workflow on \`${ref}\`.`;
+  } catch (error) {
+    console.log(`::warning::Could not start the Tests workflow: ${error}`);
+    return "Could not start the Tests workflow; run it from the Actions tab.";
+  }
+}
+
+function publishBuild(
+  meta: Meta,
+  build: BuildTarget,
+  text: string,
+  foot: string,
+): void {
+  const git = (args: string[], input?: string) =>
+    run("git", [...buildGitArgs(build), ...args], input);
+  const parsed =
+    parseBuildOutput(text) ??
+    fallbackBuildSummary(text, meta.instruction, meta.number);
+  const summary = neutralizeMentions(parsed.summary);
+  const fail = (message: string) => {
+    reply(meta, formatFailure("build", message, foot));
+    process.exitCode = 1;
+  };
+
+  let changed: string[];
+  try {
+    git(["add", "--all"]);
+    // Without rename detection a file moved out of .github/workflows/ still
+    // shows its old path.
+    changed = git(["diff", "--cached", "--name-only", "--no-renames", "-z"])
+      .split("\0")
+      .filter(Boolean);
+  } catch (error) {
+    fail(`Could not stage the changes.\n${error}`);
+    return;
+  }
+  if (changed.length === 0) {
+    reply(meta, `OpenCode \`build\` made no changes.\n\n${summary}\n\n${foot}`);
+    return;
+  }
+  const blocked = workflowChanges(changed);
+  if (blocked.length > 0) {
+    fail(
+      `The changes touch workflow files, which the workflow token cannot push:\n${blocked.join("\n")}`,
+    );
+    return;
+  }
+
+  let sha: string;
+  try {
+    git(
+      [
+        "-c",
+        `user.name=${BOT_NAME}`,
+        "-c",
+        `user.email=${BOT_EMAIL}`,
+        "commit",
+        "--quiet",
+        "--no-verify",
+        "--file",
+        "-",
+      ],
+      parsed.commitMessage,
+    );
+    sha = git(["rev-parse", "HEAD"]).trim();
+  } catch (error) {
+    fail(`Could not commit the changes.\n${error}`);
+    return;
+  }
+
+  // The clone's origin is the runner checkout, so push to GitHub by URL.
+  const server = process.env.GITHUB_SERVER_URL ?? "https://github.com";
+  try {
+    gitWithToken([
+      ...buildGitArgs(build),
+      "push",
+      `${server}/${meta.repository}.git`,
+      `HEAD:refs/heads/${build.branch}`,
+    ]);
+  } catch (error) {
+    fail(
+      `Could not push to ${build.branch}. If the branch moved while the agent worked, run the command again.\n${error}`,
+    );
+    return;
+  }
+
+  if (build.baseBranch) {
+    let number: unknown;
+    try {
+      number = api<Json>("POST", `/repos/${meta.repository}/pulls`, {
+        title: parsed.title,
+        head: build.branch,
+        base: build.baseBranch,
+        body: limit(pullRequestBody(summary, meta.number, foot)),
+      }).number;
+    } catch (error) {
+      fail(
+        `Pushed ${build.branch}, but could not open a pull request. Allow GitHub Actions to create pull requests in the repository settings, or open it manually: ${server}/${meta.repository}/compare/${build.baseBranch}...${build.branch}?expand=1\n${error}`,
+      );
+      return;
+    }
+    const tests = dispatchTests(meta.repository, build.branch);
+    reply(
+      meta,
+      `Opened #${number} from \`${build.branch}\`. ${tests}\n\n${REQUIRED_CHECKS_ON_NEW_PR}\n\n${foot}`,
+    );
+    return;
+  }
+
+  const tests = dispatchTests(meta.repository, build.branch);
+  const commit = `[\`${sha.slice(0, 7)}\`](${server}/${meta.repository}/commit/${sha})`;
+  reply(
+    meta,
+    `Pushed ${commit} to \`${build.branch}\`. ${tests}\n\n${summary}\n\n${REQUIRED_CHECKS_ON_PUSH}\n\n${foot}`,
+  );
+}
+
 function publish(): void {
   const dir = workDir();
   const meta = readJson<Meta>(path.join(dir, "meta.json"));
@@ -424,11 +670,16 @@ function publish(): void {
     process.exitCode = 1;
     return;
   }
+  if (meta.build) {
+    publishBuild(meta, meta.build, result.text, foot);
+    return;
+  }
   if (meta.agent === "review" && publishReview(meta, result.text, foot)) return;
   reply(meta, `${neutralizeMentions(result.text)}\n\n${foot}`);
 }
 
 const commands: Record<string, () => void> = {
+  route,
   prepare,
   run: runAgent,
   publish,
@@ -436,7 +687,9 @@ const commands: Record<string, () => void> = {
 const name = process.argv[2] ?? "";
 const handler = commands[name];
 if (!handler) {
-  console.error("Usage: node scripts/ci/opencode/main.mts prepare|run|publish");
+  console.error(
+    "Usage: node scripts/ci/opencode/main.mts route|prepare|run|publish",
+  );
   process.exitCode = 2;
 } else {
   handler();

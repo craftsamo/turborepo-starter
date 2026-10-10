@@ -1,7 +1,7 @@
 name: OpenCode
 
-# Comment `/oc [plan|review|debug] <instruction>` (or `/opencode`) on an issue
-# or pull request. See docs/github-actions/run-ai-agent.md.
+# Comment `/oc [plan|build|review|debug] <instruction>` (or `/opencode`) on an
+# issue or pull request. See docs/github-actions/run-ai-agent.md.
 
 on:
   issue_comment:
@@ -11,11 +11,10 @@ on:
 
 permissions: {}
 
-env:
-  OPENCODE_VERSION: 2.0.26
-
 jobs:
-  agent:
+  # Picks the agent before any token with write access exists, so only build
+  # requests get one.
+  route:
     # Only people with write access can run the agent and spend the model
     # budget.
     if: >-
@@ -23,53 +22,52 @@ jobs:
       (startsWith(github.event.comment.body, '/oc') ||
        startsWith(github.event.comment.body, '/opencode')) &&
       contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)
-    # Job-level so comments skipped by the condition above never take the
-    # queue slot of a pending command.
-    concurrency:
-      group: opencode-${{ github.event.issue.number || github.event.pull_request.number }}
-      cancel-in-progress: false
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 5
     permissions:
       contents: read
-      issues: write
-      pull-requests: write
+    outputs:
+      agent: ${{ steps.route.outputs.agent }}
     steps:
-      # The default branch supplies the scripts and agent config, so a pull
-      # request can never change the permissions its own review runs with.
       - uses: actions/checkout@v5
         with:
           ref: ${{ github.event.repository.default_branch }}
-          fetch-depth: 0
+          sparse-checkout: scripts/ci
           persist-credentials: false
       - name: Use Node.js 24.x
         uses: actions/setup-node@v5
         with:
           node-version: 24.x
           package-manager-cache: false
-      - name: Prepare request
-        id: prepare
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: node scripts/ci/opencode/main.mts prepare
-      - name: Install OpenCode
-        if: steps.prepare.outputs.agent != ''
-        run: npm install --global "@opencode/cli@${OPENCODE_VERSION}"
-      # No GitHub token in this step: the agent only reads the checkout.
-      - name: Run agent
-        if: steps.prepare.outputs.agent != ''
-        env:
-          OPENCODE_MODEL: ${{ vars.OPENCODE_MODEL }}
-          OPENCODE_MODEL_PLAN: ${{ vars.OPENCODE_MODEL_PLAN }}
-          OPENCODE_MODEL_REVIEW: ${{ vars.OPENCODE_MODEL_REVIEW }}
-          OPENCODE_MODEL_DEBUG: ${{ vars.OPENCODE_MODEL_DEBUG }}
-          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-        run: node scripts/ci/opencode/main.mts run
-      - name: Publish answer
-        if: always() && steps.prepare.outputs.agent != ''
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: node scripts/ci/opencode/main.mts publish
+      - name: Route request
+        id: route
+        run: node scripts/ci/opencode/main.mts route
+
+  answer:
+    needs: route
+    if: needs.route.outputs.agent != '' && needs.route.outputs.agent != 'build'
+    concurrency:
+      group: opencode-${{ github.event.issue.number || github.event.pull_request.number }}
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    uses: ./.github/workflows/opencode-agent.yml
+    secrets: inherit
+
+  build:
+    needs: route
+    if: needs.route.outputs.agent == 'build'
+    concurrency:
+      group: opencode-${{ github.event.issue.number || github.event.pull_request.number }}
+      cancel-in-progress: false
+    # contents and pull-requests to push and open the PR, actions to start the
+    # Tests workflow, which pushes made with this token do not trigger.
+    permissions:
+      actions: write
+      contents: write
+      issues: write
+      pull-requests: write
+    uses: ./.github/workflows/opencode-agent.yml
+    secrets: inherit
