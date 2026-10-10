@@ -33,6 +33,7 @@ overrides:
   # GHSA-w5vr-8v7q-w6rv / CVE-2026-45819: process.exit on invalid input.
   "baseline-browser-mapping": "^2.11.0"
   "ip-address": "^10.7.1"
+  "proxy-addr": "^2.0.8"
   "undici": "^7.29.1"
   "flatted": "^3.4.2"
   "handlebars": "^4.7.9"
