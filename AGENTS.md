@@ -9,16 +9,16 @@ This is a monorepo with TypeScript, Turbo, and pnpm workspaces.
 
 ## Instruction Files
 
-List instruction files explicitly in `opencode.jsonc`; do not use a glob that
-expands to multiple files. OpenCode resolves them concurrently and concatenates
-them in completion order, so glob expansion can reorder the prompt prefix
-between turns and invalidate the Anthropic prompt cache. A measurement on
-2026-09-02 found 65% full cache misses and a 46M/32M cache write/read ratio in
-this repository, compared with 4% and 0.04 in a single-file repository.
+`AGENTS.md` is the only instruction source. OpenCode V2 loads the root file
+at session start and each nested `AGENTS.md` (`apps/web`, `packages/*`) when a
+file under that directory is read. Do not add an `instructions` array to
+`opencode.jsonc`: V2 accepts it but does not resolve it, and a glob such as
+`packages/**/AGENTS.md` would also traverse workspace symlinks under
+`packages/*/node_modules/@workspace/*` in tools that do resolve it.
 
-Do not glob `packages/**/AGENTS.md`: it traverses workspace symlinks under
-`packages/*/node_modules/@workspace/*`, loading four duplicate copies (about
-24 KB).
+Do not add a `CLAUDE.md` or `CLAUDE.local.md`. Claude Code (v2.1.277+) reads
+`AGENTS.md` directly, but only while no `CLAUDE.md` exists in the working
+directory or any parent.
 
 ## Skill Routing
 
