@@ -239,6 +239,11 @@ OIDC login step and their environment variables to the run step.
 - Review comments on pull requests from forks get a read-only token from
   GitHub, so the workflow cannot reply there. Comment on the conversation tab
   instead.
+- Commands in review comments do not run while the pull request has merge
+  conflicts. GitHub starts workflows for review comments from the pull
+  request's merge commit, which does not exist until the conflicts are
+  resolved. Resolve them first, or comment on the conversation tab, quoting the
+  review comment to keep it as the subject.
 - Members whose organization membership is private may not be recognized as
   members; make the membership public or add them as collaborators.
 - A `build` commit is not checked before it is pushed; the Tests workflow
