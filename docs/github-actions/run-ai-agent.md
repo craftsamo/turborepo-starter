@@ -314,6 +314,10 @@ access to the keys.
   rules after any new `allow` rule, because the last matching rule wins. Use
   only `*` as a wildcard in patterns: a backslash does not match literally, and
   `git *\*` matches every git command.
+- **Agent names**: Do not define an agent with a CI agent's name (`plan`,
+  `build`, `review`, `debug`, or a `ci-` subagent) in `.opencode/agents/` or
+  the repository's `opencode.jsonc`. OpenCode merges it over the CI agent, and
+  its model and permission rules win. The scripts tests check this.
 - **Default models**: Edit `.github/opencode/models.json`.
 - **Skills and plugins**: Add them under `.github/opencode/skills/` and
   `.github/opencode/plugins/` for CI only, or under `.opencode/` to share them

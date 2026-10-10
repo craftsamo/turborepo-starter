@@ -289,6 +289,46 @@ describe("CI instructions", () => {
   });
 });
 
+// OpenCode merges a project agent over the CI agent with the same id, and the
+// project's model and permission rules win.
+describe("project config", () => {
+  const repoRoot = path.resolve(configDir, "../..");
+  const ids = agents.map((agent) => agent.name);
+
+  it("defines no agent that would override a CI agent", () => {
+    for (const directory of ["agent", "agents", "mode", "modes"]) {
+      const full = path.join(repoRoot, ".opencode", directory);
+      if (!existsSync(full)) continue;
+      for (const file of readdirSync(full, { recursive: true })) {
+        const id = String(file).replace(/\.md$/, "");
+        assert.ok(
+          !ids.includes(id),
+          `.opencode/${directory}/${file} overrides the CI agent ${id}`,
+        );
+      }
+    }
+  });
+
+  it("configures none of the CI agents", () => {
+    for (const file of [
+      "opencode.json",
+      "opencode.jsonc",
+      ".opencode/opencode.json",
+      ".opencode/opencode.jsonc",
+    ]) {
+      const full = path.join(repoRoot, file);
+      if (!existsSync(full)) continue;
+      const text = readFileSync(full, "utf8");
+      for (const id of ids) {
+        assert.ok(
+          !new RegExp(`"${id}"\\s*:\\s*\\{`).test(text),
+          `${file} configures the CI agent ${id}`,
+        );
+      }
+    }
+  });
+});
+
 describe("default models", () => {
   it("parses the shipped models.json", () => {
     const models = parseDefaultModels(
