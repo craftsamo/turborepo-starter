@@ -119,7 +119,8 @@ answers:
 2. `OPENCODE_MODEL`
 3. The defaults in `.github/opencode/models.json`
 
-Set the variables under **Settings > Secrets and variables > Variables**. A
+Set the variables with `nps setup.github`, which checks the format, or under
+**Settings > Secrets and variables > Variables**. A
 value is one model ID or a comma-separated list in `provider/model` or
 `provider/model#variant` form, for example `anthropic/claude-sonnet-5-5#high`
 or `openai/gpt-5.5,opencode/space-bunny-free`. Variant names differ per model;
@@ -149,8 +150,9 @@ always used as configured, regardless of its data policy.
 
 ## Providers
 
-Add a provider's API key as a repository secret to use its models. The run
-step passes these secrets to OpenCode and nothing else:
+Add a provider's API key as a repository secret to use its models, with
+`nps setup.github.secrets` or in the repository settings. The run step passes
+these secrets to OpenCode and nothing else:
 
 | Secret               | Provider                              |
 | -------------------- | ------------------------------------- |
