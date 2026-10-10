@@ -19,6 +19,7 @@ permissions:
   # rules are as strict as these, may be launched.
   - { action: subagent, resource: "ci-explore", effect: allow }
   - { action: subagent, resource: "ci-reviewer", effect: allow }
+  - { action: subagent, resource: "ci-worker", effect: allow }
   - { action: read, resource: "*", effect: allow }
   - { action: read, resource: "*.env", effect: ask }
   - { action: read, resource: "*.env.*", effect: ask }

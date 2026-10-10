@@ -41,11 +41,15 @@ The agents can hand work to CI subagents, which inherit the parent's model:
 | `ci-explore`       | Answers one bounded question about the code                  | plan, build, review, debug    |
 | `ci-reviewer`      | Broad review of one slice; maps candidates for a deep review | review, build (its own edits) |
 | `ci-reviewer-deep` | Deep review of one high-risk candidate                       | review                        |
+| `ci-worker`        | Applies well-specified, mechanical edits                     | build only                    |
 
 A subagent runs with its own permissions, not its parent's, and OpenCode's
 built-in subagents also pick up the repository's `opencode.jsonc` rules, which
 allow commands such as `pnpm`. The CI subagents therefore carry the same strict
 rules as the agents, and each agent may launch only the subagents above.
+`ci-worker` can edit files, so only `build` may launch it: `build` works in a
+separate clone, while the other agents run in the checkout whose scripts the
+publish step runs with the GitHub token.
 
 ### Process
 

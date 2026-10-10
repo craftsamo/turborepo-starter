@@ -105,13 +105,16 @@ const NEVER_ALLOWED = [
 // launch only these, and subagents launch none.
 const SUBAGENT_CALLS = {
   plan: ["ci-explore"],
-  build: ["ci-explore", "ci-reviewer"],
+  build: ["ci-explore", "ci-reviewer", "ci-worker"],
   review: ["ci-explore", "ci-reviewer", "ci-reviewer-deep"],
   debug: ["ci-explore"],
 };
 const SUBAGENTS = [...new Set(Object.values(SUBAGENT_CALLS).flat())].sort();
 // Uncommitted edits exist only in build's working tree.
-const SEES_OWN_EDITS = ["build", "ci-reviewer"];
+const SEES_OWN_EDITS = ["build", "ci-reviewer", "ci-worker"];
+// Only agents that run in build's separate clone may edit; the others run in
+// the checkout whose scripts the publish step runs with the token.
+const EDITORS = ["build", "ci-worker"];
 
 const lastIndex = (rules, predicate) => rules.findLastIndex(predicate);
 const firstIndex = (rules, predicate) => rules.findIndex(predicate);
@@ -240,7 +243,7 @@ describe("CI agents", () => {
       });
 
       const edits = rules.filter((rule) => rule.action === "edit");
-      if (agent.name === "build") {
+      if (EDITORS.includes(agent.name)) {
         it("edits files but keeps workflow, git, and env paths guarded", () => {
           const allow = lastIndex(
             edits,
