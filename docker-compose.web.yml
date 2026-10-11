@@ -9,7 +9,7 @@ services:
       - ./apps/web/.env
     environment:
       - PORT=3000
-      - HOSTNAME="0.0.0.0"
+      - HOSTNAME=0.0.0.0
       - NODE_ENV=production
     stop_signal: SIGINT
     ports:
