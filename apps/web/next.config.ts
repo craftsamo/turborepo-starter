@@ -1,3 +1,4 @@
+import path from 'path';
 import type { NextConfig } from 'next';
 import initializeBundleAnalyzer from '@next/bundle-analyzer';
 
@@ -5,9 +6,20 @@ const withBundleAnalyzer = initializeBundleAnalyzer({
   enabled: process.env.BUNDLE_ANALYZER_ENABLED === 'true',
 });
 
+// The Docker build sets this to emit `.next/standalone`: a minimal server plus
+// only the node_modules files it traces, so the image need not ship the whole
+// workspace install. Other builds keep the default output for `next start`.
+const standaloneOutput = process.env.STANDALONE_OUTPUT_ENABLED === 'true';
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   transpilePackages: ['@workspace/ui'],
+
+  ...(standaloneOutput && {
+    output: 'standalone',
+    // Trace from the monorepo root so workspace packages are included.
+    outputFileTracingRoot: path.join(__dirname, '../../'),
+  }),
 
   images: {
     remotePatterns: [

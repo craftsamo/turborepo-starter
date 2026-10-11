@@ -62,7 +62,9 @@ WORKDIR /app
 COPY --from=installer /app/ .
 COPY --from=builder /app/out/full/ .
 
-# Build the application using turbo
+# Build the application using turbo, emitting the standalone server the runner
+# stage copies (see next.config.ts)
+ENV STANDALONE_OUTPUT_ENABLED=true
 RUN pnpm exec turbo run build --filter=web...
 
 ###############################################################################
@@ -73,11 +75,11 @@ FROM node:24-alpine as runner
 # Set working directory in the container
 WORKDIR /app
 
-# Copy runtime dependencies and built application files from previous stages
-COPY --from=installer /app/node_modules ./node_modules
-COPY --from=sourcer /app/apps/web/.next ./apps/web/.next
-COPY --from=sourcer /app/apps/web/package.json ./apps/web/package.json
-COPY --from=sourcer /app/apps/web/next.config.ts ./apps/web/next.config.ts
+# Copy the standalone server with only the dependencies it traces, then the
+# static assets and public files it expects next to it (standalone output
+# leaves those two out on purpose)
+COPY --from=sourcer /app/apps/web/.next/standalone ./
+COPY --from=sourcer /app/apps/web/.next/static ./apps/web/.next/static
 COPY --from=sourcer /app/apps/web/public ./apps/web/public
 
 # Set working directory to the web application directory
@@ -86,6 +88,7 @@ WORKDIR /app/apps/web/
 # Define environment variables for the application
 ENV PORT=8080
 ENV HOSTNAME="0.0.0.0"
+ENV NODE_ENV=production
 
 # Start the web application
-CMD [ "npm", "start" ]
+CMD [ "node", "server.js" ]
