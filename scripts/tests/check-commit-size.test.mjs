@@ -1,11 +1,22 @@
 import assert from "node:assert/strict";
+import { execFileSync, spawnSync } from "node:child_process";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, it } from "node:test";
+import { fileURLToPath } from "node:url";
 
 import {
   countChangedLines,
   evaluateCommitSize,
+  generatedPaths,
+  numstatPaths,
   parseMaxChangedLines,
 } from "../check-commit-size.mjs";
+
+const script = fileURLToPath(
+  new URL("../check-commit-size.mjs", import.meta.url),
+);
 
 describe("countChangedLines", () => {
   it("counts additions and deletions", () => {
@@ -47,6 +58,82 @@ describe("evaluateCommitSize", () => {
       maxChangedLines: 500,
       passes: false,
     });
+  });
+});
+
+describe("generated files", () => {
+  it("reads linguist-generated from git check-attr output", () => {
+    const output = [
+      "db/meta/0001_snapshot.json",
+      "linguist-generated",
+      "set",
+      "db/schema.ts",
+      "linguist-generated",
+      "unspecified",
+      "db/other.json",
+      "linguist-generated",
+      "false",
+      "api.gen.ts",
+      "linguist-generated",
+      "true",
+      "",
+    ].join("\0");
+
+    assert.deepEqual(
+      [...generatedPaths(output)],
+      ["db/meta/0001_snapshot.json", "api.gen.ts"],
+    );
+  });
+
+  it("leaves excluded paths out of the count", () => {
+    const numstat = "541\t0\tdb/meta/0001_snapshot.json\n20\t5\tdb/schema.ts\n";
+
+    assert.deepEqual(numstatPaths(numstat), [
+      "db/meta/0001_snapshot.json",
+      "db/schema.ts",
+    ]);
+    assert.equal(
+      evaluateCommitSize(numstat, 500, new Set(["db/meta/0001_snapshot.json"]))
+        .changedLines,
+      25,
+    );
+  });
+
+  it("lets a staged commit through when its large file is marked generated", () => {
+    const repo = mkdtempSync(join(tmpdir(), "commit-size-"));
+    const git = (...args) => execFileSync("git", ["-C", repo, ...args]);
+    const check = () =>
+      spawnSync(process.execPath, [script, "--cached"], {
+        cwd: repo,
+        encoding: "utf8",
+      });
+
+    try {
+      git("init", "-q");
+      writeFileSync(join(repo, "snapshot.json"), "x\n".repeat(600));
+      writeFileSync(join(repo, "schema.ts"), "y\n".repeat(10));
+      git("add", "snapshot.json", "schema.ts");
+
+      const unmarked = check();
+      assert.equal(unmarked.status, 1);
+      assert.match(unmarked.stderr, /610 reviewable changed lines/);
+
+      writeFileSync(
+        join(repo, ".gitattributes"),
+        "*.json linguist-generated\n",
+      );
+      assert.equal(
+        check().status,
+        1,
+        "an unstaged .gitattributes does not count",
+      );
+
+      git("add", ".gitattributes");
+      const marked = check();
+      assert.equal(marked.status, 0, marked.stderr);
+    } finally {
+      rmSync(repo, { recursive: true, force: true });
+    }
   });
 });
 
