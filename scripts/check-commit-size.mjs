@@ -35,11 +35,37 @@ export function countChangedLines(
   return changedLines;
 }
 
+export function numstatPaths(numstat) {
+  return numstat
+    .split("\n")
+    .filter(Boolean)
+    .map((line) => line.split("\t")[2])
+    .filter((path) => path !== undefined);
+}
+
+// Paths marked `linguist-generated` in .gitattributes, read from the
+// NUL-separated output of `git check-attr -z linguist-generated`
+// (path, attribute, value triples). Generated output such as migration
+// snapshots is not reviewed line by line, so it does not count.
+export function generatedPaths(checkAttrOutput) {
+  const fields = checkAttrOutput.split("\0");
+  const generated = new Set();
+
+  for (let index = 0; index + 2 < fields.length; index += 3) {
+    const [path, , value] = fields.slice(index, index + 3);
+
+    if (value === "set" || value === "true") generated.add(path);
+  }
+
+  return generated;
+}
+
 export function evaluateCommitSize(
   numstat,
   maxChangedLines = DEFAULT_MAX_CHANGED_LINES,
+  excludedPaths = DEFAULT_EXCLUDED_PATHS,
 ) {
-  const changedLines = countChangedLines(numstat);
+  const changedLines = countChangedLines(numstat, excludedPaths);
 
   return {
     changedLines,
@@ -72,9 +98,22 @@ function main() {
     ["diff", "--cached", "--numstat", "--no-renames"],
     { encoding: "utf8" },
   );
+  const paths = numstatPaths(numstat);
+  // --cached reads .gitattributes from the index, so the attributes being
+  // committed decide, not uncommitted edits to them.
+  const generated = paths.length
+    ? generatedPaths(
+        execFileSync(
+          "git",
+          ["check-attr", "-z", "--cached", "--stdin", "linguist-generated"],
+          { encoding: "utf8", input: paths.join("\0") + "\0" },
+        ),
+      )
+    : new Set();
   const result = evaluateCommitSize(
     numstat,
     parseMaxChangedLines(process.env.MAX_COMMIT_CHANGED_LINES),
+    new Set([...DEFAULT_EXCLUDED_PATHS, ...generated]),
   );
 
   if (result.passes) return;
@@ -83,6 +122,7 @@ function main() {
     [
       `Commit contains ${result.changedLines} reviewable changed lines; the limit is ${result.maxChangedLines}.`,
       "Split the staged changes into smaller, focused commits.",
+      "Mark generated files `linguist-generated` in .gitattributes to leave them out of the count.",
       "Use --no-verify only when the repository policy explicitly permits an exception.",
     ].join("\n"),
   );
