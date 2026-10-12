@@ -80,6 +80,7 @@
     { "action": "shell", "resource": "cal *", "effect": "allow" },
     { "action": "shell", "resource": "ps *", "effect": "allow" },
     { "action": "shell", "resource": "pgrep *", "effect": "allow" },
+    { "action": "shell", "resource": "lsof *", "effect": "allow" },
     // Docs
     { "action": "shell", "resource": "man *", "effect": "allow" },
     { "action": "shell", "resource": "whatis *", "effect": "allow" },
