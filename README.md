@@ -75,7 +75,7 @@ turborepo-starter/
 
 ### Prerequisites
 
-- Node.js 24.0 or higher
+- Node.js 24.0 or higher (`.node-version` selects it in mise, fnm and nodenv)
 - pnpm 11.5.3 or higher (via Corepack)
 - GitHub CLI (`gh`), authenticated as a repository administrator
 
