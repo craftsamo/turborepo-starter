@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { readdirSync, readFileSync } from "node:fs";
+import path from "node:path";
 import { describe, it } from "node:test";
 
 import {
@@ -17,6 +19,7 @@ import {
   CommandError,
   ensureEnvironment,
   environmentExists,
+  repositoryRoot,
 } from "../setup/github/lib.mts";
 
 describe("parseArguments", () => {
@@ -145,11 +148,43 @@ describe("Actions settings", () => {
       "dorny/paths-filter@*",
       "release-drafter/release-drafter@*",
       "micnncim/action-label-syncer@*",
+      "peter-evans/create-pull-request@*",
     ]);
     assert.deepEqual(settings.workflow, {
       default_workflow_permissions: "read",
       can_approve_pull_request_reviews: true,
     });
+  });
+
+  it("allows every third-party action the workflows use", () => {
+    const workflows = path.join(repositoryRoot, ".github/workflows");
+    const { patterns_allowed } = buildActionsSettings().selectedActions;
+    const allowed = patterns_allowed.map(
+      (pattern) =>
+        new RegExp(
+          `^${pattern.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replaceAll("*", ".*")}$`,
+        ),
+    );
+    const blocked = readdirSync(workflows)
+      .filter((file) => /\.ya?ml$/.test(file))
+      .flatMap((file) =>
+        [
+          ...readFileSync(path.join(workflows, file), "utf8").matchAll(
+            /^\s*(?:-\s*)?uses:\s*["']?([^\s"'#]+)/gm,
+          ),
+        ].map((match) => `${file}: ${match[1]}`),
+      )
+      .filter((entry) => {
+        const action = entry.split(": ")[1];
+        if (action.startsWith("./") || action.startsWith("docker://")) {
+          return false;
+        }
+        // GitHub-owned actions are allowed by github_owned_allowed.
+        if (/^(actions|github)\//.test(action)) return false;
+        return !allowed.some((pattern) => pattern.test(action));
+      });
+
+    assert.deepEqual(blocked, []);
   });
 
   it("preserves an existing SHA pinning requirement", () => {

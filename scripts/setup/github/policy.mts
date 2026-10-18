@@ -241,6 +241,7 @@ const ALLOWED_ACTION_PATTERNS = [
   "dorny/paths-filter@*",
   "release-drafter/release-drafter@*",
   "micnncim/action-label-syncer@*",
+  "peter-evans/create-pull-request@*",
 ];
 const LABEL_RENAMES = new Map([["💬quesion", "💬question"]]);
 
