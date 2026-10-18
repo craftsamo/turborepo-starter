@@ -11,6 +11,7 @@ import {
   buildBranchProtection,
   buildMainRuleset,
   buildRepositorySettings,
+  buildRetentionSettings,
   diffLabels,
   diffObject,
   MODEL_VARIABLES,
@@ -29,6 +30,8 @@ import type {
   LabelDiff,
   ObjectDiff,
   RepositoryMetadata,
+  RetentionSettings,
+  RetentionState,
   SelectedActionsState,
   SetupArguments,
   WorkflowState,
@@ -310,6 +313,29 @@ function applyActionsSettings(
   );
 }
 
+const isHttpStatus = (error: unknown, ...statuses: number[]): boolean =>
+  error instanceof CommandError && statuses.includes(error.httpStatus);
+
+function getRetentionState(repository: string): RetentionState | undefined {
+  try {
+    return api<RetentionState>(
+      "GET",
+      `/repos/${repository}/actions/permissions/artifact-and-log-retention`,
+    );
+  } catch (error) {
+    if (isHttpStatus(error, 404)) return undefined;
+    throw error;
+  }
+}
+
+function applyRetention(repository: string, settings: RetentionSettings): void {
+  api(
+    "PUT",
+    `/repos/${repository}/actions/permissions/artifact-and-log-retention`,
+    settings,
+  );
+}
+
 const delay = (milliseconds: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, milliseconds));
 
@@ -505,6 +531,10 @@ export async function setupRepository(args: SetupArguments): Promise<void> {
       actionsState.permissions.sha_pinning_required,
     );
     const actionsSettings = buildActionsSettings({ shaPinningRequired });
+    const retentionState = getRetentionState(repository);
+    const retentionSettings =
+      retentionState &&
+      buildRetentionSettings(retentionState.maximum_allowed_days);
     const desiredLabels = parseLabels(
       readFileSync(path.join(repositoryRoot, ".github/labels.yml"), "utf8"),
     );
@@ -526,6 +556,16 @@ export async function setupRepository(args: SetupArguments): Promise<void> {
       "Workflow token permissions",
       diffObject(actionsState.workflow, actionsSettings.workflow),
     );
+    if (retentionSettings) {
+      printDiff(
+        "Artifact and log retention",
+        diffObject(retentionState, retentionSettings),
+      );
+    } else {
+      console.warn(
+        "\nArtifact and log retention cannot be read for this repository; skipped.",
+      );
+    }
     if (metadataResult.topics) {
       printDiff(
         "Repository topics",
@@ -576,6 +616,7 @@ export async function setupRepository(args: SetupArguments): Promise<void> {
       });
     }
     applyActionsSettings(repository, actionsSettings);
+    if (retentionSettings) applyRetention(repository, retentionSettings);
     for (const variable of modelVariables) {
       runCommand("gh", [
         "variable",

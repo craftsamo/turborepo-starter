@@ -113,6 +113,15 @@ export interface ActionsState {
   workflow: WorkflowState;
 }
 
+export interface RetentionState {
+  days?: number;
+  maximum_allowed_days?: number;
+}
+
+export interface RetentionSettings {
+  days: number;
+}
+
 export interface RestrictionUser {
   login?: string;
 }
@@ -244,6 +253,7 @@ const ALLOWED_ACTION_PATTERNS = [
   "micnncim/action-label-syncer@*",
   "peter-evans/create-pull-request@*",
 ];
+const ARTIFACT_RETENTION_DAYS = 30;
 const LABEL_RENAMES = new Map([["💬quesion", "💬question"]]);
 
 export function parseArguments(argv: string[]): SetupArguments {
@@ -356,6 +366,18 @@ export function buildActionsSettings({
       default_workflow_permissions: "read",
       can_approve_pull_request_reviews: true,
     },
+  };
+}
+
+// An organization may cap retention below the starter's value; ask for the cap
+// instead of a value GitHub would reject.
+export function buildRetentionSettings(
+  maximumAllowedDays?: number,
+): RetentionSettings {
+  return {
+    days: maximumAllowedDays
+      ? Math.min(ARTIFACT_RETENTION_DAYS, maximumAllowedDays)
+      : ARTIFACT_RETENTION_DAYS,
   };
 }
 

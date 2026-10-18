@@ -26,7 +26,8 @@ The setup manages:
 - Repository features and merge methods, including the pull request
   **Update branch** button
 - Default commit title and body formats
-- GitHub Actions permissions and selected-action allowlist
+- GitHub Actions permissions, selected-action allowlist, and artifact and log
+  retention
 - Labels from `.github/labels.yml`
 - A `Starter: protect main` Ruleset
 - Optional repository description, homepage, topics, and OpenCode model
@@ -71,6 +72,9 @@ requests through the same setting. The OpenCode workflow only posts comment
 reviews and never approves, and the managed Ruleset requires no approvals. If
 you require approvals, keep in mind that a workflow could approve a pull
 request.
+
+Artifacts and logs are kept for 30 days, or for the organization's maximum
+when it is shorter.
 
 If an existing repository requires actions to be pinned to full commit SHAs,
 setup preserves that requirement and stops before applying changes because the

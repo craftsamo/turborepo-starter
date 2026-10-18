@@ -8,6 +8,7 @@ import {
   buildBranchProtection,
   buildMainRuleset,
   buildRepositorySettings,
+  buildRetentionSettings,
   diffLabels,
   diffObject,
   MODEL_VARIABLES,
@@ -194,6 +195,12 @@ describe("Actions settings", () => {
         .sha_pinning_required,
       true,
     );
+  });
+
+  it("keeps artifacts and logs for 30 days within the organization cap", () => {
+    assert.deepEqual(buildRetentionSettings(), { days: 30 });
+    assert.deepEqual(buildRetentionSettings(90), { days: 30 });
+    assert.deepEqual(buildRetentionSettings(14), { days: 14 });
   });
 });
 
