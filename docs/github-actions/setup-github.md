@@ -23,7 +23,8 @@ confirmation. A cancelled run does not apply changes.
 
 The setup manages:
 
-- Repository features and merge methods
+- Repository features and merge methods, including the pull request
+  **Update branch** button
 - Default commit title and body formats
 - GitHub Actions permissions and selected-action allowlist
 - Labels from `.github/labels.yml`

@@ -59,6 +59,7 @@ export interface RepositorySettings extends RepositoryMetadata {
   allow_squash_merge: boolean;
   allow_rebase_merge: boolean;
   allow_auto_merge: boolean;
+  allow_update_branch: boolean;
   delete_branch_on_merge: boolean;
   merge_commit_title: string;
   merge_commit_message: string;
@@ -323,6 +324,7 @@ export function buildRepositorySettings(
     allow_squash_merge: true,
     allow_rebase_merge: false,
     allow_auto_merge: false,
+    allow_update_branch: true,
     delete_branch_on_merge: true,
     merge_commit_title: "PR_TITLE",
     merge_commit_message: "BLANK",
