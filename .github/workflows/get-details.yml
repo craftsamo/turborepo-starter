@@ -24,7 +24,7 @@ jobs:
       name: ${{ steps.project-name.outputs.name }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
       - name: Get project name from package.json
         id: project-name
         run: echo "name=$(jq -r .name < package.json)" >> $GITHUB_OUTPUT
@@ -41,7 +41,7 @@ jobs:
       details_by_name: ${{ steps.name-and-version.outputs.details_by_name }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
       - name: Get app details from apps/**/package.json
         id: name-and-version
         run: |
@@ -72,7 +72,7 @@ jobs:
       details: ${{ steps.generate-repo-details.outputs.details }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
       - name: Get repository name and owner
         id: name-and-owner
         run: |
