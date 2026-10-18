@@ -122,6 +122,22 @@ export interface RetentionSettings {
   days: number;
 }
 
+type FeatureStatus = { status: "enabled" | "disabled" };
+
+export interface SecurityAndAnalysisSettings {
+  secret_scanning: FeatureStatus;
+  secret_scanning_push_protection: FeatureStatus;
+}
+
+export type SecurityAndAnalysisState = Partial<
+  Record<keyof SecurityAndAnalysisSettings, Partial<FeatureStatus>>
+>;
+
+export interface DependabotSettings {
+  vulnerability_alerts: boolean;
+  security_updates: boolean;
+}
+
 export interface RestrictionUser {
   login?: string;
 }
@@ -379,6 +395,17 @@ export function buildRetentionSettings(
       ? Math.min(ARTIFACT_RETENTION_DAYS, maximumAllowedDays)
       : ARTIFACT_RETENTION_DAYS,
   };
+}
+
+export function buildSecurityAndAnalysis(): SecurityAndAnalysisSettings {
+  return {
+    secret_scanning: { status: "enabled" },
+    secret_scanning_push_protection: { status: "enabled" },
+  };
+}
+
+export function buildDependabotSettings(): DependabotSettings {
+  return { vulnerability_alerts: true, security_updates: true };
 }
 
 export function buildMainRuleset(integrationId: number): RulesetInput {

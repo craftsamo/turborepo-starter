@@ -6,9 +6,11 @@ import { describe, it } from "node:test";
 import {
   buildActionsSettings,
   buildBranchProtection,
+  buildDependabotSettings,
   buildMainRuleset,
   buildRepositorySettings,
   buildRetentionSettings,
+  buildSecurityAndAnalysis,
   diffLabels,
   diffObject,
   MODEL_VARIABLES,
@@ -201,6 +203,22 @@ describe("Actions settings", () => {
     assert.deepEqual(buildRetentionSettings(), { days: 30 });
     assert.deepEqual(buildRetentionSettings(90), { days: 30 });
     assert.deepEqual(buildRetentionSettings(14), { days: 14 });
+  });
+});
+
+describe("security settings", () => {
+  it("enables secret scanning with push protection", () => {
+    assert.deepEqual(buildSecurityAndAnalysis(), {
+      secret_scanning: { status: "enabled" },
+      secret_scanning_push_protection: { status: "enabled" },
+    });
+  });
+
+  it("enables Dependabot alerts and security updates", () => {
+    assert.deepEqual(buildDependabotSettings(), {
+      vulnerability_alerts: true,
+      security_updates: true,
+    });
   });
 });
 

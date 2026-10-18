@@ -9,9 +9,11 @@ import { parseModelList } from "../../ci/opencode/models.mts";
 import {
   buildActionsSettings,
   buildBranchProtection,
+  buildDependabotSettings,
   buildMainRuleset,
   buildRepositorySettings,
   buildRetentionSettings,
+  buildSecurityAndAnalysis,
   diffLabels,
   diffObject,
   MODEL_VARIABLES,
@@ -26,12 +28,15 @@ import type {
   ActionsState,
   BranchProtectionInput,
   CurrentLabel,
+  DependabotSettings,
   Label,
   LabelDiff,
   ObjectDiff,
   RepositoryMetadata,
   RetentionSettings,
   RetentionState,
+  SecurityAndAnalysisSettings,
+  SecurityAndAnalysisState,
   SelectedActionsState,
   SetupArguments,
   WorkflowState,
@@ -328,6 +333,61 @@ function getRetentionState(repository: string): RetentionState | undefined {
   }
 }
 
+function getDependabotState(repository: string): DependabotSettings {
+  let vulnerabilityAlerts = true;
+  try {
+    // 204 when enabled, 404 when disabled.
+    api("GET", `/repos/${repository}/vulnerability-alerts`);
+  } catch (error) {
+    if (!isHttpStatus(error, 404)) throw error;
+    vulnerabilityAlerts = false;
+  }
+  let securityUpdates = false;
+  try {
+    securityUpdates = Boolean(
+      api<{ enabled?: boolean }>(
+        "GET",
+        `/repos/${repository}/automated-security-fixes`,
+      )?.enabled,
+    );
+  } catch (error) {
+    if (!isHttpStatus(error, 404)) throw error;
+  }
+  return {
+    vulnerability_alerts: vulnerabilityAlerts,
+    security_updates: securityUpdates,
+  };
+}
+
+function applyDependabot(
+  repository: string,
+  settings: DependabotSettings,
+): void {
+  // Security updates build on the alerts, so enable the alerts first.
+  if (settings.vulnerability_alerts) {
+    api("PUT", `/repos/${repository}/vulnerability-alerts`);
+  }
+  if (settings.security_updates) {
+    api("PUT", `/repos/${repository}/automated-security-fixes`);
+  }
+}
+
+// Sent apart from the other repository settings: private repositories without
+// GitHub Secret Protection reject it, which must not block the rest of setup.
+function applySecurityAndAnalysis(
+  repository: string,
+  settings: SecurityAndAnalysisSettings,
+): void {
+  try {
+    api("PATCH", `/repos/${repository}`, { security_and_analysis: settings });
+  } catch (error) {
+    if (!isHttpStatus(error, 403, 404, 422)) throw error;
+    console.warn(
+      "Secret scanning is unavailable for this repository (private repositories need GitHub Secret Protection); skipped.",
+    );
+  }
+}
+
 function applyRetention(repository: string, settings: RetentionSettings): void {
   api(
     "PUT",
@@ -535,6 +595,11 @@ export async function setupRepository(args: SetupArguments): Promise<void> {
     const retentionSettings =
       retentionState &&
       buildRetentionSettings(retentionState.maximum_allowed_days);
+    const securityState = (state.security_and_analysis ??
+      {}) as SecurityAndAnalysisState;
+    const securitySettings = buildSecurityAndAnalysis();
+    const dependabotState = getDependabotState(repository);
+    const dependabotSettings = buildDependabotSettings();
     const desiredLabels = parseLabels(
       readFileSync(path.join(repositoryRoot, ".github/labels.yml"), "utf8"),
     );
@@ -566,6 +631,8 @@ export async function setupRepository(args: SetupArguments): Promise<void> {
         "\nArtifact and log retention cannot be read for this repository; skipped.",
       );
     }
+    printDiff("Secret scanning", diffObject(securityState, securitySettings));
+    printDiff("Dependabot", diffObject(dependabotState, dependabotSettings));
     if (metadataResult.topics) {
       printDiff(
         "Repository topics",
@@ -610,6 +677,8 @@ export async function setupRepository(args: SetupArguments): Promise<void> {
     }
 
     api("PATCH", `/repos/${repository}`, repositorySettings);
+    applySecurityAndAnalysis(repository, securitySettings);
+    applyDependabot(repository, dependabotSettings);
     if (metadataResult.topics) {
       api("PUT", `/repos/${repository}/topics`, {
         names: metadataResult.topics,

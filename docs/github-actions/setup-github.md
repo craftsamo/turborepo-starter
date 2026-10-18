@@ -28,6 +28,8 @@ The setup manages:
 - Default commit title and body formats
 - GitHub Actions permissions, selected-action allowlist, and artifact and log
   retention
+- Secret scanning with push protection, Dependabot alerts, and Dependabot
+  security updates
 - Labels from `.github/labels.yml`
 - A `Starter: protect main` Ruleset
 - Optional repository description, homepage, topics, and OpenCode model
@@ -79,6 +81,13 @@ when it is shorter.
 If an existing repository requires actions to be pinned to full commit SHAs,
 setup preserves that requirement and stops before applying changes because the
 starter currently uses tag references.
+
+## Security Features
+
+Setup enables Dependabot alerts, Dependabot security updates, secret scanning,
+and secret scanning push protection. Secret scanning is free for public
+repositories; private repositories need GitHub Secret Protection. When it is
+unavailable, setup prints a warning and continues with the remaining settings.
 
 ## Secrets
 
