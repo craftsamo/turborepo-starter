@@ -32,9 +32,9 @@ jobs:
   script-tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Use Node.js 24.x
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v7
         with:
           node-version: 24.x
           package-manager-cache: false
@@ -46,8 +46,8 @@ jobs:
     outputs:
       web: ${{ steps.force.outputs.web || steps.filter.outputs.web }}
     steps:
-      - uses: actions/checkout@v5
-      - uses: dorny/paths-filter@v3
+      - uses: actions/checkout@v7
+      - uses: dorny/paths-filter@v4
         id: filter
         if: github.event_name != 'workflow_dispatch'
         with:
@@ -74,14 +74,14 @@ jobs:
     outputs:
       pnpm-store-dir: ${{ steps.pnpm-store.outputs.dir }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Use Node.js 24.x
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v7
         with:
           node-version: 24.x
-          # setup-node@v5 enables package-manager caching by default and probes
-          # pnpm (from the packageManager field) before Corepack runs. Disable it;
-          # Corepack is enabled below and the pnpm store is cached manually.
+          # Keep package-manager caching off: it would probe pnpm (from the
+          # packageManager field) before Corepack runs. Corepack is enabled
+          # below and the pnpm store is cached manually.
           package-manager-cache: false
       - name: Enable Corepack
         run: corepack enable
@@ -89,7 +89,7 @@ jobs:
         id: pnpm-store
         run: echo "dir=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
       - name: Cache pnpm store
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ steps.pnpm-store.outputs.dir }}
           key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
@@ -116,19 +116,19 @@ jobs:
           - target: web
             run: ${{ needs.changes.outputs.web }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Use Node.js 24.x
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v7
         with:
           node-version: 24.x
-          # setup-node@v5 enables package-manager caching by default and probes
-          # pnpm (from the packageManager field) before Corepack runs. Disable it;
-          # Corepack is enabled below and the pnpm store is cached manually.
+          # Keep package-manager caching off: it would probe pnpm (from the
+          # packageManager field) before Corepack runs. Corepack is enabled
+          # below and the pnpm store is cached manually.
           package-manager-cache: false
       - name: Enable Corepack
         run: corepack enable
       - name: Restore pnpm store
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ needs.setup.outputs.pnpm-store-dir }}
           key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
@@ -149,16 +149,16 @@ jobs:
     runs-on: ubuntu-latest
     if: needs.setup.result == 'success' && needs.changes.outputs.web == 'true'
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Use Node.js 24.x
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v7
         with:
           node-version: 24.x
           package-manager-cache: false
       - name: Enable Corepack
         run: corepack enable
       - name: Restore pnpm store
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ needs.setup.outputs.pnpm-store-dir }}
           key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
@@ -173,7 +173,7 @@ jobs:
         run: npx nps test.ci.web.e2e.all
       - name: Upload Playwright artifacts
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: web-playwright-artifacts
           path: |
