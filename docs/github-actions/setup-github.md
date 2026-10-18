@@ -23,8 +23,7 @@ confirmation. A cancelled run does not apply changes.
 
 The setup manages:
 
-- Repository features and merge methods, including the pull request
-  **Update branch** button
+- Repository features and merge methods
 - Default commit title and body formats
 - GitHub Actions permissions, selected-action allowlist, and artifact and log
   retention
@@ -58,6 +57,12 @@ dry run lists every label that would be created, updated, renamed, or deleted.
 The managed Ruleset requires pull requests and a successful `Required checks`
 job against the latest `main`. It blocks branch deletion and force pushes while
 allowing repository administrators to bypass the Ruleset.
+
+Keep a pull request current by rebasing it onto `main` locally and
+force-pushing the branch. Setup turns off GitHub's suggestion to update pull
+request branches, whose default merges `main` into the branch. GitHub still
+offers **Update branch** while a pull request is behind, because the Ruleset
+requires the latest `main`; a local rebase and push clears it.
 
 Setup dispatches and waits for the Tests workflow before creating the Ruleset.
 If Repository Rulesets are unavailable, setup applies equivalent classic branch

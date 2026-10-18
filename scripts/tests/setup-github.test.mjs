@@ -124,7 +124,7 @@ describe("repository settings", () => {
       allow_squash_merge: true,
       allow_rebase_merge: false,
       allow_auto_merge: false,
-      allow_update_branch: true,
+      allow_update_branch: false,
       delete_branch_on_merge: true,
       merge_commit_title: "PR_TITLE",
       merge_commit_message: "BLANK",
