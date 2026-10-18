@@ -404,8 +404,14 @@ export function buildSecurityAndAnalysis(): SecurityAndAnalysisSettings {
   };
 }
 
-export function buildDependabotSettings(): DependabotSettings {
-  return { vulnerability_alerts: true, security_updates: true };
+// Security updates open pull requests on their own, so they stay off unless
+// requested.
+export function buildDependabotSettings({
+  securityUpdates = false,
+}: {
+  securityUpdates?: boolean;
+} = {}): DependabotSettings {
+  return { vulnerability_alerts: true, security_updates: securityUpdates };
 }
 
 export function buildMainRuleset(integrationId: number): RulesetInput {

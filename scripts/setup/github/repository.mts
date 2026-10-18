@@ -378,6 +378,7 @@ function getDependabotState(repository: string): DependabotSettings {
 
 function applyDependabot(
   repository: string,
+  current: DependabotSettings,
   settings: DependabotSettings,
 ): void {
   // Security updates build on the alerts, so enable the alerts first.
@@ -386,6 +387,8 @@ function applyDependabot(
   }
   if (settings.security_updates) {
     api("PUT", `/repos/${repository}/automated-security-fixes`);
+  } else if (current.security_updates) {
+    api("DELETE", `/repos/${repository}/automated-security-fixes`);
   }
 }
 
@@ -601,6 +604,13 @@ export async function setupRepository(args: SetupArguments): Promise<void> {
     const modelVariables: VariableChange[] = args.defaults
       ? []
       : await getModelVariableChanges(repository, readline!);
+    const securityUpdates = args.defaults
+      ? false
+      : await confirm(
+          "Enable Dependabot security updates (Dependabot opens pull requests for vulnerable dependencies)",
+          false,
+          readline!,
+        );
     const repositorySettings = buildRepositorySettings(metadataResult.metadata);
     const repositoryChanges = diffObject(state, repositorySettings);
     const actionsState = getActionsState(repository);
@@ -616,7 +626,7 @@ export async function setupRepository(args: SetupArguments): Promise<void> {
       {}) as SecurityAndAnalysisState;
     const securitySettings = buildSecurityAndAnalysis();
     const dependabotState = getDependabotState(repository);
-    const dependabotSettings = buildDependabotSettings();
+    const dependabotSettings = buildDependabotSettings({ securityUpdates });
     const desiredLabels = parseLabels(
       readFileSync(path.join(repositoryRoot, ".github/labels.yml"), "utf8"),
     );
@@ -699,7 +709,7 @@ export async function setupRepository(args: SetupArguments): Promise<void> {
     if (retentionSettings) applyRetention(repository, retentionSettings);
     api("PATCH", `/repos/${repository}`, repositorySettings);
     applySecurityAndAnalysis(repository, securitySettings);
-    applyDependabot(repository, dependabotSettings);
+    applyDependabot(repository, dependabotState, dependabotSettings);
     if (metadataResult.topics) {
       api("PUT", `/repos/${repository}/topics`, {
         names: metadataResult.topics,
