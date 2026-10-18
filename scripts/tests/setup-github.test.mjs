@@ -24,6 +24,10 @@ import {
   environmentExists,
   repositoryRoot,
 } from "../setup/github/lib.mts";
+import { applyActionsSettings } from "../setup/github/repository.mts";
+
+const httpError = (status, message) =>
+  new CommandError("gh api", { stderr: `gh: ${message} (HTTP ${status})` });
 
 describe("parseArguments", () => {
   it("uses interactive repository setup by default", () => {
@@ -203,6 +207,35 @@ describe("Actions settings", () => {
     assert.deepEqual(buildRetentionSettings(), { days: 30 });
     assert.deepEqual(buildRetentionSettings(90), { days: 30 });
     assert.deepEqual(buildRetentionSettings(14), { days: 14 });
+  });
+
+  it("names the organization setting that blocks pull request creation", () => {
+    const calls = [];
+    const request = (method, endpoint) => {
+      calls.push(endpoint);
+      if (endpoint.endsWith("/workflow")) throw httpError(409, "Conflict");
+    };
+
+    assert.throws(
+      () => applyActionsSettings("owner/repo", buildActionsSettings(), request),
+      /Allow GitHub Actions to create and approve pull requests/,
+    );
+    assert.deepEqual(calls, [
+      "/repos/owner/repo/actions/permissions",
+      "/repos/owner/repo/actions/permissions/selected-actions",
+      "/repos/owner/repo/actions/permissions/workflow",
+    ]);
+  });
+
+  it("propagates Actions failures that are not policy conflicts", () => {
+    const request = () => {
+      throw httpError(403, "Forbidden");
+    };
+
+    assert.throws(
+      () => applyActionsSettings("owner/repo", buildActionsSettings(), request),
+      /Forbidden/,
+    );
   });
 });
 
@@ -420,9 +453,6 @@ describe("labels", () => {
 });
 
 describe("deployment environments", () => {
-  const httpError = (status, message) =>
-    new CommandError("gh api", { stderr: `gh: ${message} (HTTP ${status})` });
-
   const recorder = (respond) => {
     const calls = [];
     const request = (method, endpoint, body) => {

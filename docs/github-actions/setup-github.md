@@ -78,6 +78,10 @@ request.
 Artifacts and logs are kept for 30 days, or for the organization's maximum
 when it is shorter.
 
+Actions settings are applied before anything else. When an organization policy
+overrides one of them, setup stops before changing other settings and names the
+organization setting an owner must allow.
+
 If an existing repository requires actions to be pinned to full commit SHAs,
 setup preserves that requirement and stops before applying changes because the
 starter currently uses tag references.

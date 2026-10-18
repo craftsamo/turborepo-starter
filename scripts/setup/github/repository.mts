@@ -48,7 +48,7 @@ import {
   repositoryRoot,
   runCommand,
 } from "./lib.mts";
-import type { RepositoryRestState } from "./lib.mts";
+import type { ApiRequest, RepositoryRestState } from "./lib.mts";
 
 interface MetadataResult {
   metadata: RepositoryMetadata;
@@ -301,25 +301,42 @@ function getActionsState(repository: string): ActionsState {
   return { permissions, selectedActions, workflow };
 }
 
-function applyActionsSettings(
-  repository: string,
-  settings: ActionsSettings,
-): void {
-  api("PUT", `/repos/${repository}/actions/permissions`, settings.permissions);
-  api(
-    "PUT",
-    `/repos/${repository}/actions/permissions/selected-actions`,
-    settings.selectedActions,
-  );
-  api(
-    "PUT",
-    `/repos/${repository}/actions/permissions/workflow`,
-    settings.workflow,
-  );
-}
-
 const isHttpStatus = (error: unknown, ...statuses: number[]): boolean =>
   error instanceof CommandError && statuses.includes(error.httpStatus);
+
+// GitHub answers 409 when an organization policy overrides a repository
+// Actions setting. Name the organization setting to change instead.
+const ORGANIZATION_ACTIONS_POLICY = {
+  permissions:
+    "enable GitHub Actions limited to selected actions. Allow it under Organization settings > Actions > General > Policies",
+  "selected-actions":
+    "choose its allowed actions. Allow it under Organization settings > Actions > General > Policies",
+  workflow:
+    "let GitHub Actions create pull requests. Enable 'Allow GitHub Actions to create and approve pull requests' under Organization settings > Actions > General > Workflow permissions",
+} as const;
+
+export function applyActionsSettings(
+  repository: string,
+  settings: ActionsSettings,
+  request: ApiRequest = api,
+): void {
+  const steps = [
+    ["permissions", "", settings.permissions],
+    ["selected-actions", "/selected-actions", settings.selectedActions],
+    ["workflow", "/workflow", settings.workflow],
+  ] as const;
+  for (const [step, suffix, body] of steps) {
+    try {
+      request("PUT", `/repos/${repository}/actions/permissions${suffix}`, body);
+    } catch (error) {
+      if (!isHttpStatus(error, 409)) throw error;
+      throw new Error(
+        `The organization does not allow ${repository} to ${ORGANIZATION_ACTIONS_POLICY[step]}, then run setup again.`,
+        { cause: error },
+      );
+    }
+  }
+}
 
 function getRetentionState(repository: string): RetentionState | undefined {
   try {
@@ -676,6 +693,10 @@ export async function setupRepository(args: SetupArguments): Promise<void> {
       );
     }
 
+    // Actions first: an organization policy conflict then stops setup before
+    // any other setting changes.
+    applyActionsSettings(repository, actionsSettings);
+    if (retentionSettings) applyRetention(repository, retentionSettings);
     api("PATCH", `/repos/${repository}`, repositorySettings);
     applySecurityAndAnalysis(repository, securitySettings);
     applyDependabot(repository, dependabotSettings);
@@ -684,8 +705,6 @@ export async function setupRepository(args: SetupArguments): Promise<void> {
         names: metadataResult.topics,
       });
     }
-    applyActionsSettings(repository, actionsSettings);
-    if (retentionSettings) applyRetention(repository, retentionSettings);
     for (const variable of modelVariables) {
       runCommand("gh", [
         "variable",
