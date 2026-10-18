@@ -350,7 +350,9 @@ export function buildRepositorySettings(
     allow_squash_merge: true,
     allow_rebase_merge: false,
     allow_auto_merge: false,
-    allow_update_branch: true,
+    // Pull requests are kept current by a local rebase and force push, so
+    // GitHub's merge-or-rebase Update branch suggestion stays off.
+    allow_update_branch: false,
     delete_branch_on_merge: true,
     merge_commit_title: "PR_TITLE",
     merge_commit_message: "BLANK",
