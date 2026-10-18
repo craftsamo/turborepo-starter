@@ -28,13 +28,13 @@ The setup manages:
 - Default commit title and body formats
 - GitHub Actions permissions, selected-action allowlist, and artifact and log
   retention
-- Secret scanning with push protection, Dependabot alerts, and Dependabot
-  security updates
+- Secret scanning with push protection and Dependabot alerts
 - Labels from `.github/labels.yml`
 - A `Starter: protect main` Ruleset
 - Optional repository description, homepage, topics, and OpenCode model
   variables (`OPENCODE_MODEL` and `OPENCODE_MODEL_<AGENT>`, checked in the
   format the workflow accepts)
+- Optional Dependabot security updates, off unless you enable them
 
 ## Dry Run and Defaults
 
@@ -45,7 +45,8 @@ nps "setup.github --dry-run --defaults"
 nps "setup.github --defaults --yes"
 ```
 
-`--defaults` skips optional metadata and model variable prompts. `--yes` skips the
+`--defaults` skips the optional metadata, model variable, and Dependabot
+security update prompts, leaving security updates off. `--yes` skips the
 final confirmation. Use `--repo owner/repository` to target a repository other
 than the current Git remote.
 
@@ -88,8 +89,16 @@ starter currently uses tag references.
 
 ## Security Features
 
-Setup enables Dependabot alerts, Dependabot security updates, secret scanning,
-and secret scanning push protection. Secret scanning is free for public
+Setup enables Dependabot alerts, secret scanning, and secret scanning push
+protection. Alerts only report vulnerable dependencies; they open no pull
+requests.
+
+Dependabot security updates open a pull request for each vulnerable
+dependency that has a fixed version. The wizard asks whether to enable them and
+defaults to no; answering no turns them off when they are on. This keeps
+security fixes in pull requests you prepare yourself unless you opt in.
+
+Secret scanning is free for public
 repositories; private repositories need GitHub Secret Protection. When it is
 unavailable, setup prints a warning and continues with the remaining settings.
 

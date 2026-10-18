@@ -247,11 +247,15 @@ describe("security settings", () => {
     });
   });
 
-  it("enables Dependabot alerts and security updates", () => {
+  it("enables Dependabot alerts and leaves security updates opt-in", () => {
     assert.deepEqual(buildDependabotSettings(), {
       vulnerability_alerts: true,
-      security_updates: true,
+      security_updates: false,
     });
+    assert.equal(
+      buildDependabotSettings({ securityUpdates: true }).security_updates,
+      true,
+    );
   });
 });
 
