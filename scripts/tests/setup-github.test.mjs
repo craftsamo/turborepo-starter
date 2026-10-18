@@ -1,11 +1,16 @@
 import assert from "node:assert/strict";
+import { readdirSync, readFileSync } from "node:fs";
+import path from "node:path";
 import { describe, it } from "node:test";
 
 import {
   buildActionsSettings,
   buildBranchProtection,
+  buildDependabotSettings,
   buildMainRuleset,
   buildRepositorySettings,
+  buildRetentionSettings,
+  buildSecurityAndAnalysis,
   diffLabels,
   diffObject,
   MODEL_VARIABLES,
@@ -17,7 +22,12 @@ import {
   CommandError,
   ensureEnvironment,
   environmentExists,
+  repositoryRoot,
 } from "../setup/github/lib.mts";
+import { applyActionsSettings } from "../setup/github/repository.mts";
+
+const httpError = (status, message) =>
+  new CommandError("gh api", { stderr: `gh: ${message} (HTTP ${status})` });
 
 describe("parseArguments", () => {
   it("uses interactive repository setup by default", () => {
@@ -114,10 +124,11 @@ describe("repository settings", () => {
       allow_squash_merge: true,
       allow_rebase_merge: false,
       allow_auto_merge: false,
+      allow_update_branch: true,
       delete_branch_on_merge: true,
       merge_commit_title: "PR_TITLE",
       merge_commit_message: "BLANK",
-      squash_merge_commit_title: "PR_TITLE",
+      squash_merge_commit_title: "COMMIT_OR_PR_TITLE",
       squash_merge_commit_message: "COMMIT_MESSAGES",
     });
   });
@@ -145,11 +156,43 @@ describe("Actions settings", () => {
       "dorny/paths-filter@*",
       "release-drafter/release-drafter@*",
       "micnncim/action-label-syncer@*",
+      "peter-evans/create-pull-request@*",
     ]);
     assert.deepEqual(settings.workflow, {
       default_workflow_permissions: "read",
       can_approve_pull_request_reviews: true,
     });
+  });
+
+  it("allows every third-party action the workflows use", () => {
+    const workflows = path.join(repositoryRoot, ".github/workflows");
+    const { patterns_allowed } = buildActionsSettings().selectedActions;
+    const allowed = patterns_allowed.map(
+      (pattern) =>
+        new RegExp(
+          `^${pattern.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replaceAll("*", ".*")}$`,
+        ),
+    );
+    const blocked = readdirSync(workflows)
+      .filter((file) => /\.ya?ml$/.test(file))
+      .flatMap((file) =>
+        [
+          ...readFileSync(path.join(workflows, file), "utf8").matchAll(
+            /^\s*(?:-\s*)?uses:\s*["']?([^\s"'#]+)/gm,
+          ),
+        ].map((match) => `${file}: ${match[1]}`),
+      )
+      .filter((entry) => {
+        const action = entry.split(": ")[1];
+        if (action.startsWith("./") || action.startsWith("docker://")) {
+          return false;
+        }
+        // GitHub-owned actions are allowed by github_owned_allowed.
+        if (/^(actions|github)\//.test(action)) return false;
+        return !allowed.some((pattern) => pattern.test(action));
+      });
+
+    assert.deepEqual(blocked, []);
   });
 
   it("preserves an existing SHA pinning requirement", () => {
@@ -158,6 +201,57 @@ describe("Actions settings", () => {
         .sha_pinning_required,
       true,
     );
+  });
+
+  it("keeps artifacts and logs for 30 days within the organization cap", () => {
+    assert.deepEqual(buildRetentionSettings(), { days: 30 });
+    assert.deepEqual(buildRetentionSettings(90), { days: 30 });
+    assert.deepEqual(buildRetentionSettings(14), { days: 14 });
+  });
+
+  it("names the organization setting that blocks pull request creation", () => {
+    const calls = [];
+    const request = (method, endpoint) => {
+      calls.push(endpoint);
+      if (endpoint.endsWith("/workflow")) throw httpError(409, "Conflict");
+    };
+
+    assert.throws(
+      () => applyActionsSettings("owner/repo", buildActionsSettings(), request),
+      /Allow GitHub Actions to create and approve pull requests/,
+    );
+    assert.deepEqual(calls, [
+      "/repos/owner/repo/actions/permissions",
+      "/repos/owner/repo/actions/permissions/selected-actions",
+      "/repos/owner/repo/actions/permissions/workflow",
+    ]);
+  });
+
+  it("propagates Actions failures that are not policy conflicts", () => {
+    const request = () => {
+      throw httpError(403, "Forbidden");
+    };
+
+    assert.throws(
+      () => applyActionsSettings("owner/repo", buildActionsSettings(), request),
+      /Forbidden/,
+    );
+  });
+});
+
+describe("security settings", () => {
+  it("enables secret scanning with push protection", () => {
+    assert.deepEqual(buildSecurityAndAnalysis(), {
+      secret_scanning: { status: "enabled" },
+      secret_scanning_push_protection: { status: "enabled" },
+    });
+  });
+
+  it("enables Dependabot alerts and security updates", () => {
+    assert.deepEqual(buildDependabotSettings(), {
+      vulnerability_alerts: true,
+      security_updates: true,
+    });
   });
 });
 
@@ -359,9 +453,6 @@ describe("labels", () => {
 });
 
 describe("deployment environments", () => {
-  const httpError = (status, message) =>
-    new CommandError("gh api", { stderr: `gh: ${message} (HTTP ${status})` });
-
   const recorder = (respond) => {
     const calls = [];
     const request = (method, endpoint, body) => {

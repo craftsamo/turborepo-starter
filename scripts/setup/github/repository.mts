@@ -9,8 +9,11 @@ import { parseModelList } from "../../ci/opencode/models.mts";
 import {
   buildActionsSettings,
   buildBranchProtection,
+  buildDependabotSettings,
   buildMainRuleset,
   buildRepositorySettings,
+  buildRetentionSettings,
+  buildSecurityAndAnalysis,
   diffLabels,
   diffObject,
   MODEL_VARIABLES,
@@ -25,10 +28,15 @@ import type {
   ActionsState,
   BranchProtectionInput,
   CurrentLabel,
+  DependabotSettings,
   Label,
   LabelDiff,
   ObjectDiff,
   RepositoryMetadata,
+  RetentionSettings,
+  RetentionState,
+  SecurityAndAnalysisSettings,
+  SecurityAndAnalysisState,
   SelectedActionsState,
   SetupArguments,
   WorkflowState,
@@ -40,7 +48,7 @@ import {
   repositoryRoot,
   runCommand,
 } from "./lib.mts";
-import type { RepositoryRestState } from "./lib.mts";
+import type { ApiRequest, RepositoryRestState } from "./lib.mts";
 
 interface MetadataResult {
   metadata: RepositoryMetadata;
@@ -293,20 +301,115 @@ function getActionsState(repository: string): ActionsState {
   return { permissions, selectedActions, workflow };
 }
 
-function applyActionsSettings(
+const isHttpStatus = (error: unknown, ...statuses: number[]): boolean =>
+  error instanceof CommandError && statuses.includes(error.httpStatus);
+
+// GitHub answers 409 when an organization policy overrides a repository
+// Actions setting. Name the organization setting to change instead.
+const ORGANIZATION_ACTIONS_POLICY = {
+  permissions:
+    "enable GitHub Actions limited to selected actions. Allow it under Organization settings > Actions > General > Policies",
+  "selected-actions":
+    "choose its allowed actions. Allow it under Organization settings > Actions > General > Policies",
+  workflow:
+    "let GitHub Actions create pull requests. Enable 'Allow GitHub Actions to create and approve pull requests' under Organization settings > Actions > General > Workflow permissions",
+} as const;
+
+export function applyActionsSettings(
   repository: string,
   settings: ActionsSettings,
+  request: ApiRequest = api,
 ): void {
-  api("PUT", `/repos/${repository}/actions/permissions`, settings.permissions);
+  const steps = [
+    ["permissions", "", settings.permissions],
+    ["selected-actions", "/selected-actions", settings.selectedActions],
+    ["workflow", "/workflow", settings.workflow],
+  ] as const;
+  for (const [step, suffix, body] of steps) {
+    try {
+      request("PUT", `/repos/${repository}/actions/permissions${suffix}`, body);
+    } catch (error) {
+      if (!isHttpStatus(error, 409)) throw error;
+      throw new Error(
+        `The organization does not allow ${repository} to ${ORGANIZATION_ACTIONS_POLICY[step]}, then run setup again.`,
+        { cause: error },
+      );
+    }
+  }
+}
+
+function getRetentionState(repository: string): RetentionState | undefined {
+  try {
+    return api<RetentionState>(
+      "GET",
+      `/repos/${repository}/actions/permissions/artifact-and-log-retention`,
+    );
+  } catch (error) {
+    if (isHttpStatus(error, 404)) return undefined;
+    throw error;
+  }
+}
+
+function getDependabotState(repository: string): DependabotSettings {
+  let vulnerabilityAlerts = true;
+  try {
+    // 204 when enabled, 404 when disabled.
+    api("GET", `/repos/${repository}/vulnerability-alerts`);
+  } catch (error) {
+    if (!isHttpStatus(error, 404)) throw error;
+    vulnerabilityAlerts = false;
+  }
+  let securityUpdates = false;
+  try {
+    securityUpdates = Boolean(
+      api<{ enabled?: boolean }>(
+        "GET",
+        `/repos/${repository}/automated-security-fixes`,
+      )?.enabled,
+    );
+  } catch (error) {
+    if (!isHttpStatus(error, 404)) throw error;
+  }
+  return {
+    vulnerability_alerts: vulnerabilityAlerts,
+    security_updates: securityUpdates,
+  };
+}
+
+function applyDependabot(
+  repository: string,
+  settings: DependabotSettings,
+): void {
+  // Security updates build on the alerts, so enable the alerts first.
+  if (settings.vulnerability_alerts) {
+    api("PUT", `/repos/${repository}/vulnerability-alerts`);
+  }
+  if (settings.security_updates) {
+    api("PUT", `/repos/${repository}/automated-security-fixes`);
+  }
+}
+
+// Sent apart from the other repository settings: private repositories without
+// GitHub Secret Protection reject it, which must not block the rest of setup.
+function applySecurityAndAnalysis(
+  repository: string,
+  settings: SecurityAndAnalysisSettings,
+): void {
+  try {
+    api("PATCH", `/repos/${repository}`, { security_and_analysis: settings });
+  } catch (error) {
+    if (!isHttpStatus(error, 403, 404, 422)) throw error;
+    console.warn(
+      "Secret scanning is unavailable for this repository (private repositories need GitHub Secret Protection); skipped.",
+    );
+  }
+}
+
+function applyRetention(repository: string, settings: RetentionSettings): void {
   api(
     "PUT",
-    `/repos/${repository}/actions/permissions/selected-actions`,
-    settings.selectedActions,
-  );
-  api(
-    "PUT",
-    `/repos/${repository}/actions/permissions/workflow`,
-    settings.workflow,
+    `/repos/${repository}/actions/permissions/artifact-and-log-retention`,
+    settings,
   );
 }
 
@@ -505,6 +608,15 @@ export async function setupRepository(args: SetupArguments): Promise<void> {
       actionsState.permissions.sha_pinning_required,
     );
     const actionsSettings = buildActionsSettings({ shaPinningRequired });
+    const retentionState = getRetentionState(repository);
+    const retentionSettings =
+      retentionState &&
+      buildRetentionSettings(retentionState.maximum_allowed_days);
+    const securityState = (state.security_and_analysis ??
+      {}) as SecurityAndAnalysisState;
+    const securitySettings = buildSecurityAndAnalysis();
+    const dependabotState = getDependabotState(repository);
+    const dependabotSettings = buildDependabotSettings();
     const desiredLabels = parseLabels(
       readFileSync(path.join(repositoryRoot, ".github/labels.yml"), "utf8"),
     );
@@ -526,6 +638,18 @@ export async function setupRepository(args: SetupArguments): Promise<void> {
       "Workflow token permissions",
       diffObject(actionsState.workflow, actionsSettings.workflow),
     );
+    if (retentionSettings) {
+      printDiff(
+        "Artifact and log retention",
+        diffObject(retentionState, retentionSettings),
+      );
+    } else {
+      console.warn(
+        "\nArtifact and log retention cannot be read for this repository; skipped.",
+      );
+    }
+    printDiff("Secret scanning", diffObject(securityState, securitySettings));
+    printDiff("Dependabot", diffObject(dependabotState, dependabotSettings));
     if (metadataResult.topics) {
       printDiff(
         "Repository topics",
@@ -569,13 +693,18 @@ export async function setupRepository(args: SetupArguments): Promise<void> {
       );
     }
 
+    // Actions first: an organization policy conflict then stops setup before
+    // any other setting changes.
+    applyActionsSettings(repository, actionsSettings);
+    if (retentionSettings) applyRetention(repository, retentionSettings);
     api("PATCH", `/repos/${repository}`, repositorySettings);
+    applySecurityAndAnalysis(repository, securitySettings);
+    applyDependabot(repository, dependabotSettings);
     if (metadataResult.topics) {
       api("PUT", `/repos/${repository}/topics`, {
         names: metadataResult.topics,
       });
     }
-    applyActionsSettings(repository, actionsSettings);
     for (const variable of modelVariables) {
       runCommand("gh", [
         "variable",

@@ -23,9 +23,13 @@ confirmation. A cancelled run does not apply changes.
 
 The setup manages:
 
-- Repository features and merge methods
+- Repository features and merge methods, including the pull request
+  **Update branch** button
 - Default commit title and body formats
-- GitHub Actions permissions and selected-action allowlist
+- GitHub Actions permissions, selected-action allowlist, and artifact and log
+  retention
+- Secret scanning with push protection, Dependabot alerts, and Dependabot
+  security updates
 - Labels from `.github/labels.yml`
 - A `Starter: protect main` Ruleset
 - Optional repository description, homepage, topics, and OpenCode model
@@ -61,17 +65,33 @@ protection without weakening stricter existing protection.
 ## Actions Permissions
 
 Setup enables Actions with a read-only default `GITHUB_TOKEN` and permits only
-GitHub-owned actions plus the third-party actions used by this starter.
+GitHub-owned actions plus the third-party actions used by this starter. A test
+fails when a workflow uses a third-party action missing from that allowlist.
 
-It also allows Actions to create pull requests, which `/oc build` needs to open
-one from an issue. GitHub grants creating and approving pull requests through
-the same setting. The OpenCode workflow only posts comment reviews and never
-approves, and the managed Ruleset requires no approvals. If you require
-approvals, keep in mind that a workflow could approve a pull request.
+It also allows Actions to create pull requests, which `/oc build` and the
+Update VRT baselines workflow need. GitHub grants creating and approving pull
+requests through the same setting. The OpenCode workflow only posts comment
+reviews and never approves, and the managed Ruleset requires no approvals. If
+you require approvals, keep in mind that a workflow could approve a pull
+request.
+
+Artifacts and logs are kept for 30 days, or for the organization's maximum
+when it is shorter.
+
+Actions settings are applied before anything else. When an organization policy
+overrides one of them, setup stops before changing other settings and names the
+organization setting an owner must allow.
 
 If an existing repository requires actions to be pinned to full commit SHAs,
 setup preserves that requirement and stops before applying changes because the
 starter currently uses tag references.
+
+## Security Features
+
+Setup enables Dependabot alerts, Dependabot security updates, secret scanning,
+and secret scanning push protection. Secret scanning is free for public
+repositories; private repositories need GitHub Secret Protection. When it is
+unavailable, setup prints a warning and continues with the remaining settings.
 
 ## Secrets
 

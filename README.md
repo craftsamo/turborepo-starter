@@ -112,7 +112,7 @@ starter's MIT license under `LICENSES/`. See
 4. **Configure GitHub**
 
 Preview and apply the starter's repository settings, Actions permissions,
-labels, and `main` protection:
+security features, labels, and `main` protection:
 
 ```sh
 nps "setup.github --dry-run --defaults"

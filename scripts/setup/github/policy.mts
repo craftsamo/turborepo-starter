@@ -59,6 +59,7 @@ export interface RepositorySettings extends RepositoryMetadata {
   allow_squash_merge: boolean;
   allow_rebase_merge: boolean;
   allow_auto_merge: boolean;
+  allow_update_branch: boolean;
   delete_branch_on_merge: boolean;
   merge_commit_title: string;
   merge_commit_message: string;
@@ -110,6 +111,31 @@ export interface ActionsState {
   permissions: ActionsPermissionsState;
   selectedActions: SelectedActionsState;
   workflow: WorkflowState;
+}
+
+export interface RetentionState {
+  days?: number;
+  maximum_allowed_days?: number;
+}
+
+export interface RetentionSettings {
+  days: number;
+}
+
+type FeatureStatus = { status: "enabled" | "disabled" };
+
+export interface SecurityAndAnalysisSettings {
+  secret_scanning: FeatureStatus;
+  secret_scanning_push_protection: FeatureStatus;
+}
+
+export type SecurityAndAnalysisState = Partial<
+  Record<keyof SecurityAndAnalysisSettings, Partial<FeatureStatus>>
+>;
+
+export interface DependabotSettings {
+  vulnerability_alerts: boolean;
+  security_updates: boolean;
 }
 
 export interface RestrictionUser {
@@ -241,7 +267,9 @@ const ALLOWED_ACTION_PATTERNS = [
   "dorny/paths-filter@*",
   "release-drafter/release-drafter@*",
   "micnncim/action-label-syncer@*",
+  "peter-evans/create-pull-request@*",
 ];
+const ARTIFACT_RETENTION_DAYS = 30;
 const LABEL_RENAMES = new Map([["💬quesion", "💬question"]]);
 
 export function parseArguments(argv: string[]): SetupArguments {
@@ -322,10 +350,11 @@ export function buildRepositorySettings(
     allow_squash_merge: true,
     allow_rebase_merge: false,
     allow_auto_merge: false,
+    allow_update_branch: true,
     delete_branch_on_merge: true,
     merge_commit_title: "PR_TITLE",
     merge_commit_message: "BLANK",
-    squash_merge_commit_title: "PR_TITLE",
+    squash_merge_commit_title: "COMMIT_OR_PR_TITLE",
     squash_merge_commit_message: "COMMIT_MESSAGES",
     ...metadata,
   };
@@ -354,6 +383,29 @@ export function buildActionsSettings({
       can_approve_pull_request_reviews: true,
     },
   };
+}
+
+// An organization may cap retention below the starter's value; ask for the cap
+// instead of a value GitHub would reject.
+export function buildRetentionSettings(
+  maximumAllowedDays?: number,
+): RetentionSettings {
+  return {
+    days: maximumAllowedDays
+      ? Math.min(ARTIFACT_RETENTION_DAYS, maximumAllowedDays)
+      : ARTIFACT_RETENTION_DAYS,
+  };
+}
+
+export function buildSecurityAndAnalysis(): SecurityAndAnalysisSettings {
+  return {
+    secret_scanning: { status: "enabled" },
+    secret_scanning_push_protection: { status: "enabled" },
+  };
+}
+
+export function buildDependabotSettings(): DependabotSettings {
+  return { vulnerability_alerts: true, security_updates: true };
 }
 
 export function buildMainRuleset(integrationId: number): RulesetInput {
