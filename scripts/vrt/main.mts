@@ -55,6 +55,25 @@ export interface ArtifactQuery {
   force?: boolean | undefined;
 }
 
+/**
+ * The official Playwright image of the version the lockfile resolves. CI and
+ * `nps vrt.update` render screenshots in it, so baselines match everywhere.
+ */
+export function playwrightImage(lockfile: string): string {
+  const versions = new Set(
+    [...lockfile.matchAll(/^ {2}playwright@(\d+\.\d+\.\d+):/gm)].map(
+      ([, version]) => version,
+    ),
+  );
+  const [version] = versions;
+  if (versions.size !== 1 || !version) {
+    throw new Error(
+      `pnpm-lock.yaml must resolve exactly one playwright version; found ${[...versions].join(", ") || "none"}.`,
+    );
+  }
+  return `mcr.microsoft.com/playwright:v${version}-noble`;
+}
+
 export function isSnapshotPath(file: string): boolean {
   return (
     SNAPSHOT_PATH.test(file) &&
@@ -243,13 +262,25 @@ function collect([source, destination]: string[]): void {
   );
 }
 
-const commands: Record<string, (argv: string[]) => void> = { accept, collect };
+function image(): void {
+  console.log(
+    playwrightImage(
+      readFileSync(path.join(repositoryRoot, "pnpm-lock.yaml"), "utf8"),
+    ),
+  );
+}
+
+const commands: Record<string, (argv: string[]) => void> = {
+  accept,
+  collect,
+  image,
+};
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const [name = "", ...argv] = process.argv.slice(2);
   const command = commands[name];
   if (!command) {
-    console.error("Usage: node scripts/vrt/main.mts accept|collect");
+    console.error("Usage: node scripts/vrt/main.mts accept|collect|image");
     process.exitCode = 2;
   } else {
     try {

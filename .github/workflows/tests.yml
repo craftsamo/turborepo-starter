@@ -37,6 +37,9 @@ concurrency:
 env:
   # Let Corepack download the pinned pnpm without an interactive prompt in CI.
   COREPACK_ENABLE_DOWNLOAD_PROMPT: 0
+  # The same store path on the runner and in the Playwright container, so every
+  # job shares one pnpm store cache.
+  pnpm_config_store_dir: /tmp/pnpm-store
 
 jobs:
   changes:
@@ -133,6 +136,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.web == 'true'
     outputs:
+      playwright-image: ${{ steps.playwright-image.outputs.image }}
       pnpm-store-dir: ${{ steps.pnpm-store.outputs.dir }}
     steps:
       - uses: actions/checkout@v7
@@ -144,6 +148,9 @@ jobs:
           # packageManager field) before Corepack runs. Corepack is enabled
           # below and the pnpm store is cached manually.
           package-manager-cache: false
+      - name: Find the Playwright image
+        id: playwright-image
+        run: echo "image=$(node scripts/vrt/main.mts image)" >> "$GITHUB_OUTPUT"
       - name: Enable Corepack
         run: corepack enable
       - name: Get pnpm store directory
@@ -209,6 +216,12 @@ jobs:
     needs: [setup, changes]
     runs-on: ubuntu-latest
     if: needs.setup.result == 'success' && needs.changes.outputs.web == 'true'
+    # Screenshots render alike only on the same fonts and browser build, so
+    # this job and Update VRT baselines run in the Playwright image of the
+    # installed version, which ships the browsers.
+    container:
+      image: ${{ needs.setup.outputs.playwright-image }}
+      options: --user 1001 --ipc=host
     steps:
       - uses: actions/checkout@v7
       - name: Use Node.js 24.x
@@ -227,9 +240,6 @@ jobs:
             ${{ runner.os }}-pnpm-
       - name: Prepare
         run: npx nps prepare.ci.web
-      - name: Install Chromium
-        working-directory: out/apps/web
-        run: pnpm exec playwright install --with-deps chromium
       - name: Test E2E
         id: e2e
         run: npx nps test.ci.web.e2e.all

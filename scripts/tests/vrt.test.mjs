@@ -19,6 +19,7 @@ import {
   listSnapshots,
   parseAcceptArguments,
   pickArtifact,
+  playwrightImage,
 } from "../vrt/main.mts";
 
 const SNAPSHOTS = "apps/web/e2e/vrt.spec.ts-snapshots";
@@ -28,6 +29,38 @@ function write(root, file, content) {
   mkdirSync(path.dirname(target), { recursive: true });
   writeFileSync(target, content);
 }
+
+describe("playwrightImage", () => {
+  const lockfile = (...versions) =>
+    [
+      "packages:",
+      "",
+      "  '@playwright/test@1.61.1':",
+      ...versions.flatMap((version) => [
+        `  playwright@${version}:`,
+        `    resolution: {integrity: sha512-x}`,
+      ]),
+      "",
+      "snapshots:",
+      "",
+      ...versions.map((version) => `  playwright@${version}: {}`),
+    ].join("\n");
+
+  it("names the image of the resolved version", () => {
+    assert.equal(
+      playwrightImage(lockfile("1.61.1")),
+      "mcr.microsoft.com/playwright:v1.61.1-noble",
+    );
+  });
+
+  it("refuses zero or several versions", () => {
+    assert.throws(() => playwrightImage(lockfile()), /found none/);
+    assert.throws(
+      () => playwrightImage(lockfile("1.61.1", "1.62.0")),
+      /found 1\.61\.1, 1\.62\.0/,
+    );
+  });
+});
 
 describe("isSnapshotPath", () => {
   it("accepts a baseline next to a spec", () => {

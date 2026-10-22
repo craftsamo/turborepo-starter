@@ -1,11 +1,11 @@
 name: Update VRT baselines
 
-# Renders the visual-regression baselines on the platform that compares them
-# (Linux) and uploads the ones that differ from the branch as the
-# vrt-baselines artifact. Bring them in with `nps vrt.accept` on that branch,
-# review the images, and commit them. The Tests workflow uploads the same
-# artifact when screenshots change; run this one to seed baselines, which VRT
-# skips while none are committed, or to refresh them on demand.
+# Renders the visual-regression baselines in the same Playwright image the
+# Tests workflow compares them in, and uploads the ones that differ from the
+# branch as the vrt-baselines artifact. Bring them in with `nps vrt.accept` on
+# that branch, review the images, and commit them. The Tests workflow uploads
+# the same artifact when screenshots change; run this one to seed baselines,
+# which VRT skips while none are committed, or to refresh them on demand.
 
 on:
   workflow_dispatch:
@@ -15,10 +15,30 @@ permissions:
 
 env:
   COREPACK_ENABLE_DOWNLOAD_PROMPT: 0
+  pnpm_config_store_dir: /tmp/pnpm-store
 
 jobs:
-  update-baselines:
+  image:
     runs-on: ubuntu-latest
+    outputs:
+      playwright-image: ${{ steps.playwright-image.outputs.image }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Use Node.js 24.x
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24.x
+          package-manager-cache: false
+      - name: Find the Playwright image
+        id: playwright-image
+        run: echo "image=$(node scripts/vrt/main.mts image)" >> "$GITHUB_OUTPUT"
+
+  update-baselines:
+    needs: image
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ needs.image.outputs.playwright-image }}
+      options: --user 1001 --ipc=host
     steps:
       - uses: actions/checkout@v7
       - name: Use Node.js 24.x
@@ -42,9 +62,6 @@ jobs:
         run: npx nps prepare.ci.web
       - name: Build web
         run: npx nps build.ci.web
-      - name: Install Chromium
-        working-directory: out/apps/web
-        run: pnpm exec playwright install --with-deps chromium
       - name: Render VRT baselines
         working-directory: out/apps/web
         env:

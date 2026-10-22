@@ -98,7 +98,10 @@ job then runs:
 3. **Test (CI)**: `nps test.ci.{target}`
    - Runs the unit/component test suite for the target
 
-The E2E job independently prunes the web workspace, installs Chromium, and runs
+The E2E job runs in the official Playwright Docker image of the version that
+`pnpm-lock.yaml` resolves (`node scripts/vrt/main.mts image`). The image ships
+Chromium and its fonts, so screenshots render the same wherever it runs. The
+job independently prunes the web workspace and runs
 `nps test.ci.web.e2e.all`. Turbo builds the web app before Playwright and then
 runs the desktop, tablet, and mobile Chromium projects. If E2E fails, the job
 uploads `web-playwright-artifacts` containing the HTML report, screenshots,
@@ -120,7 +123,8 @@ never part of this workflow.
 ### Caching Strategy
 
 - **Cache Key**: `${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}`
-- **Cache Path**: pnpm store directory from `pnpm store path`
+- **Cache Path**: `/tmp/pnpm-store` (`pnpm_config_store_dir`), the same path on
+  the runner and in the Playwright container, so all jobs share one cache
 - **Restore Keys**: Falls back to OS + pnpm prefix if exact match not found
 
 This allows subsequent workflow runs to reuse cached dependencies when
