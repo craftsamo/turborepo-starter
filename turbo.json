@@ -33,7 +33,7 @@
     "test:e2e": {
       "dependsOn": ["build"],
       "cache": false,
-      "passThroughEnv": ["CI", "WEB_E2E_PORT"]
+      "passThroughEnv": ["CI", "PLAYWRIGHT_BROWSERS_PATH", "WEB_E2E_PORT"]
     },
     "test:live": {
       "cache": false,

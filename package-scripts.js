@@ -17,6 +17,10 @@ module.exports = {
         secrets: `node scripts/setup/github/secrets.mts`,
       },
     },
+    vrt: {
+      accept: `node scripts/vrt/main.mts accept`,
+      update: `node scripts/vrt/main.mts update`,
+    },
     prepare: {
       default: `nps prepare.web`,
       web: `pnpm install`,

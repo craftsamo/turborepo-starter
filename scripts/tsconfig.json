@@ -13,5 +13,5 @@
     "types": ["node"],
     "skipLibCheck": true
   },
-  "include": ["ci/**/*.mts", "setup/**/*.mts"]
+  "include": ["ci/**/*.mts", "setup/**/*.mts", "vrt/**/*.mts"]
 }

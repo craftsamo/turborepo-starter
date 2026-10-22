@@ -98,11 +98,35 @@ job then runs:
 3. **Test (CI)**: `nps test.ci.{target}`
    - Runs the unit/component test suite for the target
 
-The E2E job independently prunes the web workspace, installs Chromium, and runs
+The E2E job runs in the official Playwright Docker image of the version that
+`pnpm-lock.yaml` resolves (`node scripts/vrt/main.mts image`), which must be a
+single `playwright` version across the workspace. The image ships
+Chromium and its fonts, so screenshots render the same wherever it runs. The
+job independently prunes the web workspace and runs
 `nps test.ci.web.e2e.all`. Turbo builds the web app before Playwright and then
 runs the desktop, tablet, and mobile Chromium projects. If E2E fails, the job
 uploads `web-playwright-artifacts` containing the HTML report, screenshots,
-videos, and traces that Playwright produced.
+videos, and traces that Playwright produced. They are kept for 3 days, since
+they are large and count toward the account's shared artifact storage.
+
+When E2E fails, the job also renders the VRT baselines again with
+`--update-snapshots=changed`. If any screenshot is new or differs from the
+committed baseline, it uploads those images as the `vrt-baselines` artifact
+and lists them in the job summary. When the change is intended, run
+`nps vrt.accept` on the branch: it copies the artifact of this repository's
+newest run for the checked-out commit into the tree, so you can review the
+images, commit them, and push. `--force` takes the branch's newest artifact
+instead, and `--run <id>` a given run's; runs from forks are never used. A
+pull request run renders the pull request merged into its base, so the images
+also show base changes the branch does not have yet. A workflow that renders
+VRT in more than one job names each upload `vrt-baselines-<name>`; `accept`
+takes all of them.
+
+To render the baselines before pushing instead, run `nps vrt.update` with
+Docker running. It packs the files git tracks or would track, prunes, installs
+and builds the web app in the same Playwright image (as `linux/amd64`, like the
+runners), and copies the new or changed baselines into the tree. Pass `--all`
+(`nps "vrt.update --all"`) to rewrite every baseline.
 
 The `Required checks` job requires `script-tests` to succeed when script paths
 changed, and both the unit/component job and the E2E job to succeed when web
@@ -112,7 +136,8 @@ never part of this workflow.
 ### Caching Strategy
 
 - **Cache Key**: `${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}`
-- **Cache Path**: pnpm store directory from `pnpm store path`
+- **Cache Path**: `/tmp/pnpm-store` (`pnpm_config_store_dir`), the same path on
+  the runner and in the Playwright container, so all jobs share one cache
 - **Restore Keys**: Falls back to OS + pnpm prefix if exact match not found
 
 This allows subsequent workflow runs to reuse cached dependencies when

@@ -37,6 +37,9 @@ concurrency:
 env:
   # Let Corepack download the pinned pnpm without an interactive prompt in CI.
   COREPACK_ENABLE_DOWNLOAD_PROMPT: 0
+  # The same store path on the runner and in the Playwright container, so every
+  # job shares one pnpm store cache.
+  pnpm_config_store_dir: /tmp/pnpm-store
 
 jobs:
   changes:
@@ -133,6 +136,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.web == 'true'
     outputs:
+      playwright-image: ${{ steps.playwright-image.outputs.image }}
       pnpm-store-dir: ${{ steps.pnpm-store.outputs.dir }}
     steps:
       - uses: actions/checkout@v7
@@ -144,6 +148,9 @@ jobs:
           # packageManager field) before Corepack runs. Corepack is enabled
           # below and the pnpm store is cached manually.
           package-manager-cache: false
+      - name: Find the Playwright image
+        id: playwright-image
+        run: echo "image=$(node scripts/vrt/main.mts image)" >> "$GITHUB_OUTPUT"
       - name: Enable Corepack
         run: corepack enable
       - name: Get pnpm store directory
@@ -209,6 +216,12 @@ jobs:
     needs: [setup, changes]
     runs-on: ubuntu-latest
     if: needs.setup.result == 'success' && needs.changes.outputs.web == 'true'
+    # Screenshots render alike only on the same fonts and browser build, so
+    # this job, Update VRT baselines and `nps vrt.update` all run in the
+    # Playwright image of the installed version, which ships the browsers.
+    container:
+      image: ${{ needs.setup.outputs.playwright-image }}
+      options: --user 1001 --ipc=host
     steps:
       - uses: actions/checkout@v7
       - name: Use Node.js 24.x
@@ -227,10 +240,8 @@ jobs:
             ${{ runner.os }}-pnpm-
       - name: Prepare
         run: npx nps prepare.ci.web
-      - name: Install Chromium
-        working-directory: out/apps/web
-        run: pnpm exec playwright install --with-deps chromium
       - name: Test E2E
+        id: e2e
         run: npx nps test.ci.web.e2e.all
       - name: Upload Playwright artifacts
         if: failure()
@@ -241,6 +252,28 @@ jobs:
             out/apps/web/playwright-report/
             out/apps/web/test-results/
           if-no-files-found: ignore
+          # Videos and traces are large and count toward the shared artifact
+          # storage; a failure is looked into within days.
+          retention-days: 3
+      # When screenshots no longer match, render the baselines again where CI
+      # compares them, so `nps vrt.accept` can bring the changed ones in.
+      - name: Render VRT baselines
+        id: vrt
+        if: failure() && steps.e2e.outcome == 'failure'
+        working-directory: out/apps/web
+        env:
+          VRT_UPDATE: "1"
+        run: pnpm exec playwright test e2e/vrt.spec.ts --update-snapshots=changed --reporter=line
+      - name: Collect changed VRT baselines
+        id: baselines
+        if: failure() && steps.vrt.outcome == 'success'
+        run: node scripts/vrt/main.mts collect out vrt-baselines
+      - name: Upload VRT baselines
+        if: failure() && steps.baselines.outputs.changed == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: vrt-baselines
+          path: vrt-baselines/
           retention-days: 7
 
   required-checks:
