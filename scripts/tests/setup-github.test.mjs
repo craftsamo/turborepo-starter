@@ -6,6 +6,7 @@ import { describe, it } from "node:test";
 import {
   buildActionsSettings,
   buildBranchProtection,
+  buildCacheRetentionSettings,
   buildDependabotSettings,
   buildMainRuleset,
   buildRepositorySettings,
@@ -24,7 +25,10 @@ import {
   environmentExists,
   repositoryRoot,
 } from "../setup/github/lib.mts";
-import { applyActionsSettings } from "../setup/github/repository.mts";
+import {
+  applyActionsSettings,
+  applyCacheRetention,
+} from "../setup/github/repository.mts";
 
 const httpError = (status, message) =>
   new CommandError("gh api", { stderr: `gh: ${message} (HTTP ${status})` });
@@ -206,6 +210,43 @@ describe("Actions settings", () => {
     assert.deepEqual(buildRetentionSettings(), { days: 30 });
     assert.deepEqual(buildRetentionSettings(90), { days: 30 });
     assert.deepEqual(buildRetentionSettings(14), { days: 14 });
+  });
+
+  it("keeps unused Actions caches for 3 days", () => {
+    assert.deepEqual(buildCacheRetentionSettings(), {
+      max_cache_retention_days: 3,
+    });
+  });
+
+  it("keeps the cache retention an organization caps lower", (t) => {
+    const warn = t.mock.method(console, "warn", () => {});
+    const calls = [];
+    applyCacheRetention(
+      "owner/repo",
+      buildCacheRetentionSettings(),
+      (method, endpoint, body) => {
+        calls.push([method, endpoint, body]);
+        throw httpError(400, "Bad Request");
+      },
+    );
+    assert.deepEqual(calls, [
+      [
+        "PUT",
+        "/repos/owner/repo/actions/cache/retention-limit",
+        { max_cache_retention_days: 3 },
+      ],
+    ]);
+    assert.match(warn.mock.calls[0].arguments[0], /may cap it/);
+  });
+
+  it("stops on other cache retention errors", () => {
+    assert.throws(
+      () =>
+        applyCacheRetention("owner/repo", buildCacheRetentionSettings(), () => {
+          throw httpError(500, "Server Error");
+        }),
+      /Server Error/,
+    );
   });
 
   it("names the organization setting that blocks pull request creation", () => {

@@ -25,8 +25,8 @@ The setup manages:
 
 - Repository features and merge methods
 - Default commit title and body formats
-- GitHub Actions permissions, selected-action allowlist, and artifact and log
-  retention
+- GitHub Actions permissions, selected-action allowlist, artifact and log
+  retention, and cache retention
 - Secret scanning with push protection and Dependabot alerts
 - Labels from `.github/labels.yml`
 - A `Starter: protect main` Ruleset
@@ -81,7 +81,16 @@ managed Ruleset requires no approvals. If you require approvals, keep in mind
 that a workflow could approve a pull request.
 
 Artifacts and logs are kept for 30 days, or for the organization's maximum
-when it is shorter.
+when it is shorter. GitHub applies the same period to checks, workflow runs,
+and commit statuses, so a shorter one would also drop the `Required checks`
+result of a pull request left open longer. Artifact storage is kept down by
+the `retention-days` each workflow sets on its uploads instead.
+
+Actions caches are removed after 3 days without use, instead of GitHub's 7.
+Caches of merged branches then leave the repository's 10 GB cache quota
+sooner, rather than pushing out the ones `main` still uses. Setup keeps the
+current value when an organization or enterprise policy caps it lower, and
+never raises the 10 GB quota, which GitHub would bill.
 
 Actions settings are applied before anything else. When an organization policy
 overrides one of them, setup stops before changing other settings and names the
