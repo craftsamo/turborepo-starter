@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import {
   appendFileSync,
   cpSync,
@@ -36,25 +36,17 @@ const SKIPPED_DIRECTORIES = new Set([
   "test-results",
 ]);
 
-export interface ArtifactRun {
+export interface WorkflowRun {
   id: number;
-  head_branch: string | null;
+  created_at: string;
   head_sha: string;
+  repository: { id: number };
+  head_repository?: { id: number } | null;
 }
 
 export interface Artifact {
-  id: number;
   name: string;
   expired: boolean;
-  created_at: string;
-  workflow_run?: ArtifactRun | null;
-}
-
-export interface ArtifactQuery {
-  branch: string;
-  headSha: string;
-  runId?: number | undefined;
-  force?: boolean | undefined;
 }
 
 /**
@@ -126,37 +118,28 @@ export function copySnapshots(files: string[], from: string, to: string): void {
 }
 
 /**
- * The newest unexpired baselines artifact for the branch. It must come from the
- * commit checked out locally, unless forced, so baselines rendered from another
- * state of the branch are not committed by mistake.
+ * Runs of this repository, newest first. A pull request from a fork runs its
+ * own workflow files, so its artifacts are never taken.
  */
-export function pickArtifact(
-  artifacts: Artifact[],
-  { branch, headSha, runId, force = false }: ArtifactQuery,
-): Artifact & { workflow_run: ArtifactRun } {
-  const candidates = artifacts
-    .filter(
-      (artifact): artifact is Artifact & { workflow_run: ArtifactRun } =>
-        artifact.name === ARTIFACT_NAME &&
-        !artifact.expired &&
-        artifact.workflow_run?.head_branch === branch &&
-        (runId === undefined || artifact.workflow_run.id === runId),
-    )
+export function ownRuns(runs: WorkflowRun[]): WorkflowRun[] {
+  return runs
+    .filter((run) => run.head_repository?.id === run.repository.id)
     .sort((a, b) => b.created_at.localeCompare(a.created_at));
-  const newest = candidates[0];
-  if (!newest) {
-    throw new Error(
-      `No ${ARTIFACT_NAME} artifact for ${branch}${runId === undefined ? "" : ` in run ${runId}`}. ` +
-        "A Tests run uploads one when screenshots change, and the Update VRT baselines workflow on demand; it expires after 7 days.",
-    );
-  }
-  if (!force && newest.workflow_run.head_sha !== headSha) {
-    throw new Error(
-      `The newest baselines for ${branch} were rendered from ${newest.workflow_run.head_sha.slice(0, 7)}, but HEAD is ${headSha.slice(0, 7)}. ` +
-        "Push HEAD and wait for its Tests run, or pass --force to take them anyway.",
-    );
-  }
-  return newest;
+}
+
+/**
+ * Unexpired baselines artifacts. A workflow that renders VRT in more than one
+ * job names each upload `vrt-baselines-<name>`, since artifact names are
+ * unique within a run.
+ */
+export function baselineArtifacts(artifacts: Artifact[]): string[] {
+  return artifacts
+    .filter(
+      ({ name, expired }) =>
+        !expired &&
+        (name === ARTIFACT_NAME || name.startsWith(`${ARTIFACT_NAME}-`)),
+    )
+    .map(({ name }) => name);
 }
 
 export function parseAcceptArguments(argv: string[]): {
@@ -197,36 +180,92 @@ function printAccepted(files: string[]): void {
   );
 }
 
+/**
+ * The runs to take baselines from: the given run, the branch's runs when
+ * forced, and otherwise the runs of the checked-out commit, so baselines
+ * rendered from another state of the branch are not committed by mistake.
+ */
+function candidateRuns(
+  repository: string,
+  headSha: string,
+  { runId, force }: { runId?: number | undefined; force: boolean },
+): { runs: WorkflowRun[]; scope: string } {
+  if (runId !== undefined) {
+    return {
+      runs: [
+        api<WorkflowRun>("GET", `/repos/${repository}/actions/runs/${runId}`)!,
+      ],
+      scope: `run ${runId}`,
+    };
+  }
+  let query = `head_sha=${headSha}`;
+  let scope = `HEAD (${headSha.slice(0, 7)})`;
+  if (force) {
+    const branch = git(["rev-parse", "--abbrev-ref", "HEAD"]);
+    if (branch === "HEAD") {
+      throw new Error("HEAD is detached; check out a branch or pass --run.");
+    }
+    query = `branch=${encodeURIComponent(branch)}`;
+    scope = `branch ${branch}`;
+  }
+  const { workflow_runs: runs } = api<{ workflow_runs: WorkflowRun[] }>(
+    "GET",
+    `/repos/${repository}/actions/runs?${query}&per_page=100`,
+  )!;
+  return { runs, scope };
+}
+
 /** Copy the baselines CI rendered for the checked-out commit into the tree. */
 function accept(argv: string[]): void {
   const { runId, force } = parseAcceptArguments(argv);
   const repository = getRepositoryName();
-  const branch = git(["rev-parse", "--abbrev-ref", "HEAD"]);
   const headSha = git(["rev-parse", "HEAD"]);
-  const { artifacts } = api<{ artifacts: Artifact[] }>(
-    "GET",
-    `/repos/${repository}/actions/artifacts?name=${ARTIFACT_NAME}&per_page=100`,
-  )!;
-  const artifact = pickArtifact(artifacts, { branch, headSha, runId, force });
-  const download = mkdtempSync(path.join(tmpdir(), "vrt-"));
-  try {
-    runCommand("gh", [
-      "run",
-      "download",
-      String(artifact.workflow_run.id),
-      "--repo",
-      repository,
-      "--name",
-      ARTIFACT_NAME,
-      "--dir",
-      download,
-    ]);
-    const files = listSnapshots(download);
-    copySnapshots(files, download, repositoryRoot);
-    printAccepted(files);
-  } finally {
-    rmSync(download, { recursive: true, force: true });
+  const { runs, scope } = candidateRuns(repository, headSha, { runId, force });
+  for (const run of ownRuns(runs)) {
+    const { artifacts } = api<{ artifacts: Artifact[] }>(
+      "GET",
+      `/repos/${repository}/actions/runs/${run.id}/artifacts?per_page=100`,
+    )!;
+    const names = baselineArtifacts(artifacts);
+    if (names.length === 0) continue;
+    if (run.head_sha !== headSha) {
+      console.warn(
+        `Taking baselines rendered from ${run.head_sha.slice(0, 7)}; HEAD is ${headSha.slice(0, 7)}.`,
+      );
+    }
+    const download = mkdtempSync(path.join(tmpdir(), "vrt-"));
+    try {
+      const files = new Set<string>();
+      for (const name of names) {
+        const directory = path.join(download, name);
+        runCommand("gh", [
+          "run",
+          "download",
+          String(run.id),
+          "--repo",
+          repository,
+          "--name",
+          name,
+          "--dir",
+          directory,
+        ]);
+        const found = listSnapshots(directory);
+        copySnapshots(found, directory, repositoryRoot);
+        for (const file of found) files.add(file);
+      }
+      printAccepted([...files].sort());
+    } finally {
+      rmSync(download, { recursive: true, force: true });
+    }
+    return;
   }
+  throw new Error(
+    `No ${ARTIFACT_NAME} artifact from a run of this repository for ${scope}. ` +
+      "A Tests run uploads one when screenshots change, and the Update VRT baselines workflow on demand; it expires after 7 days." +
+      (runId === undefined && !force
+        ? " Push HEAD and wait for its Tests run, or pass --force to take the branch's newest."
+        : ""),
+  );
 }
 
 /**
@@ -318,7 +357,12 @@ async function update(argv: string[]): Promise<void> {
       cause: error,
     });
   }
-  const files = git(["ls-files", "-z", "-co", "--exclude-standard"])
+  // Every path in the repository can outgrow the default 1 MiB output buffer.
+  const files = execFileSync(
+    "git",
+    ["ls-files", "-z", "-co", "--exclude-standard"],
+    { cwd: repositoryRoot, encoding: "utf8", maxBuffer: 256 * 1024 * 1024 },
+  )
     .split("\0")
     .filter((file) => {
       const full = path.join(repositoryRoot, file);
@@ -344,6 +388,9 @@ async function update(argv: string[]): Promise<void> {
         stdio: ["pipe", "pipe", "inherit"],
       },
     );
+    const tarDone = exitCode(tar);
+    // Awaited below; keep an early tar failure from being unhandled meanwhile.
+    tarDone.catch(() => undefined);
     tar.stdin.end(`${files.join("\0")}\0`);
     const docker = spawn(
       "docker",
@@ -384,16 +431,21 @@ async function update(argv: string[]): Promise<void> {
       { stdio: [tar.stdout, "inherit", "inherit"] },
     );
     // A failed render closes the pipe early, so its exit code explains more
-    // than tar's.
-    const [tarCode, dockerCode] = await Promise.all([
-      exitCode(tar),
-      exitCode(docker),
-    ]);
+    // than tar's, and tar is stopped instead of left writing to it.
+    let dockerCode: number | null;
+    try {
+      dockerCode = await exitCode(docker);
+    } catch (error) {
+      tar.kill();
+      throw error;
+    }
     if (dockerCode !== 0) {
+      tar.kill();
       throw new Error(
         `Rendering failed (exit code ${dockerCode}); see the output above.`,
       );
     }
+    const tarCode = await tarDone;
     if (tarCode !== 0) {
       throw new Error(`Packing the files failed (exit code ${tarCode}).`);
     }

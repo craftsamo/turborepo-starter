@@ -52,7 +52,7 @@ test.describe('visual regression', () => {
   test.skip(!isVrtPlatform, 'VRT baselines are rendered on Linux (CI); skipped elsewhere.');
   test.skip(
     isVrtPlatform && !isVrtUpdate && !hasVrtBaselines(__filename),
-    'No committed VRT baselines yet — run the "Update VRT baselines" workflow.',
+    'No committed VRT baselines yet — run `nps vrt.update`, or the "Update VRT baselines" workflow and `nps vrt.accept`.',
   );
 
   for (const colorScheme of ['light', 'dark'] as const) {

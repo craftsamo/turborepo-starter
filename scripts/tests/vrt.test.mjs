@@ -13,13 +13,14 @@ import { afterEach, beforeEach, describe, it } from "node:test";
 
 import {
   ARTIFACT_NAME,
+  baselineArtifacts,
   changedSnapshots,
   copySnapshots,
   isSnapshotPath,
   listSnapshots,
+  ownRuns,
   parseAcceptArguments,
   parseUpdateArguments,
-  pickArtifact,
   playwrightImage,
 } from "../vrt/main.mts";
 
@@ -138,57 +139,39 @@ describe("snapshot trees", () => {
   });
 });
 
-describe("pickArtifact", () => {
-  const artifact = (id, branch, sha, createdAt, extra = {}) => ({
+describe("ownRuns", () => {
+  const run = (id, createdAt, headRepository = 1) => ({
     id,
-    name: ARTIFACT_NAME,
-    expired: false,
     created_at: createdAt,
-    workflow_run: { id: id * 10, head_branch: branch, head_sha: sha },
-    ...extra,
-  });
-  const artifacts = [
-    artifact(1, "feat/a", "aaa", "2026-10-20T00:00:00Z"),
-    artifact(2, "feat/a", "bbb", "2026-10-21T00:00:00Z"),
-    artifact(3, "feat/a", "ccc", "2026-10-22T00:00:00Z", { expired: true }),
-    artifact(4, "feat/b", "bbb", "2026-10-23T00:00:00Z"),
-    artifact(5, "feat/a", "bbb", "2026-10-24T00:00:00Z", { name: "other" }),
-  ];
-
-  it("takes the newest unexpired artifact of the branch", () => {
-    assert.equal(
-      pickArtifact(artifacts, { branch: "feat/a", headSha: "bbb" }).id,
-      2,
-    );
+    head_sha: "aaa",
+    repository: { id: 1 },
+    head_repository: headRepository === null ? null : { id: headRepository },
   });
 
-  it("takes the artifact of a given run", () => {
-    assert.equal(
-      pickArtifact(artifacts, {
-        branch: "feat/a",
-        headSha: "aaa",
-        runId: 10,
-      }).id,
-      1,
+  it("keeps this repository's runs, newest first", () => {
+    assert.deepEqual(
+      ownRuns([
+        run(1, "2026-10-20T00:00:00Z"),
+        run(2, "2026-10-22T00:00:00Z", 2),
+        run(3, "2026-10-21T00:00:00Z"),
+        run(4, "2026-10-23T00:00:00Z", null),
+      ]).map(({ id }) => id),
+      [3, 1],
     );
   });
+});
 
-  it("refuses baselines rendered from another commit unless forced", () => {
-    assert.throws(
-      () => pickArtifact(artifacts, { branch: "feat/a", headSha: "ddd" }),
-      /rendered from bbb, but HEAD is ddd/,
-    );
-    assert.equal(
-      pickArtifact(artifacts, { branch: "feat/a", headSha: "ddd", force: true })
-        .id,
-      2,
-    );
-  });
-
-  it("explains where baselines come from when there are none", () => {
-    assert.throws(
-      () => pickArtifact(artifacts, { branch: "feat/c", headSha: "aaa" }),
-      /No vrt-baselines artifact for feat\/c/,
+describe("baselineArtifacts", () => {
+  it("takes the unexpired baselines artifacts, one or one per job", () => {
+    assert.deepEqual(
+      baselineArtifacts([
+        { name: ARTIFACT_NAME, expired: false },
+        { name: `${ARTIFACT_NAME}-admin`, expired: false },
+        { name: `${ARTIFACT_NAME}-old`, expired: true },
+        { name: "web-playwright-artifacts", expired: false },
+        { name: `${ARTIFACT_NAME}x`, expired: false },
+      ]),
+      [ARTIFACT_NAME, `${ARTIFACT_NAME}-admin`],
     );
   });
 });

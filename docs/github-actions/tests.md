@@ -99,7 +99,8 @@ job then runs:
    - Runs the unit/component test suite for the target
 
 The E2E job runs in the official Playwright Docker image of the version that
-`pnpm-lock.yaml` resolves (`node scripts/vrt/main.mts image`). The image ships
+`pnpm-lock.yaml` resolves (`node scripts/vrt/main.mts image`), which must be a
+single `playwright` version across the workspace. The image ships
 Chromium and its fonts, so screenshots render the same wherever it runs. The
 job independently prunes the web workspace and runs
 `nps test.ci.web.e2e.all`. Turbo builds the web app before Playwright and then
@@ -112,9 +113,14 @@ When E2E fails, the job also renders the VRT baselines again with
 `--update-snapshots=changed`. If any screenshot is new or differs from the
 committed baseline, it uploads those images as the `vrt-baselines` artifact
 and lists them in the job summary. When the change is intended, run
-`nps vrt.accept` on the branch: it copies the artifact of the newest run for
-the checked-out commit into the tree, so you can review the images, commit
-them, and push.
+`nps vrt.accept` on the branch: it copies the artifact of this repository's
+newest run for the checked-out commit into the tree, so you can review the
+images, commit them, and push. `--force` takes the branch's newest artifact
+instead, and `--run <id>` a given run's; runs from forks are never used. A
+pull request run renders the pull request merged into its base, so the images
+also show base changes the branch does not have yet. A workflow that renders
+VRT in more than one job names each upload `vrt-baselines-<name>`; `accept`
+takes all of them.
 
 To render the baselines before pushing instead, run `nps vrt.update` with
 Docker running. It packs the files git tracks or would track, prunes, installs
