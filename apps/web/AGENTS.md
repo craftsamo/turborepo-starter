@@ -133,9 +133,9 @@ Three layers with distinct responsibilities (see the root AGENTS.md "Test
 Layer Responsibilities"): Vitest/jsdom for semantics and behavior (never
 layout), `e2e/layout.spec.ts` for geometry invariants via the
 `@workspace/playwright` helpers, and `e2e/vrt.spec.ts` for visual regression
-against Linux-rendered baselines (skipped locally on other platforms; refresh
-via the "Update VRT baselines" workflow). New routes must be added to the
-route lists in both `e2e/layout.spec.ts` and `e2e/vrt.spec.ts` — the
+against Linux-rendered baselines (skipped locally on other platforms; bring in
+the baselines CI rendered with `nps vrt.accept`). New routes must be added to
+the route lists in both `e2e/layout.spec.ts` and `e2e/vrt.spec.ts` — the
 `add-e2e-test` skill covers the workflow.
 
 Run tests with:

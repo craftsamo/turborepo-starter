@@ -92,7 +92,8 @@ that can actually observe the failure it guards against:
   filling the screen.
 - **Playwright VRT** (`e2e/vrt.spec.ts`) — pixel comparison against committed
   baselines per route x viewport x color scheme. Baselines render on Linux
-  (CI) only; regenerate them with the "Update VRT baselines" workflow.
+  (CI) only; when screenshots change, CI uploads the new ones and
+  `nps vrt.accept` copies them into the branch for review.
 
 **Definition of done**: a change touching layout, chrome, breakpoints, or
 theming is not covered until a geometry invariant and/or VRT shot exercises

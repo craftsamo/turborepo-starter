@@ -1,7 +1,7 @@
 ---
 name: add-e2e-test
 description: |-
-  Use when adding or updating Playwright E2E coverage for a browser app — functional flows, layout geometry invariants (overflow, chrome, scrolling, snap), or visual regression (VRT) baselines — and when wiring a new route or a new browser app into the E2E safety net. Covers the @workspace/playwright config factory and helpers, the layout.spec.ts / vrt.spec.ts patterns, Linux-only VRT baselines, and the "Update VRT baselines" workflow. Trigger keywords: "e2e", "playwright", "layout test", "geometry invariant", "VRT", "visual regression", "screenshot test", "baseline".
+  Use when adding or updating Playwright E2E coverage for a browser app — functional flows, layout geometry invariants (overflow, chrome, scrolling, snap), or visual regression (VRT) baselines — and when wiring a new route or a new browser app into the E2E safety net. Covers the @workspace/playwright config factory and helpers, the layout.spec.ts / vrt.spec.ts patterns, Linux-only VRT baselines, and accepting CI-rendered baselines with `nps vrt.accept`. Trigger keywords: "e2e", "playwright", "layout test", "geometry invariant", "VRT", "visual regression", "screenshot test", "baseline".
 license: MIT
 compatibility: opencode
 metadata:
@@ -42,8 +42,10 @@ the root AGENTS.md.
   - `layout.spec.ts` — geometry invariants per route x viewport.
   - `vrt.spec.ts` — screenshot comparison per route x viewport x color scheme.
 - Baselines: `apps/web/e2e/vrt.spec.ts-snapshots/` (Linux-rendered, committed).
-- Baseline refresh: `.github/workflows/update-vrt-baselines.yml`
-  (workflow_dispatch → PR with regenerated images).
+- Baseline refresh: a failing `e2e` job in `.github/workflows/tests.yml`, or
+  `.github/workflows/update-vrt-baselines.yml` (workflow_dispatch), uploads
+  the changed images as the `vrt-baselines` artifact; `nps vrt.accept`
+  (`scripts/vrt/main.mts`) copies it into the branch.
 
 </Scope>
 
@@ -72,10 +74,12 @@ the root AGENTS.md.
 
 4. **Baselines**: VRT compares only on Linux (`isVrtPlatform`) because font
    rasterization differs per OS; other platforms skip. After adding shots or
-   landing an intentional visual change, run the **"Update VRT baselines"**
-   workflow (Actions → workflow_dispatch) and merge the PR it opens. Until
+   making an intentional visual change, push: the CI `e2e` job fails on the
+   new or changed screenshots, renders them again, and uploads them. Run
+   `nps vrt.accept` on the branch, review the images, commit, and push. Until
    baselines exist for the spec, it skips (`hasVrtBaselines`) instead of
-   failing.
+   failing; seed them with the **"Update VRT baselines"** workflow
+   (Actions → workflow_dispatch) and `nps vrt.accept`.
 
 5. **New browser app?** Call `createPlaywrightConfig()` from the app's
    `playwright.config.ts` with a distinct `portEnvVar` / `defaultPort` (Turbo
@@ -123,7 +127,7 @@ Routing by change type:
 | New chrome / layout primitive | Helper in `@workspace/playwright` + specs |
 | New interaction flow | Functional spec (+ Vitest for component behavior) |
 | Critical in-page arrangement | Route-specific assertion in `layout.spec.ts` |
-| Style-only change | No new tests — refresh VRT baselines via the workflow |
+| Style-only change | No new tests — accept the CI-rendered VRT baselines |
 
 </WhatToAssert>
 
@@ -143,7 +147,7 @@ Routing by change type:
 - Do NOT write screenshot assertions outside the `vrt` helper / tolerances —
   ad-hoc `toHaveScreenshot` calls without the fonts/images wait flake.
 - Do NOT generate or commit VRT baselines from macOS/Windows — they will fail
-  in CI; only the workflow (Linux) produces valid baselines.
+  in CI; only images CI rendered (`nps vrt.accept`) are valid baselines.
 - Do NOT add a route without extending BOTH `layout.spec.ts` and
   `vrt.spec.ts` — an uncovered route reintroduces the "tests pass but layout
   breaks" gap this layer exists to close.

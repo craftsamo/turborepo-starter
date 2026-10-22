@@ -104,6 +104,14 @@ runs the desktop, tablet, and mobile Chromium projects. If E2E fails, the job
 uploads `web-playwright-artifacts` containing the HTML report, screenshots,
 videos, and traces that Playwright produced.
 
+When E2E fails, the job also renders the VRT baselines again with
+`--update-snapshots=changed`. If any screenshot is new or differs from the
+committed baseline, it uploads those images as the `vrt-baselines` artifact
+and lists them in the job summary. When the change is intended, run
+`nps vrt.accept` on the branch: it copies the artifact of the newest run for
+the checked-out commit into the tree, so you can review the images, commit
+them, and push.
+
 The `Required checks` job requires `script-tests` to succeed when script paths
 changed, and both the unit/component job and the E2E job to succeed when web
 paths changed. Live tests against external deployments are opt-in and are

@@ -74,12 +74,11 @@ Setup enables Actions with a read-only default `GITHUB_TOKEN` and permits only
 GitHub-owned actions plus the third-party actions used by this starter. A test
 fails when a workflow uses a third-party action missing from that allowlist.
 
-It also allows Actions to create pull requests, which `/oc build` and the
-Update VRT baselines workflow need. GitHub grants creating and approving pull
-requests through the same setting. The OpenCode workflow only posts comment
-reviews and never approves, and the managed Ruleset requires no approvals. If
-you require approvals, keep in mind that a workflow could approve a pull
-request.
+It also allows Actions to create pull requests, which `/oc build` needs.
+GitHub grants creating and approving pull requests through the same setting.
+The OpenCode workflow only posts comment reviews and never approves, and the
+managed Ruleset requires no approvals. If you require approvals, keep in mind
+that a workflow could approve a pull request.
 
 Artifacts and logs are kept for 30 days, or for the organization's maximum
 when it is shorter.

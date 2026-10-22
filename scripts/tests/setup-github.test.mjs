@@ -156,7 +156,6 @@ describe("Actions settings", () => {
       "dorny/paths-filter@*",
       "release-drafter/release-drafter@*",
       "micnncim/action-label-syncer@*",
-      "peter-evans/create-pull-request@*",
     ]);
     assert.deepEqual(settings.workflow, {
       default_workflow_permissions: "read",

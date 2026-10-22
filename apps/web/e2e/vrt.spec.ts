@@ -8,9 +8,10 @@ import { hasVrtBaselines, isVrtPlatform, isVrtUpdate, vrt } from '@workspace/pla
  * dark-mode rendering.
  *
  * Baselines live in `vrt.spec.ts-snapshots/` and are rendered on Linux (CI)
- * only — font rasterization differs per OS, so other platforms skip. To
- * create or refresh baselines, run the "Update VRT baselines" workflow
- * (workflow_dispatch), which opens a PR with the regenerated images.
+ * only — font rasterization differs per OS, so other platforms skip. When
+ * screenshots change, the failing CI run uploads the new images; bring them
+ * into the branch with `nps vrt.accept`. To seed baselines, run the "Update
+ * VRT baselines" workflow (workflow_dispatch), then `nps vrt.accept`.
  */
 
 const shots: ReadonlyArray<{
