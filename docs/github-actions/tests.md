@@ -38,6 +38,13 @@ changed.
 | e2e             | Run Playwright against the built web app  | Runs for web changes     |
 | Required checks | Aggregate the required results for `main` | Always runs              |
 
+### Superseded Runs
+
+A new push to a pull request cancels the run still in progress for it, since
+that run no longer checks the pull request's head. Pushes to `main` are not
+cancelled: they wait for the running check, and only the newest waiting run is
+kept, so the latest `main` commit is always checked.
+
 ### Change Detection
 
 The workflow uses [dorny/paths-filter](https://github.com/dorny/paths-filter) to

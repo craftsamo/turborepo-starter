@@ -24,6 +24,13 @@ permissions:
   contents: read
   pull-requests: read
 
+# A new push to a pull request cancels its running checks, which no longer
+# match its head. Pushes to main wait instead, and only the newest waiting run
+# is kept, so the latest main commit is always checked.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 env:
   # Let Corepack download the pinned pnpm without an interactive prompt in CI.
   COREPACK_ENABLE_DOWNLOAD_PROMPT: 0

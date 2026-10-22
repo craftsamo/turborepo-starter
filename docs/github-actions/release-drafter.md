@@ -27,6 +27,10 @@ requests and commits to the `main` branch using the
 5. **Generate**: Create or update draft release notes
 6. **Resolve Version**: Calculate version bump based on labels
 
+A newer run for the same pull request or branch cancels the one still in
+progress, since each run rebuilds the draft and the labels from the current
+state.
+
 ### Release Naming
 
 | Component    | Format               | Example              |
