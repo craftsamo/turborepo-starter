@@ -31,6 +31,12 @@ A newer run for the same pull request or branch cancels the one still in
 progress, since each run rebuilds the draft and the labels from the current
 state.
 
+In a stack, a push to a pull request between the lowest unmerged and the top
+ones skips the job, because a stack rebase pushes all of them at once. A
+middle pull request is labeled when it is opened and again once it becomes
+the lowest. See
+[Stacked Pull Requests](tests.md#stacked-pull-requests).
+
 ### Release Naming
 
 | Component    | Format               | Example              |

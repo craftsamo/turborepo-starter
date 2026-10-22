@@ -54,9 +54,23 @@ jobs:
       web: ${{ steps.force.outputs.web || steps.filter.outputs.web }}
     steps:
       - uses: actions/checkout@v7
+      # A stack runs this workflow for every pull request in it. The app checks
+      # run only on the lowest unmerged one, which merges next, and the top one,
+      # which holds every change in the stack. A middle one runs them once the
+      # pull requests below it merge and it is rebased onto the stack base.
+      - name: Skip the app checks in the middle of a stack
+        id: stack
+        if: >-
+          github.event.pull_request.stack != null &&
+          github.event.pull_request.stack.base.ref != github.event.pull_request.base.ref &&
+          github.event.pull_request.stack.position != github.event.pull_request.stack.size
+        env:
+          POSITION: ${{ github.event.pull_request.stack.position }}
+          SIZE: ${{ github.event.pull_request.stack.size }}
+        run: echo "::notice::Pull request $POSITION of $SIZE in a stack. The app checks run on the lowest unmerged and the top pull requests."
       - uses: dorny/paths-filter@v4
         id: filter
-        if: github.event_name != 'workflow_dispatch'
+        if: github.event_name != 'workflow_dispatch' && steps.stack.outcome == 'skipped'
         with:
           filters: |
             web:
