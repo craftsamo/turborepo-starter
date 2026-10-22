@@ -9,6 +9,7 @@ import { parseModelList } from "../../ci/opencode/models.mts";
 import {
   buildActionsSettings,
   buildBranchProtection,
+  buildCacheRetentionSettings,
   buildDependabotSettings,
   buildMainRuleset,
   buildRepositorySettings,
@@ -27,6 +28,8 @@ import type {
   ActionsSettings,
   ActionsState,
   BranchProtectionInput,
+  CacheRetentionSettings,
+  CacheRetentionState,
   CurrentLabel,
   DependabotSettings,
   Label,
@@ -416,6 +419,42 @@ function applyRetention(repository: string, settings: RetentionSettings): void {
   );
 }
 
+function getCacheRetentionState(
+  repository: string,
+): CacheRetentionState | undefined {
+  try {
+    return api<CacheRetentionState>(
+      "GET",
+      `/repos/${repository}/actions/cache/retention-limit`,
+    );
+  } catch (error) {
+    if (isHttpStatus(error, 403, 404)) return undefined;
+    throw error;
+  }
+}
+
+// An organization or enterprise may cap cache retention below the starter's
+// value; GitHub reports the cap only by rejecting the request, so keep the
+// current value instead of stopping setup.
+export function applyCacheRetention(
+  repository: string,
+  settings: CacheRetentionSettings,
+  request: ApiRequest = api,
+): void {
+  try {
+    request(
+      "PUT",
+      `/repos/${repository}/actions/cache/retention-limit`,
+      settings,
+    );
+  } catch (error) {
+    if (!isHttpStatus(error, 400, 403, 422)) throw error;
+    console.warn(
+      `Actions cache retention could not be set to ${settings.max_cache_retention_days} days; an organization or enterprise policy may cap it. Kept the current value.`,
+    );
+  }
+}
+
 const delay = (milliseconds: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, milliseconds));
 
@@ -622,6 +661,9 @@ export async function setupRepository(args: SetupArguments): Promise<void> {
     const retentionSettings =
       retentionState &&
       buildRetentionSettings(retentionState.maximum_allowed_days);
+    const cacheRetentionState = getCacheRetentionState(repository);
+    const cacheRetentionSettings =
+      cacheRetentionState && buildCacheRetentionSettings();
     const securityState = (state.security_and_analysis ??
       {}) as SecurityAndAnalysisState;
     const securitySettings = buildSecurityAndAnalysis();
@@ -656,6 +698,16 @@ export async function setupRepository(args: SetupArguments): Promise<void> {
     } else {
       console.warn(
         "\nArtifact and log retention cannot be read for this repository; skipped.",
+      );
+    }
+    if (cacheRetentionSettings) {
+      printDiff(
+        "Actions cache retention",
+        diffObject(cacheRetentionState, cacheRetentionSettings),
+      );
+    } else {
+      console.warn(
+        "\nActions cache retention cannot be read for this repository; skipped.",
       );
     }
     printDiff("Secret scanning", diffObject(securityState, securitySettings));
@@ -707,6 +759,9 @@ export async function setupRepository(args: SetupArguments): Promise<void> {
     // any other setting changes.
     applyActionsSettings(repository, actionsSettings);
     if (retentionSettings) applyRetention(repository, retentionSettings);
+    if (cacheRetentionSettings) {
+      applyCacheRetention(repository, cacheRetentionSettings);
+    }
     api("PATCH", `/repos/${repository}`, repositorySettings);
     applySecurityAndAnalysis(repository, securitySettings);
     applyDependabot(repository, dependabotState, dependabotSettings);

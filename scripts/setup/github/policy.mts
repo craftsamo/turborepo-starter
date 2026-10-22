@@ -122,6 +122,14 @@ export interface RetentionSettings {
   days: number;
 }
 
+export interface CacheRetentionState {
+  max_cache_retention_days?: number;
+}
+
+export interface CacheRetentionSettings {
+  max_cache_retention_days: number;
+}
+
 type FeatureStatus = { status: "enabled" | "disabled" };
 
 export interface SecurityAndAnalysisSettings {
@@ -269,6 +277,10 @@ const ALLOWED_ACTION_PATTERNS = [
   "micnncim/action-label-syncer@*",
 ];
 const ARTIFACT_RETENTION_DAYS = 30;
+// GitHub drops a cache unused for 7 days. Three still spans a weekend, and
+// drops the caches of merged branches before they crowd out main's in the
+// repository's 10 GB cache quota.
+const CACHE_RETENTION_DAYS = 3;
 const LABEL_RENAMES = new Map([["💬quesion", "💬question"]]);
 
 export function parseArguments(argv: string[]): SetupArguments {
@@ -396,6 +408,10 @@ export function buildRetentionSettings(
       ? Math.min(ARTIFACT_RETENTION_DAYS, maximumAllowedDays)
       : ARTIFACT_RETENTION_DAYS,
   };
+}
+
+export function buildCacheRetentionSettings(): CacheRetentionSettings {
+  return { max_cache_retention_days: CACHE_RETENTION_DAYS };
 }
 
 export function buildSecurityAndAnalysis(): SecurityAndAnalysisSettings {
