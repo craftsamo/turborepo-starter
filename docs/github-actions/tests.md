@@ -19,24 +19,25 @@ changed.
 ### Process
 
 1. **Trigger**: Push/PR to `main` or manual dispatch
-2. **Filter**: Detect application, package, workflow, and root toolchain changes
-3. **Setup**: Install Node.js 24.x, cache dependencies, lint, and typecheck
-4. **Prepare**: Prune monorepo and install dependencies (CI mode)
-5. **Build**: Build the application for unit/component tests
-6. **Test**: Run the unit/component test suite
-7. **E2E**: Install Chromium, build through Turbo, and run Playwright
-8. **Required checks**: Aggregate required jobs into one Ruleset-compatible result
+2. **Filter**: Detect script and web changes
+3. **Script tests**: Typecheck and test the repository scripts
+4. **Setup**: Install Node.js 24.x, cache dependencies, lint, and typecheck
+5. **Prepare**: Prune monorepo and install dependencies (CI mode)
+6. **Build**: Build the application for unit/component tests
+7. **Test**: Run the unit/component test suite
+8. **E2E**: Install Chromium, build through Turbo, and run Playwright
+9. **Required checks**: Aggregate required jobs into one Ruleset-compatible result
 
 ### Job Structure
 
-| Job             | Purpose                                   | Conditions               |
-| --------------- | ----------------------------------------- | ------------------------ |
-| script-tests    | Test repository automation scripts        | Always runs              |
-| changes         | Detect file changes in relevant paths     | Always runs              |
-| setup           | Install, lint, and typecheck              | Runs if changes detected |
-| test            | Build and test the application            | Runs if setup succeeds   |
-| e2e             | Run Playwright against the built web app  | Runs for web changes     |
-| Required checks | Aggregate the required results for `main` | Always runs              |
+| Job             | Purpose                                   | Conditions              |
+| --------------- | ----------------------------------------- | ----------------------- |
+| changes         | Detect file changes in relevant paths     | Always runs             |
+| script-tests    | Typecheck and test repository scripts     | Runs for script changes |
+| setup           | Install, lint, and typecheck              | Runs for web changes    |
+| test            | Build and test the application            | Runs if setup succeeds  |
+| e2e             | Run Playwright against the built web app  | Runs for web changes    |
+| Required checks | Aggregate the required results for `main` | Always runs             |
 
 ### Superseded Runs
 
@@ -49,26 +50,29 @@ kept, so the latest `main` commit is always checked.
 
 GitHub runs this workflow for every pull request in a stack, because each one
 counts as targeting the stack base. A stack rebase pushes all of them at once,
-so the `setup`, `test`, and `e2e` jobs run only on two of them:
+so `script-tests`, `setup`, `test`, and `e2e` run only on two of them:
 
 - **Lowest unmerged**: the pull request that targets the stack base directly
   and merges next.
 - **Top**: the last pull request, which holds every change in the stack.
 
 The `changes` job reports no changes for the pull requests in between, and
-`Required checks` passes for them on `script-tests` and `changes` alone. Once
-the pull requests below one merge, GitHub rebases it onto the stack base and
-it runs the full checks as the new lowest. Pull requests outside a stack
-always run the full checks.
+`Required checks` passes for them on `changes` alone. Once the pull requests
+below one merge, GitHub rebases it onto the stack base and it runs the full
+checks as the new lowest. Pull requests outside a stack always run the full
+checks.
 
 ### Change Detection
 
 The workflow uses [dorny/paths-filter](https://github.com/dorny/paths-filter) to
 detect changes:
 
-| Target | Paths Monitored                                                                          |
-| ------ | ---------------------------------------------------------------------------------------- |
-| web    | `apps/web/**`, `packages/**`, `scripts/**`, the tests workflow, and root toolchain files |
+| Target  | Paths Monitored                                                                                             |
+| ------- | ----------------------------------------------------------------------------------------------------------- |
+| scripts | `scripts/**` and the files their tests read: the workflows, the OpenCode agents and config, and `README.md` |
+| web     | `apps/web/**`, `packages/**`, the tests workflow, and root toolchain files                                  |
+
+Both targets also watch `package.json` and `package-scripts.js`.
 
 Tests only run for a target if changes are detected in its monitored paths.
 Manual dispatches run all targets so repository setup can verify the required
@@ -76,8 +80,10 @@ status check before protecting `main`.
 
 ### Commands Executed
 
-The setup job runs `nps lint` and `nps typecheck` for the complete workspace.
-For each affected application/package, the test job then runs:
+The script-tests job installs dependencies, then runs `nps typecheck.scripts`
+and `nps test.ci.scripts`. The setup job runs `nps lint` and `nps typecheck`
+for the complete workspace. For each affected application/package, the test
+job then runs:
 
 1. **Prepare (CI)**: `nps prepare.ci.{target}`
    - Prunes monorepo to specific scope
@@ -95,9 +101,10 @@ runs the desktop, tablet, and mobile Chromium projects. If E2E fails, the job
 uploads `web-playwright-artifacts` containing the HTML report, screenshots,
 videos, and traces that Playwright produced.
 
-The `Required checks` job requires both the unit/component job and the E2E job
-to succeed when web paths changed. Live tests against external deployments are
-opt-in and are never part of this workflow.
+The `Required checks` job requires `script-tests` to succeed when script paths
+changed, and both the unit/component job and the E2E job to succeed when web
+paths changed. Live tests against external deployments are opt-in and are
+never part of this workflow.
 
 ### Caching Strategy
 
