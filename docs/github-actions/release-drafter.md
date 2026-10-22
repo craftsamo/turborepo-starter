@@ -4,8 +4,7 @@
 
 ## Prerequisites
 
-- Pull requests must be **opened, reopened, or synchronized** against `main`
-  branch
+- Pull requests must be **opened or reopened**, against any base branch
 - Or pushes to `main` branch
 - Pull requests must have labels matching the configuration in
   `.github/release-drafter.yml`
@@ -19,7 +18,7 @@ requests and commits to the `main` branch using the
 
 ### Process
 
-1. **Trigger**: PR opened/reopened/synchronized or push to `main`
+1. **Trigger**: PR opened/reopened (labels only) or push to `main` (draft only)
 2. **Analyze**: Review PR labels and branch naming patterns
 3. **Categorize**: Group changes by category (Features, Enhancements, Bug Fixes,
    Documentation)
@@ -31,11 +30,15 @@ A newer run for the same pull request or branch cancels the one still in
 progress, since each run rebuilds the draft and the labels from the current
 state.
 
-In a stack, a push to a pull request between the lowest unmerged and the top
-ones skips the job, because a stack rebase pushes all of them at once. A
-middle pull request is labeled when it is opened and again once it becomes
-the lowest. See
-[Stacked Pull Requests](tests.md#stacked-pull-requests).
+Labels follow the branch name, which a later push does not change, so a push
+to a pull request does not run the workflow. The `.md` rule below looks at the
+files when the pull request is opened.
+
+A pull request run only applies labels, whatever the base branch: a stack
+opens each upper pull request on the branch below it and links it to the stack
+only afterwards, so a `main` filter would miss it. Only pushes to `main`
+redraft the release; a draft built from a pull request run would target the
+pull request's merge ref instead of `main`.
 
 ### Release Naming
 
@@ -68,8 +71,8 @@ Version bumps are determined by labels on pull requests:
 
 ### Auto-labeling Rules
 
-Labels are automatically applied based on branch naming patterns or file
-changes:
+Labels are automatically applied when a pull request is opened or reopened,
+based on branch naming patterns or file changes:
 
 1. **Feature**: Branch name starts with `feat/`
 2. **Enhancement**: Branch name starts with `enhance/`, `improve/`, or

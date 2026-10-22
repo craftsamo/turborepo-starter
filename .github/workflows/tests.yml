@@ -16,6 +16,9 @@ on:
       - "pnpm-workspace.yaml"
       - "scripts/**"
       - "turbo.json"
+      # Markdown under the apps and the packages is documentation.
+      - "!apps/**/*.md"
+      - "!packages/**/*.md"
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -36,29 +39,18 @@ env:
   COREPACK_ENABLE_DOWNLOAD_PROMPT: 0
 
 jobs:
-  script-tests:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - name: Use Node.js 24.x
-        uses: actions/setup-node@v7
-        with:
-          node-version: 24.x
-          package-manager-cache: false
-      - name: Test repository scripts
-        run: npx nps test.ci.scripts
-
   changes:
     runs-on: ubuntu-latest
     outputs:
+      scripts: ${{ steps.force.outputs.scripts || steps.filter.outputs.scripts }}
       web: ${{ steps.force.outputs.web || steps.filter.outputs.web }}
     steps:
       - uses: actions/checkout@v7
-      # A stack runs this workflow for every pull request in it. The app checks
-      # run only on the lowest unmerged one, which merges next, and the top one,
+      # A stack runs this workflow for every pull request in it. The checks run
+      # only on the lowest unmerged one, which merges next, and the top one,
       # which holds every change in the stack. A middle one runs them once the
       # pull requests below it merge and it is rebased onto the stack base.
-      - name: Skip the app checks in the middle of a stack
+      - name: Skip the checks in the middle of a stack
         id: stack
         if: >-
           github.event.pull_request.stack != null &&
@@ -67,12 +59,27 @@ jobs:
         env:
           POSITION: ${{ github.event.pull_request.stack.position }}
           SIZE: ${{ github.event.pull_request.stack.size }}
-        run: echo "::notice::Pull request $POSITION of $SIZE in a stack. The app checks run on the lowest unmerged and the top pull requests."
+        run: echo "::notice::Pull request $POSITION of $SIZE in a stack. The checks run on the lowest unmerged and the top pull requests."
       - uses: dorny/paths-filter@v4
         id: filter
         if: github.event_name != 'workflow_dispatch' && steps.stack.outcome == 'skipped'
         with:
+          # A file counts when it matches a pattern and no '!' pattern.
+          predicate-quantifier: some-with-excludes
           filters: |
+            # The repository scripts and every file their tests read.
+            scripts:
+              - '.github/opencode/**'
+              - '.github/workflows/**'
+              - '.opencode/{agent,agents,mode,modes}/**'
+              - '.opencode/opencode.{json,jsonc}'
+              - 'opencode.{json,jsonc}'
+              - 'package.json'
+              - 'package-scripts.js'
+              - 'README.md'
+              - 'scripts/**'
+            # The app, the packages it builds from, and the toolchain. Their
+            # Markdown is documentation; drop the exclusion if a build reads it.
             web:
               - '.github/workflows/tests.yml'
               - 'apps/web/**'
@@ -81,12 +88,45 @@ jobs:
               - 'packages/**'
               - 'pnpm-lock.yaml'
               - 'pnpm-workspace.yaml'
-              - 'scripts/**'
               - 'turbo.json'
+              - '!**/*.md'
       - name: Run all checks for manual dispatch
         id: force
         if: github.event_name == 'workflow_dispatch'
-        run: echo "web=true" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "scripts=true" >> "$GITHUB_OUTPUT"
+          echo "web=true" >> "$GITHUB_OUTPUT"
+
+  script-tests:
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.scripts == 'true'
+    steps:
+      - uses: actions/checkout@v7
+      - name: Use Node.js 24.x
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24.x
+          package-manager-cache: false
+      - name: Enable Corepack
+        run: corepack enable
+      - name: Get pnpm store directory
+        id: pnpm-store
+        run: echo "dir=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+      - name: Cache pnpm store
+        uses: actions/cache@v6
+        with:
+          path: ${{ steps.pnpm-store.outputs.dir }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+      - run: pnpm install --frozen-lockfile
+      # The setup job runs only for app changes, so the scripts are
+      # typechecked here too.
+      - name: Typecheck repository scripts
+        run: npx nps typecheck.scripts
+      - name: Test repository scripts
+        run: npx nps test.ci.scripts
 
   setup:
     runs-on: ubuntu-latest
@@ -206,19 +246,24 @@ jobs:
   required-checks:
     name: Required checks
     if: always()
-    needs: [script-tests, changes, setup, test, e2e]
+    needs: [changes, script-tests, setup, test, e2e]
     runs-on: ubuntu-latest
     steps:
       - name: Verify required jobs
         env:
-          SCRIPT_TESTS_RESULT: ${{ needs.script-tests.result }}
           CHANGES_RESULT: ${{ needs.changes.result }}
+          SCRIPTS_CHANGED: ${{ needs.changes.outputs.scripts }}
+          SCRIPT_TESTS_RESULT: ${{ needs.script-tests.result }}
           WEB_CHANGED: ${{ needs.changes.outputs.web }}
           SETUP_RESULT: ${{ needs.setup.result }}
           TEST_RESULT: ${{ needs.test.result }}
           E2E_RESULT: ${{ needs.e2e.result }}
         run: |
-          if [[ "$SCRIPT_TESTS_RESULT" != "success" || "$CHANGES_RESULT" != "success" ]]; then
+          if [[ "$CHANGES_RESULT" != "success" ]]; then
+            exit 1
+          fi
+
+          if [[ "$SCRIPTS_CHANGED" == "true" && "$SCRIPT_TESTS_RESULT" != "success" ]]; then
             exit 1
           fi
 
