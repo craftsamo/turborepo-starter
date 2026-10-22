@@ -18,6 +18,7 @@ import {
   isSnapshotPath,
   listSnapshots,
   parseAcceptArguments,
+  parseUpdateArguments,
   pickArtifact,
   playwrightImage,
 } from "../vrt/main.mts";
@@ -204,5 +205,13 @@ describe("parseAcceptArguments", () => {
   it("rejects a bad run or flag", () => {
     assert.throws(() => parseAcceptArguments(["--run", "x"]), /--run requires/);
     assert.throws(() => parseAcceptArguments(["--yes"]), /Unknown argument/);
+  });
+});
+
+describe("parseUpdateArguments", () => {
+  it("renders the changed baselines unless asked for all", () => {
+    assert.deepEqual(parseUpdateArguments([]), { all: false });
+    assert.deepEqual(parseUpdateArguments(["--all"]), { all: true });
+    assert.throws(() => parseUpdateArguments(["--yes"]), /Unknown argument/);
   });
 });

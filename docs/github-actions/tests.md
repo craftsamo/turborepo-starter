@@ -115,6 +115,12 @@ and lists them in the job summary. When the change is intended, run
 the checked-out commit into the tree, so you can review the images, commit
 them, and push.
 
+To render the baselines before pushing instead, run `nps vrt.update` with
+Docker running. It packs the files git tracks or would track, prunes, installs
+and builds the web app in the same Playwright image (as `linux/amd64`, like the
+runners), and copies the new or changed baselines into the tree. Pass `--all`
+(`nps "vrt.update --all"`) to rewrite every baseline.
+
 The `Required checks` job requires `script-tests` to succeed when script paths
 changed, and both the unit/component job and the E2E job to succeed when web
 paths changed. Live tests against external deployments are opt-in and are

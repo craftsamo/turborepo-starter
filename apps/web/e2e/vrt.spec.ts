@@ -10,7 +10,8 @@ import { hasVrtBaselines, isVrtPlatform, isVrtUpdate, vrt } from '@workspace/pla
  * Baselines live in `vrt.spec.ts-snapshots/` and are rendered on Linux (CI)
  * only — font rasterization differs per OS, so other platforms skip. When
  * screenshots change, the failing CI run uploads the new images; bring them
- * into the branch with `nps vrt.accept`. To seed baselines, run the "Update
+ * into the branch with `nps vrt.accept`, or render them before pushing with
+ * `nps vrt.update` (Docker). To seed baselines without Docker, run the "Update
  * VRT baselines" workflow (workflow_dispatch), then `nps vrt.accept`.
  */
 

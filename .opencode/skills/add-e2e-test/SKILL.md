@@ -45,7 +45,9 @@ the root AGENTS.md.
 - Baseline refresh: a failing `e2e` job in `.github/workflows/tests.yml`, or
   `.github/workflows/update-vrt-baselines.yml` (workflow_dispatch), uploads
   the changed images as the `vrt-baselines` artifact; `nps vrt.accept`
-  (`scripts/vrt/main.mts`) copies it into the branch.
+  (`scripts/vrt/main.mts`) copies it into the branch. `nps vrt.update` renders
+  them locally in the same Playwright Docker image (`linux/amd64`) before
+  pushing.
 
 </Scope>
 
@@ -79,7 +81,8 @@ the root AGENTS.md.
    `nps vrt.accept` on the branch, review the images, commit, and push. Until
    baselines exist for the spec, it skips (`hasVrtBaselines`) instead of
    failing; seed them with the **"Update VRT baselines"** workflow
-   (Actions → workflow_dispatch) and `nps vrt.accept`.
+   (Actions → workflow_dispatch) and `nps vrt.accept`. With Docker running,
+   `nps vrt.update` does either without a CI round trip.
 
 5. **New browser app?** Call `createPlaywrightConfig()` from the app's
    `playwright.config.ts` with a distinct `portEnvVar` / `defaultPort` (Turbo
@@ -147,7 +150,8 @@ Routing by change type:
 - Do NOT write screenshot assertions outside the `vrt` helper / tolerances —
   ad-hoc `toHaveScreenshot` calls without the fonts/images wait flake.
 - Do NOT generate or commit VRT baselines from macOS/Windows — they will fail
-  in CI; only images CI rendered (`nps vrt.accept`) are valid baselines.
+  in CI; only images rendered in the Playwright image (`nps vrt.accept`,
+  `nps vrt.update`) are valid baselines.
 - Do NOT add a route without extending BOTH `layout.spec.ts` and
   `vrt.spec.ts` — an uncovered route reintroduces the "tests pass but layout
   breaks" gap this layer exists to close.

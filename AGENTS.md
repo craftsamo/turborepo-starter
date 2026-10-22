@@ -70,6 +70,8 @@ full options.
   `nps test.watch`
 - **Dev**: `nps dev` (all), `nps dev.web`
 - **Single test**: `cd apps/web && pnpm test -- path/to/test.test.tsx`
+- **VRT baselines**: `nps vrt.accept` (copy the ones CI rendered for this
+  commit), `nps vrt.update` (render them locally in Docker)
 
 Workspace apps participate by defining `test`, `test:ci`, and `test:e2e`
 package scripts. E2E tasks run concurrently, so each app must isolate ports,
@@ -93,7 +95,8 @@ that can actually observe the failure it guards against:
 - **Playwright VRT** (`e2e/vrt.spec.ts`) — pixel comparison against committed
   baselines per route x viewport x color scheme. Baselines render on Linux
   (CI) only; when screenshots change, CI uploads the new ones and
-  `nps vrt.accept` copies them into the branch for review.
+  `nps vrt.accept` copies them into the branch for review. `nps vrt.update`
+  renders them locally in the same Playwright Docker image instead.
 
 **Definition of done**: a change touching layout, chrome, breakpoints, or
 theming is not covered until a geometry invariant and/or VRT shot exercises

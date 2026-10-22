@@ -19,6 +19,7 @@ module.exports = {
     },
     vrt: {
       accept: `node scripts/vrt/main.mts accept`,
+      update: `node scripts/vrt/main.mts update`,
     },
     prepare: {
       default: `nps prepare.web`,

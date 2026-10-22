@@ -1,3 +1,4 @@
+import { spawn } from "node:child_process";
 import {
   appendFileSync,
   cpSync,
@@ -7,6 +8,7 @@ import {
   readdirSync,
   readFileSync,
   rmSync,
+  statSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -183,7 +185,7 @@ function git(args: string[]): string {
 
 function printAccepted(files: string[]): void {
   if (files.length === 0) {
-    console.log("The artifact holds no baselines; nothing changed.");
+    console.log("No baseline changed.");
     return;
   }
   console.log(`Copied ${files.length} baseline(s):`);
@@ -262,29 +264,165 @@ function collect([source, destination]: string[]): void {
   );
 }
 
-function image(): void {
-  console.log(
-    playwrightImage(
-      readFileSync(path.join(repositoryRoot, "pnpm-lock.yaml"), "utf8"),
-    ),
+function lockfileImage(): string {
+  return playwrightImage(
+    readFileSync(path.join(repositoryRoot, "pnpm-lock.yaml"), "utf8"),
   );
 }
 
-const commands: Record<string, (argv: string[]) => void> = {
+function image(): void {
+  console.log(lockfileImage());
+}
+
+export function parseUpdateArguments(argv: string[]): { all: boolean } {
+  let all = false;
+  for (const value of argv) {
+    if (value === "--all") all = true;
+    else throw new Error(`Unknown argument: ${value}`);
+  }
+  return { all };
+}
+
+// Mirrors the e2e job: prune and install the web app, build it, and render the
+// VRT spec, then hand the snapshot directories back through /out.
+const RENDER_SCRIPT = `set -euo pipefail
+tar -xf - --warning=no-unknown-keyword
+corepack enable
+npx nps prepare.ci.web
+npx nps build.ci.web
+(cd out/apps/web && VRT_UPDATE=1 pnpm exec playwright test e2e/vrt.spec.ts --update-snapshots="$SNAPSHOT_MODE")
+cd out
+find apps packages -name node_modules -prune -o -path '*-snapshots/*.png' -exec cp --parents {} /out \\;
+chown -R "$HOST_UID:$HOST_GID" /out`;
+
+// `exit`, not `close`: tar's output stays open in this process while docker
+// reads it, so tar's `close` never comes.
+function exitCode(child: ReturnType<typeof spawn>): Promise<number | null> {
+  return new Promise((resolve, reject) => {
+    child.on("error", reject);
+    child.on("exit", resolve);
+  });
+}
+
+/**
+ * Render the VRT baselines in the Playwright image CI uses, from the files git
+ * tracks or would track, and copy the new or changed ones into the tree.
+ */
+async function update(argv: string[]): Promise<void> {
+  const { all } = parseUpdateArguments(argv);
+  const playwright = lockfileImage();
+  try {
+    runCommand("docker", ["info", "--format", "{{.ServerVersion}}"]);
+  } catch (error) {
+    throw new Error("Docker is not running; start it and try again.", {
+      cause: error,
+    });
+  }
+  const files = git(["ls-files", "-z", "-co", "--exclude-standard"])
+    .split("\0")
+    .filter((file) => {
+      const full = path.join(repositoryRoot, file);
+      return file && existsSync(full) && statSync(full).isFile();
+    });
+  const output = mkdtempSync(path.join(tmpdir(), "vrt-update-"));
+  try {
+    console.log(`Rendering VRT baselines in ${playwright} (linux/amd64)...`);
+    const tar = spawn(
+      "tar",
+      [
+        ...(process.platform === "darwin" ? ["--no-mac-metadata"] : []),
+        "-c",
+        "-f",
+        "-",
+        "--null",
+        "-T",
+        "-",
+      ],
+      {
+        cwd: repositoryRoot,
+        env: { ...process.env, COPYFILE_DISABLE: "1" },
+        stdio: ["pipe", "pipe", "inherit"],
+      },
+    );
+    tar.stdin.end(`${files.join("\0")}\0`);
+    const docker = spawn(
+      "docker",
+      [
+        "run",
+        "--rm",
+        "-i",
+        "--init",
+        "--ipc=host",
+        // CI renders on x86-64 runners; another architecture could round
+        // differently.
+        "--platform",
+        "linux/amd64",
+        "--workdir",
+        "/work",
+        "--volume",
+        `${output}:/out`,
+        // Keeps downloaded packages between runs.
+        "--volume",
+        "vrt-pnpm-store:/pnpm-store",
+        "--env",
+        "CI=1",
+        "--env",
+        "COREPACK_ENABLE_DOWNLOAD_PROMPT=0",
+        "--env",
+        "pnpm_config_store_dir=/pnpm-store",
+        "--env",
+        `SNAPSHOT_MODE=${all ? "all" : "changed"}`,
+        "--env",
+        `HOST_UID=${process.getuid?.() ?? 0}`,
+        "--env",
+        `HOST_GID=${process.getgid?.() ?? 0}`,
+        playwright,
+        "bash",
+        "-c",
+        RENDER_SCRIPT,
+      ],
+      { stdio: [tar.stdout, "inherit", "inherit"] },
+    );
+    // A failed render closes the pipe early, so its exit code explains more
+    // than tar's.
+    const [tarCode, dockerCode] = await Promise.all([
+      exitCode(tar),
+      exitCode(docker),
+    ]);
+    if (dockerCode !== 0) {
+      throw new Error(
+        `Rendering failed (exit code ${dockerCode}); see the output above.`,
+      );
+    }
+    if (tarCode !== 0) {
+      throw new Error(`Packing the files failed (exit code ${tarCode}).`);
+    }
+    const changed = changedSnapshots(output, repositoryRoot);
+    copySnapshots(changed, output, repositoryRoot);
+    printAccepted(changed);
+  } finally {
+    rmSync(output, { recursive: true, force: true });
+  }
+}
+
+const commands: Record<string, (argv: string[]) => void | Promise<void>> = {
   accept,
   collect,
   image,
+  update,
 };
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const [name = "", ...argv] = process.argv.slice(2);
   const command = commands[name];
   if (!command) {
-    console.error("Usage: node scripts/vrt/main.mts accept|collect|image");
+    console.error(
+      "Usage: node scripts/vrt/main.mts accept|collect|image|update",
+    );
     process.exitCode = 2;
   } else {
     try {
-      command(argv);
+      await command(argv);
     } catch (error) {
       console.error(error instanceof Error ? error.message : error);
       process.exitCode = 1;

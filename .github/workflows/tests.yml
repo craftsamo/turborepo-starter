@@ -217,8 +217,8 @@ jobs:
     runs-on: ubuntu-latest
     if: needs.setup.result == 'success' && needs.changes.outputs.web == 'true'
     # Screenshots render alike only on the same fonts and browser build, so
-    # this job and Update VRT baselines run in the Playwright image of the
-    # installed version, which ships the browsers.
+    # this job, Update VRT baselines and `nps vrt.update` all run in the
+    # Playwright image of the installed version, which ships the browsers.
     container:
       image: ${{ needs.setup.outputs.playwright-image }}
       options: --user 1001 --ipc=host
