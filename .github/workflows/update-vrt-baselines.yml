@@ -76,7 +76,7 @@ jobs:
             out/apps/web/playwright-report/
             out/apps/web/test-results/
           if-no-files-found: ignore
-          retention-days: 7
+          retention-days: 3
       - name: Collect changed VRT baselines
         id: baselines
         run: node scripts/vrt/main.mts collect out vrt-baselines

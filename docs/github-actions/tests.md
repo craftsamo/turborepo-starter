@@ -105,7 +105,8 @@ job independently prunes the web workspace and runs
 `nps test.ci.web.e2e.all`. Turbo builds the web app before Playwright and then
 runs the desktop, tablet, and mobile Chromium projects. If E2E fails, the job
 uploads `web-playwright-artifacts` containing the HTML report, screenshots,
-videos, and traces that Playwright produced.
+videos, and traces that Playwright produced. They are kept for 3 days, since
+they are large and count toward the account's shared artifact storage.
 
 When E2E fails, the job also renders the VRT baselines again with
 `--update-snapshots=changed`. If any screenshot is new or differs from the

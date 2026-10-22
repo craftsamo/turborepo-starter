@@ -252,7 +252,9 @@ jobs:
             out/apps/web/playwright-report/
             out/apps/web/test-results/
           if-no-files-found: ignore
-          retention-days: 7
+          # Videos and traces are large and count toward the shared artifact
+          # storage; a failure is looked into within days.
+          retention-days: 3
       # When screenshots no longer match, render the baselines again where CI
       # compares them, so `nps vrt.accept` can bring the changed ones in.
       - name: Render VRT baselines
