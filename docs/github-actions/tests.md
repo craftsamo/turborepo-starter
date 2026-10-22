@@ -38,6 +38,29 @@ changed.
 | e2e             | Run Playwright against the built web app  | Runs for web changes     |
 | Required checks | Aggregate the required results for `main` | Always runs              |
 
+### Superseded Runs
+
+A new push to a pull request cancels the run still in progress for it, since
+that run no longer checks the pull request's head. Pushes to `main` are not
+cancelled: they wait for the running check, and only the newest waiting run is
+kept, so the latest `main` commit is always checked.
+
+### Stacked Pull Requests
+
+GitHub runs this workflow for every pull request in a stack, because each one
+counts as targeting the stack base. A stack rebase pushes all of them at once,
+so the `setup`, `test`, and `e2e` jobs run only on two of them:
+
+- **Lowest unmerged**: the pull request that targets the stack base directly
+  and merges next.
+- **Top**: the last pull request, which holds every change in the stack.
+
+The `changes` job reports no changes for the pull requests in between, and
+`Required checks` passes for them on `script-tests` and `changes` alone. Once
+the pull requests below one merge, GitHub rebases it onto the stack base and
+it runs the full checks as the new lowest. Pull requests outside a stack
+always run the full checks.
+
 ### Change Detection
 
 The workflow uses [dorny/paths-filter](https://github.com/dorny/paths-filter) to

@@ -9,6 +9,21 @@ on:
 
 jobs:
   update_release_draft:
+    # Rebasing a stack pushes every pull request in it. Relabel only the lowest
+    # unmerged and the top ones on a push; a middle one is labeled when it is
+    # opened and again once it becomes the lowest.
+    if: >-
+      github.event.action != 'synchronize' ||
+      github.event.pull_request.stack == null ||
+      github.event.pull_request.stack.base.ref == github.event.pull_request.base.ref ||
+      github.event.pull_request.stack.position == github.event.pull_request.stack.size
+    # Each run rebuilds the draft and the labels from the current state, so a
+    # newer run replaces the one still in progress. This sits on the job, not
+    # the workflow, so that a run skipped by the condition above does not
+    # cancel one in progress.
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+      cancel-in-progress: true
     permissions:
       contents: write
       pull-requests: write
