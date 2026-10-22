@@ -16,6 +16,9 @@ on:
       - "pnpm-workspace.yaml"
       - "scripts/**"
       - "turbo.json"
+      # Markdown under the apps and the packages is documentation.
+      - "!apps/**/*.md"
+      - "!packages/**/*.md"
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -61,6 +64,8 @@ jobs:
         id: filter
         if: github.event_name != 'workflow_dispatch' && steps.stack.outcome == 'skipped'
         with:
+          # A file counts when it matches a pattern and no '!' pattern.
+          predicate-quantifier: some-with-excludes
           filters: |
             # The repository scripts and every file their tests read.
             scripts:
@@ -73,7 +78,8 @@ jobs:
               - 'package-scripts.js'
               - 'README.md'
               - 'scripts/**'
-            # The app, the packages it builds from, and the toolchain.
+            # The app, the packages it builds from, and the toolchain. Their
+            # Markdown is documentation; drop the exclusion if a build reads it.
             web:
               - '.github/workflows/tests.yml'
               - 'apps/web/**'
@@ -83,6 +89,7 @@ jobs:
               - 'pnpm-lock.yaml'
               - 'pnpm-workspace.yaml'
               - 'turbo.json'
+              - '!**/*.md'
       - name: Run all checks for manual dispatch
         id: force
         if: github.event_name == 'workflow_dispatch'

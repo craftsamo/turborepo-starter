@@ -4,7 +4,8 @@
 
 ## Prerequisites
 
-- Push to `main` with application, package, workflow, or root toolchain changes
+- Push to `main` with application, package, script, workflow, or root toolchain
+  changes other than Markdown under `apps/` and `packages/`
 - Pull request against `main`
 - Or manual trigger via GitHub Actions UI (`workflow_dispatch`)
 - Node.js 24.x compatible environment
@@ -70,9 +71,11 @@ detect changes:
 | Target  | Paths Monitored                                                                                             |
 | ------- | ----------------------------------------------------------------------------------------------------------- |
 | scripts | `scripts/**` and the files their tests read: the workflows, the OpenCode agents and config, and `README.md` |
-| web     | `apps/web/**`, `packages/**`, the tests workflow, and root toolchain files                                  |
+| web     | `apps/web/**`, `packages/**`, the tests workflow, and root toolchain files, except Markdown                 |
 
-Both targets also watch `package.json` and `package-scripts.js`.
+Both targets also watch `package.json` and `package-scripts.js`. Markdown under
+the app and the packages is documentation, so it does not count as a web
+change; remove the `!**/*.md` pattern if a build starts reading Markdown.
 
 Tests only run for a target if changes are detected in its monitored paths.
 Manual dispatches run all targets so repository setup can verify the required
