@@ -1,107 +1,81 @@
 name: Task
-description: Record a task
+description: One unit of work, implemented by one branch or one stack of pull requests
 type: task
 body:
-  - type: textarea
-    id: overview
-    attributes:
-      label: Overview
-      description: Please describe an overview of this task.
-      placeholder: |
-        - What needs to be done
-        - Scope / non-scope (optional)
-    validations:
-      required: true
-
   - type: textarea
     id: purpose
     attributes:
       label: Purpose
-      description: Please explain why this task is needed, the background, and the business context.
+      description: The single goal, in one or two lines. What problem it solves and why now.
       placeholder: |
-        What problem does this solve, and why is it important now?
+        Let a signed-in user export their data as CSV, so support stops doing it by hand.
     validations:
       required: true
 
   - type: textarea
-    id: acceptance-criteria
+    id: requirements
     attributes:
-      label: Acceptance Criteria
-      description: Please list the conditions that determine this task is complete.
+      label: Requirements
+      description: >-
+        What must hold when this is done. Provisional while decisions are open; confirmed once
+        they are settled. Use a `###` heading per sub-part (API, data, UI) when there are several.
       placeholder: |
-        - [ ] Criterion 1
-        - [ ] Criterion 2
-        - [ ] Criterion 3
+        - Export runs server-side and streams the file
+        - Only the owner can download it
+
+        ### API
+        - `POST /api/export` starts a job, `GET /api/export/{id}` fetches the result
+
+        ### UI
+        - A button on the account page; the link appears when the job is done
     validations:
       required: true
 
   - type: textarea
-    id: api-spec
+    id: implementation-outline
     attributes:
-      label: API Design
-      description: Please describe API design such as Endpoint, Request, and Response.
+      label: Implementation outline
+      description: >-
+        How the work splits into pull requests. Prose while the spec is a draft; a checklist of
+        layers, bottom to top, once it is fixed. Tick a layer with its PR number when the PR opens.
       placeholder: |
-        - Endpoint(s):
-        - Request:
-        - Response:
-        - Auth / errors (optional):
+        - [ ] Export job and storage
+        - [ ] API routes
+        - [ ] Account page button and download link
     validations:
       required: false
 
   - type: textarea
-    id: database-schema
+    id: open-decisions
     attributes:
-      label: Database Design
-      description: Please describe DB design such as Schema and Columns.
+      label: Open decisions
+      description: >-
+        What must be settled before implementation starts. Remove this section when nothing is
+        open: its presence marks the spec as a draft.
       placeholder: |
-        - Tables/collections:
-        - Columns/fields:
-        - Relations/indexes (optional):
+        - Keep finished exports for how long?
+        - CSV only, or also JSON?
     validations:
       required: false
 
   - type: textarea
-    id: ui-flow
+    id: acceptance
     attributes:
-      label: UI Flow
-      description: Please describe page transitions, user flow, and interaction flow.
+      label: Acceptance
+      description: The checks that prove it done, including the commands to run.
       placeholder: |
-        Screen A → Screen B → Screen C
-        (Include key user actions and system responses if needed.)
+        - [ ] `nps test` passes with the new cases
+        - [ ] An export of 10,000 rows downloads within 5 s in staging
     validations:
-      required: false
+      required: true
 
   - type: textarea
-    id: component-design
+    id: evidence
     attributes:
-      label: Component Design
-      description: Please describe component structure, state management, Props, etc.
+      label: Evidence
+      description: Links to the research, decisions and issues this one rests on.
       placeholder: |
-        - Components involved:
-        - Key props/state:
-        - State management approach (optional):
-    validations:
-      required: false
-
-  - type: textarea
-    id: page-layout
-    attributes:
-      label: Page Layout
-      description: Page layout, placement, and design specs.
-      placeholder: |
-        - Layout notes / wireframe link (optional)
-        - Responsive behavior (optional)
-    validations:
-      required: false
-
-  - type: textarea
-    id: implementation-notes
-    attributes:
-      label: Notes
-      description: Please write any implementation notes, compatibility concerns, or recommended technologies.
-      placeholder: |
-        - Dependencies / risks:
-        - Rollout plan (optional):
-        - Testing notes (optional):
+        - Parent research: #12 (comment)
+        - Decided in #15
     validations:
       required: false
