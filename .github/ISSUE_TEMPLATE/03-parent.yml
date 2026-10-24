@@ -1,0 +1,53 @@
+name: Parent
+description: A goal made of several tasks; it tracks and has no branch of its own
+body:
+  - type: textarea
+    id: overview
+    attributes:
+      label: Overview
+      description: The outcome and why, in one to three lines.
+      placeholder: |
+        Replace the hand-run monthly report with a page the team reads on its own, so the data is
+        current and nobody assembles it by hand.
+    validations:
+      required: true
+
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: >-
+        Constraints, principles and the open business decisions, with where each one lands. Keep
+        the full research in comments on this issue; put only its conclusions here.
+      placeholder: |
+        - Numbers come from the warehouse, never from the app database
+        - Open: which currency the totals show — a setting, decided before the page ships
+    validations:
+      required: true
+
+  - type: textarea
+    id: plan
+    attributes:
+      label: Plan
+      description: >-
+        The sub-issues as `#n`, one line each on what it delivers. No checkboxes (the sub-issue
+        panel shows progress) and no numbering (blocked-by carries the order). Parts not yet split
+        may stay prose.
+      placeholder: |
+        - #21 the query layer and its tests
+        - #22 the report page, read-only
+        - #23 the export button
+        - Alerts on thresholds, once the page has run a month
+    validations:
+      required: false
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance
+      description: The integration checks run after every sub-issue lands; the parent's exit criterion.
+      placeholder: |
+        - [ ] The page matches last month's hand-made report to the cent
+        - [ ] The old report job is removed
+    validations:
+      required: true

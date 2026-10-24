@@ -3,33 +3,23 @@ description: Report an issue that should be fixed
 type: bug
 labels: ["🐛bug"]
 body:
-  - type: input
-    id: overview
-    attributes:
-      label: Overview
-      description: Please describe a brief summary of the bug you encountered.
-      placeholder: e.g., The app crashes when clicking the Save button.
-    validations:
-      required: false
-
   - type: textarea
-    id: details
+    id: symptom
     attributes:
-      label: Details
-      description: Please describe the issue in detail.
+      label: Symptom
+      description: What you expected and what happened instead, with any error message or log.
       placeholder: |
-        - Expected behavior:
-        - Actual behavior:
-        - Error message / logs (if any):
-        - Related links (if any):
+        - Expected: the form saves and shows a confirmation
+        - Actual: the page reloads and the input is empty
+        - Error / logs: `TypeError: Cannot read properties of undefined` in the console
     validations:
       required: true
 
   - type: textarea
-    id: reproduce
+    id: repro-steps
     attributes:
-      label: Steps to Reproduce
-      description: Please describe the steps to reproduce the issue.
+      label: Repro steps
+      description: The shortest path that shows the symptom.
       placeholder: |
         1. Go to ...
         2. Click ...
@@ -38,10 +28,23 @@ body:
       required: true
 
   - type: textarea
+    id: suspected-cause
+    attributes:
+      label: Suspected cause
+      description: >-
+        Where you think it comes from, with a permalink to the code when you have one. Add a
+        `### Confirmed cause` once verified.
+      placeholder: |
+        The handler reads `event.target.value` before the ref is set:
+        https://github.com/owner/repo/blob/<sha>/apps/web/src/...#L10-L20
+    validations:
+      required: false
+
+  - type: textarea
     id: screenshot
     attributes:
       label: Screenshots
-      description: Please attach screenshots related to the issue.
+      description: Attach screenshots or a recording related to the issue.
       placeholder: Paste images here or drag & drop (optional).
     validations:
       required: false
@@ -50,7 +53,7 @@ body:
     id: share-link
     attributes:
       label: Share Link
-      description: Please share the AI agent session link.
+      description: Share the AI agent session link.
       placeholder: Paste the share link here (optional).
     validations:
       required: false
