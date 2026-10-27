@@ -27,7 +27,7 @@ overrides:
   "@modelcontextprotocol/sdk": "^1.31.0"
   "hono": "^4.13.7"
   # GHSA-4c8g-83qw-93j6 and later URI host-confusion fixes: require 3.1.6+.
-  "fast-uri": "^3.1.6"
+  "fast-uri": "^3.1.9"
   # GHSA-73wf-gq98-2v4g / CVE-2026-73088: uncaught crash via custom stats.
   "browserslist": "^4.28.7"
   # GHSA-w5vr-8v7q-w6rv / CVE-2026-45819: process.exit on invalid input.
