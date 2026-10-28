@@ -29,6 +29,8 @@ The setup manages:
   retention, and cache retention
 - Secret scanning with push protection and Dependabot alerts
 - Labels from `.github/labels.yml`
+- A writable `Release version bump` deploy key and its `RELEASE_DEPLOY_KEY`
+  secret, which Release Drafter pushes the root version bump to `main` with
 - A `Starter: protect main` Ruleset
 - Optional repository description, homepage, topics, and OpenCode model
   variables (`OPENCODE_MODEL` and `OPENCODE_MODEL_<AGENT>`, checked in the
@@ -56,7 +58,19 @@ dry run lists every label that would be created, updated, renamed, or deleted.
 
 The managed Ruleset requires pull requests and a successful `Required checks`
 job against the latest `main`. It blocks branch deletion and force pushes while
-allowing repository administrators to bypass the Ruleset.
+allowing repository administrators and deploy keys to bypass the Ruleset.
+
+The deploy key bypass is what lets Release Drafter push the root version bump
+to `main`. Setup creates a key pair locally with `ssh-keygen`, registers the
+public half as the writable `Release version bump` deploy key, stores the
+private half in the `RELEASE_DEPLOY_KEY` secret, and deletes the local copy. It
+keeps an existing key whose secret is present, and replaces the pair when
+either half is missing or the key is read-only; to rotate the key, delete it
+under **Settings → Deploy keys** and run setup again. Any workflow of this
+repository can read the secret and so push to `main`, so review workflow
+changes with that in mind; a fork's workflow cannot read it. GitHub accepts
+GitHub Actions itself as a bypass actor only on organization repositories,
+which is why a deploy key is used.
 
 Keep a pull request current by rebasing it onto `main` locally and
 force-pushing the branch. Setup turns off GitHub's suggestion to update pull

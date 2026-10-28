@@ -38,6 +38,7 @@ The workflow manages all labels defined in `.github/labels.yml`:
   `📝documentation`
 - **Questions/Issues**: `💬question`, `🔁duplicate`, `🚫wontfix`
 - **Version**: `🌟major`
+- **Release notes**: `skip-changelog`
 - **Apps**: `🌐app: web`
 - **Packages**: `📦package: vitest`, `📦package: eslint`,
   `📦package: prettier`, `📦package: tsconfig`, `📦package: ui`,

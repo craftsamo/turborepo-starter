@@ -17,6 +17,7 @@ import {
   MODEL_VARIABLES,
   parseArguments,
   parseLabels,
+  planReleaseKey,
   PROVIDER_SECRETS,
 } from "../setup/github/policy.mts";
 import {
@@ -159,6 +160,7 @@ describe("Actions settings", () => {
     assert.deepEqual(settings.selectedActions.patterns_allowed, [
       "dorny/paths-filter@*",
       "release-drafter/release-drafter@*",
+      "release-drafter/release-drafter/autolabeler@*",
       "micnncim/action-label-syncer@*",
     ]);
     assert.deepEqual(settings.workflow, {
@@ -320,6 +322,24 @@ describe("OpenCode workflow settings", () => {
   });
 });
 
+describe("release deploy key", () => {
+  const key = (read_only) => ({ id: 7, read_only });
+
+  it("keeps a writable key whose secret is present", () => {
+    assert.equal(planReleaseKey({ key: key(false), secret: true }), "keep");
+  });
+
+  it("creates a key pair when there is no key", () => {
+    assert.equal(planReleaseKey({ key: undefined, secret: false }), "create");
+    assert.equal(planReleaseKey({ key: undefined, secret: true }), "create");
+  });
+
+  it("replaces a key without its secret, or one that cannot push", () => {
+    assert.equal(planReleaseKey({ key: key(false), secret: false }), "replace");
+    assert.equal(planReleaseKey({ key: key(true), secret: true }), "replace");
+  });
+});
+
 describe("main protection", () => {
   it("builds an active main ruleset with the required CI gate", () => {
     const ruleset = buildMainRuleset(15368);
@@ -332,7 +352,10 @@ describe("main protection", () => {
 
     assert.equal(ruleset.name, "Starter: protect main");
     assert.deepEqual(ruleset.conditions.ref_name.include, ["refs/heads/main"]);
-    assert.equal(ruleset.bypass_actors[0].bypass_mode, "always");
+    assert.deepEqual(ruleset.bypass_actors, [
+      { actor_id: 5, actor_type: "RepositoryRole", bypass_mode: "always" },
+      { actor_id: null, actor_type: "DeployKey", bypass_mode: "always" },
+    ]);
     assert.equal(pullRequestRule.parameters.required_approving_review_count, 0);
     assert.equal(
       pullRequestRule.parameters.required_review_thread_resolution,

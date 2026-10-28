@@ -72,6 +72,10 @@ full options.
 - **Single test**: `cd apps/web && pnpm test -- path/to/test.test.tsx`
 - **VRT baselines**: `nps vrt.accept` (copy the ones CI rendered for this
   commit), `nps vrt.update` (render them locally in Docker)
+- **Release**: Release Drafter keeps the root version on `main` at the draft
+  release's; `nps release.sync` does the same by hand when Actions cannot
+  run. Publishing the draft stays manual, see
+  `docs/github-actions/release-drafter.md`
 
 Workspace apps participate by defining `test`, `test:ci`, and `test:e2e`
 package scripts. E2E tasks run concurrently, so each app must isolate ports,

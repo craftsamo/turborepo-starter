@@ -210,6 +210,7 @@ list.
 | `nps setup.project`        | Initialize project metadata and licensing   |
 | `nps setup.github`         | Configure GitHub repository settings        |
 | `nps setup.github.secrets` | Configure Repository or Environment secrets |
+| `nps release.sync`         | Set the root version on main to the draft's |
 | `nps docker.build.web`     | Build the web Docker image                  |
 | `nps docker.start.web`     | Start the web container via docker-compose  |
 | `nps start`                | Start the built web app in production mode  |
@@ -232,13 +233,14 @@ project standards.
 
 ### Available Workflows
 
-| Workflow            | Trigger          | Purpose                                                                |
-| ------------------- | ---------------- | ---------------------------------------------------------------------- |
-| **Sync Labels**     | Manual dispatch  | Synchronizes repository labels with `.github/labels.yml` configuration |
-| **Display Details** | Manual dispatch  | Displays project, apps, and repository information                     |
-| **Release Drafter** | Push/PR to main  | Labels new pull requests by branch and drafts categorized releases     |
-| **Tests**           | Push/PR to main  | Runs tests for affected apps and packages                              |
-| **Run AI Agent**    | Issue/PR comment | Plans, builds, reviews, or debugs via `/oc` or `/opencode` commands    |
+| Workflow                 | Trigger              | Purpose                                                                |
+| ------------------------ | -------------------- | ---------------------------------------------------------------------- |
+| **Sync Labels**          | Manual dispatch      | Synchronizes repository labels with `.github/labels.yml` configuration |
+| **Display Details**      | Manual dispatch      | Displays project, apps, and repository information                     |
+| **Release Drafter**      | PR opened / Tests ok | Labels new pull requests by branch and drafts categorized releases     |
+| **Tests**                | Push/PR to main      | Runs tests for affected apps and packages                              |
+| **Update VRT baselines** | Manual dispatch      | Renders changed VRT baselines in CI for `nps vrt.accept`               |
+| **Run AI Agent**         | Issue/PR comment     | Plans, builds, reviews, or debugs via `/oc` or `/opencode` commands    |
 
 ### Documentation
 

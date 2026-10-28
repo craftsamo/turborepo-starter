@@ -5,40 +5,54 @@
 ## Prerequisites
 
 - Pull requests must be **opened or reopened**, against any base branch
-- Or pushes to `main` branch
+- Or the Tests workflow completes successfully on `main`
 - Pull requests must have labels matching the configuration in
   `.github/release-drafter.yml`
-- Repository must have `contents: write` and `pull-requests: write` permissions
+- The labeling job needs `pull-requests: write`; the drafting job needs
+  `contents: write`
 
 ## How It Works
 
-The workflow automatically creates and updates draft releases based on pull
-requests and commits to the `main` branch using the
-[release-drafter](https://github.com/release-drafter/release-drafter) action.
+The workflow labels pull requests and keeps a draft release up to date with
+the pull requests merged into `main`, using the
+[release-drafter](https://github.com/release-drafter/release-drafter) action
+(v7). Publishing the draft stays a manual step.
 
 ### Process
 
-1. **Trigger**: PR opened/reopened (labels only) or push to `main` (draft only)
-2. **Analyze**: Review PR labels and branch naming patterns
-3. **Categorize**: Group changes by category (Features, Enhancements, Bug Fixes,
-   Documentation)
-4. **Auto-label**: Apply labels based on branch naming or file changes
-5. **Generate**: Create or update draft release notes
-6. **Resolve Version**: Calculate version bump based on labels
+1. **Trigger**: PR opened/reopened (labels only) or a successful Tests run
+   on `main` (draft only)
+2. **Auto-label**: Apply labels based on the branch name
+3. **Categorize**: Group the merged pull requests by label (Features, Bug
+   Fixes, Enhancements, Documentation, Other Changes)
+4. **Generate**: Create or update draft release notes
+5. **Resolve Version**: Calculate the version bump from the labels
 
-A newer run for the same pull request or branch cancels the one still in
-progress, since each run rebuilds the draft and the labels from the current
-state.
+Release Drafter v7 ships labeling and drafting as two actions, so the workflow
+runs one job per event: `label_pull_request` on a pull request and
+`update_release_draft` after a Tests run. A newer run for the same pull
+request or branch cancels the one still in progress, since each run rebuilds
+the labels or the draft from the current state.
 
 Labels follow the branch name, which a later push does not change, so a push
-to a pull request does not run the workflow. The `.md` rule below looks at the
-files when the pull request is opened.
+to a pull request does not run the workflow.
 
 A pull request run only applies labels, whatever the base branch: a stack
 opens each upper pull request on the branch below it and links it to the stack
-only afterwards, so a `main` filter would miss it. Only pushes to `main`
-redraft the release; a draft built from a pull request run would target the
-pull request's merge ref instead of `main`.
+only afterwards, so a `main` filter would miss it. Only `main` redrafts the
+release; a draft built from a pull request run would target the pull request's
+merge ref instead of `main`.
+
+### Drafting After Tests
+
+The draft follows `main` through the Tests workflow rather than the push
+itself: `update_release_draft` runs on `workflow_run` when Tests completes on
+`main`, and only when it succeeded. A `main` commit that fails its checks
+leaves the draft at the last state that passed, and the next successful run
+catches the draft up. Tests runs on every push to `main`, including one that
+only touches documentation, so every `main` commit reaches this trigger.
+Re-running a failed Tests run, or dispatching it manually on `main`, redrafts
+once it passes.
 
 ### Release Naming
 
@@ -50,33 +64,98 @@ pull request's merge ref instead of `main`.
 
 ### Change Categories
 
-Changes are organized into four categories based on PR labels:
+Each merged pull request appears once, under the first category whose label it
+carries. A pull request with none of these labels lands under Other Changes,
+and one labeled `skip-changelog` is left out of the notes altogether.
 
-| Category         | Labels              | Icon |
-| ---------------- | ------------------- | ---- |
-| 🚀 New Features  | `🌱feature`         | 🚀   |
-| ⚒️ Enhancement   | `⚒️enhancement`     | ⚒️   |
-| 🐛 Bug Fixes     | `🐛bug`, `🐞hotfix` | 🐛   |
-| 📄 Documentation | `📝documentation`   | 📄   |
+| Category         | Labels              |
+| ---------------- | ------------------- |
+| 🚀 New Features  | `🌱feature`         |
+| 🐛 Bug Fixes     | `🐛bug`, `🐞hotfix` |
+| ⚒️ Enhancement   | `⚒️enhancement`     |
+| 📄 Documentation | `📝documentation`   |
+| 🧰 Other Changes | (none of the above) |
 
 ### Version Resolution
 
-Version bumps are determined by labels on pull requests:
+The highest bump among the merged pull requests wins:
 
-| Version Type | Trigger Labels                                        |
-| ------------ | ----------------------------------------------------- |
-| Major        | `🌟major`                                             |
-| Minor        | `🌱feature`                                           |
-| Patch        | `📝documentation`, `⚒️enhancement`, `🐛bug`, `🐞hotfix` (default) |
+| Version Type | Trigger Labels                     |
+| ------------ | ---------------------------------- |
+| Major        | `🌟major`                          |
+| Minor        | `🌱feature`                        |
+| Patch        | Every other pull request (default) |
 
 ### Auto-labeling Rules
 
-Labels are automatically applied when a pull request is opened or reopened,
-based on branch naming patterns or file changes:
+Labels are applied when a pull request is opened or reopened, based on the
+branch name. File-based rules are not used: most pull requests touch Markdown
+such as `AGENTS.md` or `docs/` alongside the code, so a `*.md` rule would mark
+nearly everything as documentation.
 
 1. **Feature**: Branch name starts with `feat/`
 2. **Enhancement**: Branch name starts with `enhance/`, `improve/`, or
    `refactor/`
 3. **Bug Fix**: Branch name starts with `fix/`
 4. **Hotfix**: Branch name starts with `hotfix/`
-5. **Documentation**: Branch name starts with `docs/` or changes `.md` files
+5. **Documentation**: Branch name starts with `docs/`
+
+### Version on `main`
+
+After redrafting, the same job sets the root `package.json` version on `main`
+to the version the draft resolved, when it differs, with a
+`chore(release): set the version to <version>` commit by `github-actions[bot]`.
+So `main` always names the release it is heading for, and the commit a release
+tags carries its version.
+
+The push uses the release deploy key, whose private half is the
+`RELEASE_DEPLOY_KEY` secret. `nps setup.github` creates the key and the secret,
+and adds deploy keys as a bypass actor of the `Starter: protect main` Ruleset,
+so the push goes straight to `main`. GitHub accepts GitHub Actions itself as a
+bypass actor only on organization repositories, which is why a key is used:
+it works on personal repositories as well. Any workflow of this repository can
+read the secret and so push to `main`; a fork's workflow cannot read it.
+
+Unlike a push with `GITHUB_TOKEN`, a push with the key starts workflows: Tests
+runs on the bump commit, and the redraft that follows finds the version
+already set and pushes nothing, so it cannot loop. If `main` moves between the
+checkout and the push, the push is rejected and the job fails; the Tests run
+of that new commit redrafts and bumps again, so nothing needs doing. Without
+the secret, the job warns and leaves the version alone. Classic branch
+protection, which the setup falls back to where Rulesets are unavailable, has
+no such bypass: there the bump fails and the manual command below is the way.
+
+```sh
+nps release.sync
+```
+
+`release.sync` does the same by hand, for when Actions cannot run: it reads the
+one draft release, takes the version from its tag, commits the bump in a
+temporary worktree so the checked-out branch is left alone, and pushes it to
+`main` under your own account, which the Ruleset allows for repository
+administrators. When `main` already carries the version, it says so and
+changes nothing.
+
+Only the root `package.json` follows the release. `apps/*/package.json` keep
+their own versions, which the `Get details` workflow reads for the deployment
+of each app.
+
+## Publishing a Release
+
+Open the draft under Releases, read the notes, and publish it. GitHub creates
+the `v<version>` tag on the head of `main` at that moment. Publish once Release
+Drafter has run for the last merge: the draft then lists that pull request, and
+`main` carries the version.
+
+A pull request that merges before publishing can move the draft to another
+version: a feature raises the minor, a `🌟major` label the major. Release
+Drafter follows it on the next successful Tests run, and sets the new version
+on `main` the same way.
+
+### Rolling Back
+
+A published release is a tag and a page, not a deployment, so a mistake is
+corrected forward: revert the offending pull request on `main` and publish the
+next patch. Deleting a release and its tag leaves the version in the history of
+everyone who fetched it, so only do that for a release published by accident
+before anyone could have seen it.

@@ -229,8 +229,8 @@ export interface RulesetInput {
   target: "branch";
   enforcement: "active";
   bypass_actors: Array<{
-    actor_id: number;
-    actor_type: "RepositoryRole";
+    actor_id: number | null;
+    actor_type: "RepositoryRole" | "DeployKey";
     bypass_mode: "always";
   }>;
   conditions: {
@@ -267,6 +267,28 @@ export interface RulesetInput {
 const REPOSITORY_RULESET_NAME = "Starter: protect main";
 const REQUIRED_CHECK = "Required checks";
 
+// The deploy key Release Drafter pushes the root version bump to main with,
+// and the repository secret that holds its private half.
+export const RELEASE_KEY_TITLE = "Release version bump";
+export const RELEASE_KEY_SECRET = "RELEASE_DEPLOY_KEY";
+
+export interface ReleaseKeyState {
+  key?: { id: number; read_only: boolean } | undefined;
+  secret: boolean;
+}
+
+export type ReleaseKeyPlan = "keep" | "create" | "replace";
+
+/**
+ * The secret cannot be read back, so a writable key with its secret present
+ * is kept, and anything else gets a new key pair: a missing half, or a key
+ * that cannot push.
+ */
+export function planReleaseKey(state: ReleaseKeyState): ReleaseKeyPlan {
+  if (state.key && !state.key.read_only && state.secret) return "keep";
+  return state.key ? "replace" : "create";
+}
+
 // The OpenCode workflow's model variables and provider key secrets, taken
 // from the workflow scripts so the two never drift apart.
 export const MODEL_VARIABLES = ["OPENCODE_MODEL", ...AGENTS.map(agentVariable)];
@@ -274,6 +296,9 @@ export const PROVIDER_SECRETS: readonly string[] = SECRET_VARIABLES;
 const ALLOWED_ACTION_PATTERNS = [
   "dorny/paths-filter@*",
   "release-drafter/release-drafter@*",
+  // The autolabeler of the same repository, which the drafter pattern does
+  // not cover: the pattern matches the action's full path.
+  "release-drafter/release-drafter/autolabeler@*",
   "micnncim/action-label-syncer@*",
 ];
 const ARTIFACT_RETENTION_DAYS = 30;
@@ -440,6 +465,15 @@ export function buildMainRuleset(integrationId: number): RulesetInput {
       {
         actor_id: 5,
         actor_type: "RepositoryRole",
+        bypass_mode: "always",
+      },
+      // Deploy keys, so that Release Drafter can push the root version bump
+      // to main with the release deploy key. GitHub accepts GitHub Actions as
+      // a bypass actor only on organization repositories; a deploy key works
+      // on personal ones as well.
+      {
+        actor_id: null,
+        actor_type: "DeployKey",
         bypass_mode: "always",
       },
     ],

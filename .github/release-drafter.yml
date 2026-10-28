@@ -4,20 +4,48 @@ name-template: "v$RESOLVED_VERSION 🚀"
 # tag-template: Specifies the tagging convention for the release version.
 tag-template: "v$RESOLVED_VERSION"
 
+# Categories run in order. A changelog category is exclusive, so a pull
+# request with several labels lands under the first one that matches instead
+# of under each of them. A changelog category contributes a patch increment
+# unless it sets semver-increment.
 categories:
+  # A pull request with this label does not appear in the release notes.
+  - type: pre-exclude
+    when:
+      label: "skip-changelog"
+
   - title: 🚀 New Features
-    labels:
-      - "🌱feature"
-  - title: ⚒️ Enhancement
-    labels:
-      - "⚒️enhancement"
+    semver-increment: minor
+    exclusive: true
+    when:
+      label: "🌱feature"
   - title: 🐛 Bug Fixes
-    labels:
-      - "🐛bug"
-      - "🐞hotfix"
+    exclusive: true
+    when:
+      labels:
+        - "🐛bug"
+        - "🐞hotfix"
+  - title: ⚒️ Enhancement
+    exclusive: true
+    when:
+      label: "⚒️enhancement"
   - title: 📄 Documentation
-    labels:
-      - "📝documentation"
+    exclusive: true
+    when:
+      label: "📝documentation"
+  # The one category without a condition receives every pull request the
+  # categories above did not match, so nothing floats outside a heading.
+  - title: 🧰 Other Changes
+
+  # A version-resolver category only affects $RESOLVED_VERSION. The highest
+  # increment among all matching categories wins.
+  - type: version-resolver
+    semver-increment: major
+    when:
+      label: "🌟major"
+  # The fallback when no other category resolves a version.
+  - type: version-resolver
+    semver-increment: patch
 
 # change-template: Defines the format for individual change log entries in the release notes.
 # - `$TITLE`: Represents the title of the change.
@@ -28,30 +56,14 @@ change-template: "- $TITLE @$AUTHOR (#$NUMBER)"
 # You can add # and @ to disable mentions, and add ` to disable code blocks.
 change-title-escapes: '\<*_&'
 
-version-resolver:
-  # Specifies labels that trigger a major version bump.
-  major:
-    labels:
-      - "🌟major"
-  # Specifies labels that trigger a minor version bump.
-  minor:
-    labels:
-      - "🌱feature"
-  # Specifies labels that trigger a patch version bump.
-  patch:
-    labels:
-      - "📝documentation"
-      - "⚒️enhancement"
-      - "🐛bug"
-      - "🐞hotfix"
-  # Specifies the default version bump when no labels match.
-  default: patch
-
+# Every change sits under a category heading, so the body needs no heading of
+# its own.
 template: |
-  ## Changes
-
   $CHANGES
 
+# Labels follow the branch name only. A file rule such as `*.md` would label
+# most pull requests as documentation, since they touch AGENTS.md or docs
+# alongside the code.
 autolabeler:
   # Automatically applies the "🌱feature" label based on branch naming patterns.
   - label: "🌱feature"
@@ -73,9 +85,7 @@ autolabeler:
     branch:
       - "/^hotfix[/-].+/"
 
-  # Automatically applies the "📝documentation" label based on branch naming patterns or file changes.
+  # Automatically applies the "📝documentation" label based on branch naming patterns.
   - label: "📝documentation"
     branch:
       - "/^docs[/-].+/"
-    files:
-      - "*.md"
