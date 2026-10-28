@@ -22,6 +22,7 @@ module.exports = {
       update: `node scripts/vrt/main.mts update`,
     },
     release: {
+      draft: `node scripts/release/main.mts draft`,
       sync: `node scripts/release/main.mts sync`,
     },
     prepare: {
