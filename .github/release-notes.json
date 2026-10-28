@@ -1,0 +1,19 @@
+{
+  "$comment": "Read by scripts/release/main.mts draft. A pull request lands under the first category whose label it carries; the category without labels takes the rest. The next version raises the major for a label in major, else the highest increment of the categories its pull requests land in (patch by default). See docs/github-actions/release-drafter.md.",
+  "name": "v{version} 🚀",
+  "tagPrefix": "v",
+  "exclude": ["skip-changelog"],
+  "major": ["🌟major"],
+  "titleEscapes": "\\<*_&",
+  "categories": [
+    {
+      "title": "🚀 New Features",
+      "labels": ["🌱feature"],
+      "increment": "minor"
+    },
+    { "title": "🐛 Bug Fixes", "labels": ["🐛bug", "🐞hotfix"] },
+    { "title": "⚒️ Enhancement", "labels": ["⚒️enhancement"] },
+    { "title": "📄 Documentation", "labels": ["📝documentation"] },
+    { "title": "🧰 Other Changes" }
+  ]
+}
