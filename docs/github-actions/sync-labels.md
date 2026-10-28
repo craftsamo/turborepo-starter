@@ -35,7 +35,7 @@ The sync operation uses the following settings:
 The workflow manages all labels defined in `.github/labels.yml`:
 
 - **Types**: `🌱feature`, `⚒️enhancement`, `🐛bug`, `🐞hotfix`,
-  `📝documentation`
+  `📝documentation`, `🔧maintenance`, `dependencies`
 - **Questions/Issues**: `💬question`, `🔁duplicate`, `🚫wontfix`
 - **Version**: `🌟major`
 - **Release notes**: `skip-changelog`

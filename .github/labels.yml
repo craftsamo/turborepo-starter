@@ -14,6 +14,13 @@
 - name: "📝documentation"
   description: "Documentation improvement or addition"
   color: "0075CA"
+- name: "🔧maintenance"
+  description: "CI, build, tooling, tests and other upkeep"
+  color: "BFD4F2"
+# Unprefixed: Dependabot applies this exact name to its own pull requests.
+- name: "dependencies"
+  description: "Dependency updates"
+  color: "0366D6"
 - name: "💬question"
   description: "General inquiries or clarifications"
   color: "D876E3"

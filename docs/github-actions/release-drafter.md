@@ -27,7 +27,7 @@ step.
 3. **Collect**: Find the pull requests whose merge commit landed on `main`
    since the last published release
 4. **Categorize**: Group them by label (Features, Bug Fixes, Enhancements,
-   Documentation, Other Changes)
+   Documentation, Dependencies, Maintenance, Other Changes)
 5. **Resolve Version**: Calculate the version bump from the labels
 6. **Generate**: Create or update the one draft release
 
@@ -105,6 +105,8 @@ categories live in `.github/release-notes.json`.
 | 🐛 Bug Fixes     | `🐛bug`, `🐞hotfix` |
 | ⚒️ Enhancement   | `⚒️enhancement`     |
 | 📄 Documentation | `📝documentation`   |
+| ⬆️ Dependencies  | `dependencies`      |
+| 🔧 Maintenance   | `🔧maintenance`     |
 | 🧰 Other Changes | (none of the above) |
 
 ### Version Resolution
@@ -120,17 +122,25 @@ published release that is not a prerelease (`0.0.0` before the first):
 
 ### Auto-labeling Rules
 
-Labels are applied when a pull request is opened or reopened, based on the
-branch name. File-based rules are not used: most pull requests touch Markdown
+Labels are applied when a pull request is opened or reopened. The rules live
+in `.github/release-drafter.yml`, and every rule that matches adds its label.
+
+**Type** follows the branch name, whose prefix is the commit type of the
+change (`/` or `-` after it). It picks the release notes category.
+
+| Branch prefix                                     | Label             |
+| ------------------------------------------------- | ----------------- |
+| `feat`                                            | `🌱feature`       |
+| `enhance`, `improve`, `refactor`, `perf`          | `⚒️enhancement`   |
+| `fix`                                             | `🐛bug`           |
+| `hotfix`                                          | `🐞hotfix`        |
+| `docs`                                            | `📝documentation` |
+| `ci`, `build`, `chore`, `test`, `style`, `revert` | `🔧maintenance`   |
+| `deps`, `dependabot`                              | `dependencies`    |
+
+The type never follows the changed files: most pull requests touch Markdown
 such as `AGENTS.md` or `docs/` alongside the code, so a `*.md` rule would mark
 nearly everything as documentation.
-
-1. **Feature**: Branch name starts with `feat/`
-2. **Enhancement**: Branch name starts with `enhance/`, `improve/`, or
-   `refactor/`
-3. **Bug Fix**: Branch name starts with `fix/`
-4. **Hotfix**: Branch name starts with `hotfix/`
-5. **Documentation**: Branch name starts with `docs/`
 
 ### Version on `main`
 

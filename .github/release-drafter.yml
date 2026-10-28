@@ -2,31 +2,35 @@
 # is opened. The release notes and the version come from those labels, through
 # .github/release-notes.json and scripts/release.
 
-# Labels follow the branch name only. A file rule such as `*.md` would label
-# most pull requests as documentation, since they touch AGENTS.md or docs
-# alongside the code.
 autolabeler:
-  # Automatically applies the "🌱feature" label based on branch naming patterns.
+  # Type labels follow the branch name, whose prefix is the commit type of the
+  # change. Each branch gets at most one, and it picks the release notes
+  # category. A file rule such as `*.md` would label most pull requests as
+  # documentation, since they touch AGENTS.md or docs alongside the code.
   - label: "🌱feature"
     branch:
       - "/^feat[/-].+/"
 
-  # Automatically applies the "⚒️enhancement" label based on branch naming patterns.
   - label: "⚒️enhancement"
     branch:
-      - "/^(enhance|improve|refactor)[/-].+/"
+      - "/^(enhance|improve|refactor|perf)[/-].+/"
 
-  # Automatically applies the "🐛bug" label based on branch naming patterns.
   - label: "🐛bug"
     branch:
       - "/^fix[/-].+/"
 
-  # Automatically applies the "🐞hotfix" label based on branch naming patterns.
   - label: "🐞hotfix"
     branch:
       - "/^hotfix[/-].+/"
 
-  # Automatically applies the "📝documentation" label based on branch naming patterns.
   - label: "📝documentation"
     branch:
       - "/^docs[/-].+/"
+
+  - label: "🔧maintenance"
+    branch:
+      - "/^(ci|build|chore|test|style|revert)[/-].+/"
+
+  - label: "dependencies"
+    branch:
+      - "/^(deps|dependabot)[/-].+/"
