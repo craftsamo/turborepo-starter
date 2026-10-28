@@ -1,24 +1,12 @@
 name: Tests
 
 on:
+  # Every push to main runs, so that each main commit gets a Required checks
+  # verdict and the workflows that follow a successful run, such as Release
+  # Drafter, see one. The changes job keeps the expensive jobs scoped: a push
+  # that touches nothing they test finishes on the changes job alone.
   push:
     branches: [main]
-    paths:
-      - ".github/workflows/tests.yml"
-      - ".cz-config.js"
-      - ".husky/**"
-      - "apps/**"
-      - "commitlint.config.js"
-      - "package.json"
-      - "package-scripts.js"
-      - "packages/**"
-      - "pnpm-lock.yaml"
-      - "pnpm-workspace.yaml"
-      - "scripts/**"
-      - "turbo.json"
-      # Markdown under the apps and the packages is documentation.
-      - "!apps/**/*.md"
-      - "!packages/**/*.md"
   pull_request:
     branches: [main]
   workflow_dispatch:

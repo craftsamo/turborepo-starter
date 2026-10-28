@@ -4,8 +4,7 @@
 
 ## Prerequisites
 
-- Push to `main` with application, package, script, workflow, or root toolchain
-  changes other than Markdown under `apps/` and `packages/`
+- Push to `main`
 - Pull request against `main`
 - Or manual trigger via GitHub Actions UI (`workflow_dispatch`)
 - Node.js 24.x compatible environment
@@ -13,9 +12,11 @@
 
 ## How It Works
 
-The workflow always reports a `Required checks` result for pull requests while
-using path filtering to skip expensive application checks when no relevant files
-changed.
+The workflow always reports a `Required checks` result for pull requests and
+for every push to `main`, while using path filtering to skip expensive
+application checks when no relevant files changed. A push that touches only
+documentation finishes on the `changes` job alone, so every `main` commit
+still gets a verdict that other workflows can follow, such as Release Drafter.
 
 ### Process
 
