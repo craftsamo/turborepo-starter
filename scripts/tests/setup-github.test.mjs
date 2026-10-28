@@ -159,7 +159,6 @@ describe("Actions settings", () => {
     assert.equal(settings.selectedActions.verified_allowed, false);
     assert.deepEqual(settings.selectedActions.patterns_allowed, [
       "dorny/paths-filter@*",
-      "release-drafter/release-drafter@*",
       "release-drafter/release-drafter/autolabeler@*",
       "micnncim/action-label-syncer@*",
     ]);

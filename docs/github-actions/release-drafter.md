@@ -6,31 +6,33 @@
 
 - Pull requests must be **opened or reopened**, against any base branch
 - Or the Tests workflow completes successfully on `main`
-- Pull requests must have labels matching the configuration in
-  `.github/release-drafter.yml`
+- Pull requests must have labels matching `.github/release-drafter.yml`
+  (labeling) and `.github/release-notes.json` (notes and version)
 - The labeling job needs `pull-requests: write`; the drafting job needs
   `contents: write`
 
 ## How It Works
 
 The workflow labels pull requests and keeps a draft release up to date with
-the pull requests merged into `main`, using the
-[release-drafter](https://github.com/release-drafter/release-drafter) action
-(v7). Publishing the draft stays a manual step.
+the pull requests merged into `main`. Labeling uses the autolabeler of
+[release-drafter](https://github.com/release-drafter/release-drafter) (v7);
+the draft is written by `scripts/release`. Publishing the draft stays a manual
+step.
 
 ### Process
 
 1. **Trigger**: PR opened/reopened (labels only) or a successful Tests run
    on `main` (draft only)
 2. **Auto-label**: Apply labels based on the branch name
-3. **Categorize**: Group the merged pull requests by label (Features, Bug
-   Fixes, Enhancements, Documentation, Other Changes)
-4. **Generate**: Create or update draft release notes
+3. **Collect**: Find the pull requests whose merge commit landed on `main`
+   since the last published release
+4. **Categorize**: Group them by label (Features, Bug Fixes, Enhancements,
+   Documentation, Other Changes)
 5. **Resolve Version**: Calculate the version bump from the labels
+6. **Generate**: Create or update the one draft release
 
-Release Drafter v7 ships labeling and drafting as two actions, so the workflow
-runs one job per event: `label_pull_request` on a pull request and
-`update_release_draft` after a Tests run. A newer run for the same pull
+The workflow runs one job per event: `label_pull_request` on a pull request
+and `update_release_draft` after a Tests run. A newer run for the same pull
 request or branch cancels the one still in progress, since each run rebuilds
 the labels or the draft from the current state.
 
@@ -43,30 +45,59 @@ only afterwards, so a `main` filter would miss it. Only `main` redrafts the
 release; a draft built from a pull request run would target the pull request's
 merge ref instead of `main`.
 
+### Stacked Pull Requests
+
+A stack merged in one go lands every layer on `main` with one merge commit,
+but only its lowest pull request targeted `main`; the upper ones merged into
+the branch below them. Release Drafter's own drafting finds a pull request
+through the commits it brought to `main`'s history, which only counts pull
+requests that targeted `main`, so it would leave the upper layers out of the
+notes and their labels out of the version.
+
+`scripts/release` instead searches the pull requests merged since the last
+release, in any branch, and keeps those whose merge commit is in the range of
+the release. Every layer of a stack records the same merge commit, so every
+layer is listed, however many there are. A pull request merged into another
+long-lived branch is left out, since its merge commit is not in the range.
+
+```sh
+nps "release.draft --dry-run"
+```
+
+prints the draft the next run would write, without writing it.
+
 ### Drafting After Tests
 
 The draft follows `main` through the Tests workflow rather than the push
 itself: `update_release_draft` runs on `workflow_run` when Tests completes on
-`main`, and only when it succeeded. A `main` commit that fails its checks
-leaves the draft at the last state that passed, and the next successful run
-catches the draft up. Tests runs on every push to `main`, including one that
-only touches documentation, so every `main` commit reaches this trigger.
-Re-running a failed Tests run, or dispatching it manually on `main`, redrafts
-once it passes.
+`main`, and only when it succeeded on a push or a manual run (never on a pull
+request, whose head branch a fork may also call `main`). The draft targets the
+commit Tests passed on, so publishing it tags exactly what was checked. A
+`main` commit that fails its checks leaves the draft at the last state that
+passed, and the next successful run catches the draft up. Tests runs on every
+push to `main`, including one that only touches documentation, so every `main`
+commit reaches this trigger. Re-running a failed Tests run, or dispatching it
+manually on `main`, redrafts once it passes.
+
+With nothing to release since the last release (no pull request, or only
+`skip-changelog` ones), the run leaves the draft and the version alone.
 
 ### Release Naming
 
-| Component    | Format               | Example              |
-| ------------ | -------------------- | -------------------- |
-| Release name | `v$RESOLVED_VERSION` | `v1.2.3 🚀`          |
-| Git tag      | `v$RESOLVED_VERSION` | `v1.2.3`             |
-| Change entry | PR title + author    | `Title @user (#123)` |
+| Component    | Format            | Example              |
+| ------------ | ----------------- | -------------------- |
+| Release name | `v<version> 🚀`   | `v1.2.3 🚀`          |
+| Git tag      | `v<version>`      | `v1.2.3`             |
+| Change entry | PR title + author | `Title @user (#123)` |
+
+`name` and `tagPrefix` in `.github/release-notes.json` set the first two.
 
 ### Change Categories
 
 Each merged pull request appears once, under the first category whose label it
 carries. A pull request with none of these labels lands under Other Changes,
-and one labeled `skip-changelog` is left out of the notes altogether.
+and one labeled `skip-changelog` is left out of the notes altogether. The
+categories live in `.github/release-notes.json`.
 
 | Category         | Labels              |
 | ---------------- | ------------------- |
@@ -78,7 +109,8 @@ and one labeled `skip-changelog` is left out of the notes altogether.
 
 ### Version Resolution
 
-The highest bump among the merged pull requests wins:
+The highest bump among the merged pull requests wins, counted from the last
+published release that is not a prerelease (`0.0.0` before the first):
 
 | Version Type | Trigger Labels                     |
 | ------------ | ---------------------------------- |
@@ -103,7 +135,7 @@ nearly everything as documentation.
 ### Version on `main`
 
 After redrafting, the same job sets the root `package.json` version on `main`
-to the version the draft resolved, when it differs, with a
+to the draft's version, when it differs, with a
 `chore(release): set the version to <version>` commit by `github-actions[bot]`.
 So `main` always names the release it is heading for, and the commit a release
 tags carries its version.
@@ -117,11 +149,11 @@ it works on personal repositories as well. Any workflow of this repository can
 read the secret and so push to `main`; a fork's workflow cannot read it.
 
 Unlike a push with `GITHUB_TOKEN`, a push with the key starts workflows: Tests
-runs on the bump commit, and the redraft that follows finds the version
-already set and pushes nothing, so it cannot loop. If `main` moves between the
-checkout and the push, the push is rejected and the job fails; the Tests run
-of that new commit redrafts and bumps again, so nothing needs doing. Without
-the secret, the job warns and leaves the version alone. Classic branch
+runs on the bump commit, and the redraft that follows targets it, finds the
+version already set and pushes nothing, so it cannot loop. If `main` moves
+between the checkout and the push, the push is rejected and the job fails; the
+Tests run of that new commit redrafts and bumps again, so nothing needs doing.
+Without the secret, the job warns and leaves the version alone. Classic branch
 protection, which the setup falls back to where Rulesets are unavailable, has
 no such bypass: there the bump fails and the manual command below is the way.
 
@@ -143,14 +175,14 @@ of each app.
 ## Publishing a Release
 
 Open the draft under Releases, read the notes, and publish it. GitHub creates
-the `v<version>` tag on the head of `main` at that moment. Publish once Release
-Drafter has run for the last merge: the draft then lists that pull request, and
-`main` carries the version.
+the `v<version>` tag on the commit the draft targets. Publish once the run that
+follows the version bump has redrafted: the draft then targets the bump commit,
+which carries the version.
 
 A pull request that merges before publishing can move the draft to another
-version: a feature raises the minor, a `🌟major` label the major. Release
-Drafter follows it on the next successful Tests run, and sets the new version
-on `main` the same way.
+version: a feature raises the minor, a `🌟major` label the major. The workflow
+follows it on the next successful Tests run, and sets the new version on
+`main` the same way.
 
 ### Rolling Back
 

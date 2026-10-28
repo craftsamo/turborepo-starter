@@ -295,9 +295,9 @@ export const MODEL_VARIABLES = ["OPENCODE_MODEL", ...AGENTS.map(agentVariable)];
 export const PROVIDER_SECRETS: readonly string[] = SECRET_VARIABLES;
 const ALLOWED_ACTION_PATTERNS = [
   "dorny/paths-filter@*",
-  "release-drafter/release-drafter@*",
-  // The autolabeler of the same repository, which the drafter pattern does
-  // not cover: the pattern matches the action's full path.
+  // Release Drafter's autolabeler only; scripts/release drafts the release.
+  // A pattern matches the action's full path, so this one does not allow the
+  // drafter at the repository root.
   "release-drafter/release-drafter/autolabeler@*",
   "micnncim/action-label-syncer@*",
 ];

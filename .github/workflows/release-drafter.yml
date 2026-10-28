@@ -19,10 +19,11 @@ permissions:
   contents: read
 
 jobs:
-  # Release Drafter v7 splits labeling off into its own action, so each event
-  # runs the one it needs: a pull request only labels, a Tests run on main
-  # only redrafts. Drafting from a pull request would point the draft at its
-  # merge ref instead of main.
+  # A pull request only gets its labels, from Release Drafter's autolabeler. A
+  # Tests run on main only redrafts, with scripts/release: Release Drafter
+  # finds a pull request through the commits it brought to main's history,
+  # which leaves out the upper layers of a stack merged in one go, since they
+  # merge into the branch below them.
   label_pull_request:
     if: github.event_name == 'pull_request'
     concurrency:
@@ -38,11 +39,14 @@ jobs:
       - uses: release-drafter/release-drafter/autolabeler@v7
 
   update_release_draft:
-    # Only a successful Tests run redrafts. A failed run leaves the draft at
-    # the last state of main that passed; a manual run of Tests on main
-    # redrafts once it passes.
+    # Only a successful Tests run of main itself redrafts: a push or a manual
+    # run. The branches filter above matches the head branch's name, so a
+    # pull request from a fork's own main would pass it. A failed run leaves
+    # the draft at the last state of main that passed; a manual run of Tests
+    # on main redrafts once it passes.
     if: >-
       github.event_name == 'workflow_run' &&
+      github.event.workflow_run.event != 'pull_request' &&
       github.event.workflow_run.conclusion == 'success'
     # Each run rebuilds the draft from the current state of main, so a newer
     # run replaces the one still in progress.
@@ -57,36 +61,42 @@ jobs:
       # A secret cannot appear in a step's if, so whether it is set is read
       # here once.
       RELEASE_KEY_SET: ${{ secrets.RELEASE_DEPLOY_KEY != '' }}
+      GH_TOKEN: ${{ github.token }}
     steps:
-      - uses: release-drafter/release-drafter@v7
-        id: draft
-      # Keep the root package version on main at the version the draft
-      # resolved, so the commit the release tags carries it. The push uses
-      # the release deploy key, which the main ruleset lets through (the
-      # GitHub setup creates the key and adds deploy keys as a bypass actor).
-      # Unlike GITHUB_TOKEN, the push starts Tests, so the bump is checked
-      # too; the redraft that follows finds the version already set and
-      # pushes nothing, so this cannot loop. The draft resolves no version
-      # while nothing has merged since the last release, and these steps are
-      # skipped.
-      - name: Warn that the version cannot be set
-        if: steps.draft.outputs.resolved_version != '' && env.RELEASE_KEY_SET != 'true'
-        run: echo "::warning::RELEASE_DEPLOY_KEY is not set, so the version on main stays as it is. Run nps setup.github to create it, or nps release.sync to set the version by hand."
+      # The whole history and the tags, to find the commits since the last
+      # release. With the release deploy key when it is set, so the version
+      # bump below can push to main; otherwise with GITHUB_TOKEN.
       - uses: actions/checkout@v7
-        if: steps.draft.outputs.resolved_version != '' && env.RELEASE_KEY_SET == 'true'
         with:
           ref: main
+          fetch-depth: 0
           ssh-key: ${{ secrets.RELEASE_DEPLOY_KEY }}
       - name: Use Node.js 24.x
-        if: steps.draft.outputs.resolved_version != '' && env.RELEASE_KEY_SET == 'true'
         uses: actions/setup-node@v7
         with:
           node-version: 24.x
           package-manager-cache: false
-      - name: Set the version on main to the draft's
-        if: steps.draft.outputs.resolved_version != '' && env.RELEASE_KEY_SET == 'true'
+      # The draft targets the commit Tests passed on, so publishing it tags
+      # exactly what was checked. With nothing to release since the last
+      # release, the step sets no version and the steps below are skipped.
+      - name: Draft the release
+        id: draft
         env:
-          VERSION: ${{ steps.draft.outputs.resolved_version }}
+          TARGET: ${{ github.event.workflow_run.head_sha }}
+        run: node scripts/release/main.mts draft --target "$TARGET"
+      # Keep the root package version on main at the draft's, so the commit
+      # the release tags carries it. The push uses the release deploy key,
+      # which the main ruleset lets through (the GitHub setup creates the key
+      # and adds deploy keys as a bypass actor). Unlike GITHUB_TOKEN, the push
+      # starts Tests, so the bump is checked too; the redraft that follows
+      # finds the version already set and pushes nothing, so this cannot loop.
+      - name: Warn that the version cannot be set
+        if: steps.draft.outputs.version != '' && env.RELEASE_KEY_SET != 'true'
+        run: echo "::warning::RELEASE_DEPLOY_KEY is not set, so the version on main stays as it is. Run nps setup.github to create it, or nps release.sync to set the version by hand."
+      - name: Set the version on main to the draft's
+        if: steps.draft.outputs.version != '' && env.RELEASE_KEY_SET == 'true'
+        env:
+          VERSION: ${{ steps.draft.outputs.version }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

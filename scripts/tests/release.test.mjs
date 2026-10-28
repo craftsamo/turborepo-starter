@@ -6,6 +6,7 @@ import {
   bumpMessage,
   currentVersion,
   draftVersion,
+  parseDraftArguments,
   parseSyncArguments,
 } from "../release/main.mts";
 
@@ -95,6 +96,25 @@ describe("bumpMessage", () => {
         assert.ok(line.length <= 72, `body line too long: ${line}`);
       }
     }
+  });
+});
+
+describe("parseDraftArguments", () => {
+  it("takes a target commit and a dry run", () => {
+    assert.deepEqual(parseDraftArguments([]), { dryRun: false });
+    assert.deepEqual(
+      parseDraftArguments(["--target", "52bf51f", "--dry-run"]),
+      {
+        target: "52bf51f",
+        dryRun: true,
+      },
+    );
+  });
+
+  it("rejects a target that is not a commit SHA, or another flag", () => {
+    assert.throws(() => parseDraftArguments(["--target"]), /--target/);
+    assert.throws(() => parseDraftArguments(["--target", "main"]), /--target/);
+    assert.throws(() => parseDraftArguments(["--force"]), /Unknown argument/);
   });
 });
 
