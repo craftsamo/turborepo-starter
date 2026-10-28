@@ -29,6 +29,11 @@
   description: "Indicates a major release update"
   color: "FBCA04"
 
+## Release notes
+- name: "skip-changelog"
+  description: "Leave this pull request out of the release notes"
+  color: "EDEDED"
+
 ## Apps
 - name: "🌐app: web"
   description: "Web application"

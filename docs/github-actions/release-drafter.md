@@ -21,9 +21,9 @@ the pull requests merged into `main`, using the
 ### Process
 
 1. **Trigger**: PR opened/reopened (labels only) or push to `main` (draft only)
-2. **Auto-label**: Apply labels based on branch naming or file changes
-3. **Categorize**: Group the merged pull requests by label (Features,
-   Enhancements, Bug Fixes, Documentation)
+2. **Auto-label**: Apply labels based on the branch name
+3. **Categorize**: Group the merged pull requests by label (Features, Bug
+   Fixes, Enhancements, Documentation, Other Changes)
 4. **Generate**: Create or update draft release notes
 5. **Resolve Version**: Calculate the version bump from the labels
 
@@ -34,8 +34,7 @@ branch cancels the one still in progress, since each run rebuilds the labels
 or the draft from the current state.
 
 Labels follow the branch name, which a later push does not change, so a push
-to a pull request does not run the workflow. The `.md` rule below looks at the
-files when the pull request is opened.
+to a pull request does not run the workflow.
 
 A pull request run only applies labels, whatever the base branch: a stack
 opens each upper pull request on the branch below it and links it to the stack
@@ -53,14 +52,17 @@ pull request's merge ref instead of `main`.
 
 ### Change Categories
 
-Changes are organized into four categories based on PR labels:
+Each merged pull request appears once, under the first category whose label it
+carries. A pull request with none of these labels lands under Other Changes,
+and one labeled `skip-changelog` is left out of the notes altogether.
 
-| Category         | Labels              | Icon |
-| ---------------- | ------------------- | ---- |
-| 🚀 New Features  | `🌱feature`         | 🚀   |
-| ⚒️ Enhancement   | `⚒️enhancement`     | ⚒️   |
-| 🐛 Bug Fixes     | `🐛bug`, `🐞hotfix` | 🐛   |
-| 📄 Documentation | `📝documentation`   | 📄   |
+| Category         | Labels              |
+| ---------------- | ------------------- |
+| 🚀 New Features  | `🌱feature`         |
+| 🐛 Bug Fixes     | `🐛bug`, `🐞hotfix` |
+| ⚒️ Enhancement   | `⚒️enhancement`     |
+| 📄 Documentation | `📝documentation`   |
+| 🧰 Other Changes | (none of the above) |
 
 ### Version Resolution
 
@@ -74,12 +76,14 @@ The highest bump among the merged pull requests wins:
 
 ### Auto-labeling Rules
 
-Labels are automatically applied when a pull request is opened or reopened,
-based on branch naming patterns or file changes:
+Labels are applied when a pull request is opened or reopened, based on the
+branch name. File-based rules are not used: most pull requests touch Markdown
+such as `AGENTS.md` or `docs/` alongside the code, so a `*.md` rule would mark
+nearly everything as documentation.
 
 1. **Feature**: Branch name starts with `feat/`
 2. **Enhancement**: Branch name starts with `enhance/`, `improve/`, or
    `refactor/`
 3. **Bug Fix**: Branch name starts with `fix/`
 4. **Hotfix**: Branch name starts with `hotfix/`
-5. **Documentation**: Branch name starts with `docs/` or changes `.md` files
+5. **Documentation**: Branch name starts with `docs/`
