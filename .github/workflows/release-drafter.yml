@@ -38,11 +38,14 @@ jobs:
       - uses: release-drafter/release-drafter/autolabeler@v7
 
   update_release_draft:
-    # Only a successful Tests run redrafts. A failed run leaves the draft at
-    # the last state of main that passed; a manual run of Tests on main
-    # redrafts once it passes.
+    # Only a successful Tests run of main itself redrafts: a push or a manual
+    # run. The branches filter above matches the head branch's name, so a
+    # pull request from a fork's own main would pass it. A failed run leaves
+    # the draft at the last state of main that passed; a manual run of Tests
+    # on main redrafts once it passes.
     if: >-
       github.event_name == 'workflow_run' &&
+      github.event.workflow_run.event != 'pull_request' &&
       github.event.workflow_run.conclusion == 'success'
     # Each run rebuilds the draft from the current state of main, so a newer
     # run replaces the one still in progress.

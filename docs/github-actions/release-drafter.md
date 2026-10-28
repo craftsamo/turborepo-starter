@@ -47,12 +47,13 @@ merge ref instead of `main`.
 
 The draft follows `main` through the Tests workflow rather than the push
 itself: `update_release_draft` runs on `workflow_run` when Tests completes on
-`main`, and only when it succeeded. A `main` commit that fails its checks
-leaves the draft at the last state that passed, and the next successful run
-catches the draft up. Tests runs on every push to `main`, including one that
-only touches documentation, so every `main` commit reaches this trigger.
-Re-running a failed Tests run, or dispatching it manually on `main`, redrafts
-once it passes.
+`main`, and only when it succeeded on a push or a manual run (never on a pull
+request, whose head branch a fork may also call `main`). A `main` commit that
+fails its checks leaves the draft at the last state that passed, and the next
+successful run catches the draft up. Tests runs on every push to `main`,
+including one that only touches documentation, so every `main` commit reaches
+this trigger. Re-running a failed Tests run, or dispatching it manually on
+`main`, redrafts once it passes.
 
 ### Release Naming
 
