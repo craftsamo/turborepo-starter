@@ -5,7 +5,7 @@
 ## Prerequisites
 
 - Pull requests must be **opened or reopened**, against any base branch
-- Or pushes to `main` branch
+- Or the Tests workflow completes successfully on `main`
 - Pull requests must have labels matching the configuration in
   `.github/release-drafter.yml`
 - The labeling job needs `pull-requests: write`; the drafting job needs
@@ -20,7 +20,8 @@ the pull requests merged into `main`, using the
 
 ### Process
 
-1. **Trigger**: PR opened/reopened (labels only) or push to `main` (draft only)
+1. **Trigger**: PR opened/reopened (labels only) or a successful Tests run
+   on `main` (draft only)
 2. **Auto-label**: Apply labels based on the branch name
 3. **Categorize**: Group the merged pull requests by label (Features, Bug
    Fixes, Enhancements, Documentation, Other Changes)
@@ -29,18 +30,29 @@ the pull requests merged into `main`, using the
 
 Release Drafter v7 ships labeling and drafting as two actions, so the workflow
 runs one job per event: `label_pull_request` on a pull request and
-`update_release_draft` on a push. A newer run for the same pull request or
-branch cancels the one still in progress, since each run rebuilds the labels
-or the draft from the current state.
+`update_release_draft` after a Tests run. A newer run for the same pull
+request or branch cancels the one still in progress, since each run rebuilds
+the labels or the draft from the current state.
 
 Labels follow the branch name, which a later push does not change, so a push
 to a pull request does not run the workflow.
 
 A pull request run only applies labels, whatever the base branch: a stack
 opens each upper pull request on the branch below it and links it to the stack
-only afterwards, so a `main` filter would miss it. Only pushes to `main`
-redraft the release; a draft built from a pull request run would target the
-pull request's merge ref instead of `main`.
+only afterwards, so a `main` filter would miss it. Only `main` redrafts the
+release; a draft built from a pull request run would target the pull request's
+merge ref instead of `main`.
+
+### Drafting After Tests
+
+The draft follows `main` through the Tests workflow rather than the push
+itself: `update_release_draft` runs on `workflow_run` when Tests completes on
+`main`, and only when it succeeded. A `main` commit that fails its checks
+leaves the draft at the last state that passed, and the next successful run
+catches the draft up. Tests runs on every push to `main`, including one that
+only touches documentation, so every `main` commit reaches this trigger.
+Re-running a failed Tests run, or dispatching it manually on `main`, redrafts
+once it passes.
 
 ### Release Naming
 

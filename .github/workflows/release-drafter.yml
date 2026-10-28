@@ -1,7 +1,12 @@
 name: Release Drafter
 
 on:
-  push:
+  # The draft follows a main commit only once Tests has passed on it, so the
+  # draft never describes a state of main that failed its checks. Tests runs
+  # on every push to main, so every main commit reaches this trigger.
+  workflow_run:
+    workflows: [Tests]
+    types: [completed]
     branches: [main]
   # Labels follow the branch name, which a later push does not change, so a
   # pull request is labeled only when it is opened or reopened. Any base
@@ -15,9 +20,9 @@ permissions:
 
 jobs:
   # Release Drafter v7 splits labeling off into its own action, so each event
-  # runs the one it needs: a pull request only labels, a push to main only
-  # redrafts. Drafting from a pull request would point the draft at its merge
-  # ref instead of main.
+  # runs the one it needs: a pull request only labels, a Tests run on main
+  # only redrafts. Drafting from a pull request would point the draft at its
+  # merge ref instead of main.
   label_pull_request:
     if: github.event_name == 'pull_request'
     concurrency:
@@ -33,7 +38,12 @@ jobs:
       - uses: release-drafter/release-drafter/autolabeler@v7
 
   update_release_draft:
-    if: github.event_name == 'push'
+    # Only a successful Tests run redrafts. A failed run leaves the draft at
+    # the last state of main that passed; a manual run of Tests on main
+    # redrafts once it passes.
+    if: >-
+      github.event_name == 'workflow_run' &&
+      github.event.workflow_run.conclusion == 'success'
     # Each run rebuilds the draft from the current state of main, so a newer
     # run replaces the one still in progress.
     concurrency:

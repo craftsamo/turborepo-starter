@@ -232,14 +232,14 @@ project standards.
 
 ### Available Workflows
 
-| Workflow                 | Trigger               | Purpose                                                                |
-| ------------------------ | --------------------- | ---------------------------------------------------------------------- |
-| **Sync Labels**          | Manual dispatch       | Synchronizes repository labels with `.github/labels.yml` configuration |
-| **Display Details**      | Manual dispatch       | Displays project, apps, and repository information                     |
-| **Release Drafter**      | PR opened / push main | Labels new pull requests by branch and drafts categorized releases     |
-| **Tests**                | Push/PR to main       | Runs tests for affected apps and packages                              |
-| **Update VRT baselines** | Manual dispatch       | Renders changed VRT baselines in CI for `nps vrt.accept`               |
-| **Run AI Agent**         | Issue/PR comment      | Plans, builds, reviews, or debugs via `/oc` or `/opencode` commands    |
+| Workflow                 | Trigger              | Purpose                                                                |
+| ------------------------ | -------------------- | ---------------------------------------------------------------------- |
+| **Sync Labels**          | Manual dispatch      | Synchronizes repository labels with `.github/labels.yml` configuration |
+| **Display Details**      | Manual dispatch      | Displays project, apps, and repository information                     |
+| **Release Drafter**      | PR opened / Tests ok | Labels new pull requests by branch and drafts categorized releases     |
+| **Tests**                | Push/PR to main      | Runs tests for affected apps and packages                              |
+| **Update VRT baselines** | Manual dispatch      | Renders changed VRT baselines in CI for `nps vrt.accept`               |
+| **Run AI Agent**         | Issue/PR comment     | Plans, builds, reviews, or debugs via `/oc` or `/opencode` commands    |
 
 ### Documentation
 
