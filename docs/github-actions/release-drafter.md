@@ -23,8 +23,8 @@ step.
 
 1. **Trigger**: PR opened/reopened (labels only) or a successful Tests run
    on `main` (draft only)
-2. **Auto-label**: Apply labels based on the branch name and the changed
-   files
+2. **Auto-label**: Apply labels based on the branch name, the changed files
+   and the description
 3. **Collect**: Find the pull requests whose merge commit landed on `main`
    since the last published release
 4. **Categorize**: Group them by label (Features, Bug Fixes, Enhancements,
@@ -144,6 +144,9 @@ change (`/` or `-` after it). It picks the release notes category.
 The type never follows the changed files: most pull requests touch Markdown
 such as `AGENTS.md` or `docs/` alongside the code, so a `*.md` rule would mark
 nearly everything as documentation.
+
+**Breaking change**: a ticked `Yes` under Breaking Changes in the description,
+as the pull request template asks, adds `🌟major`.
 
 **Area** follows the changed files, compared with the pull request's base, so
 each layer of a stack gets the areas it changes itself. Areas do not affect

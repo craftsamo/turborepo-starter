@@ -45,7 +45,7 @@ The workflow manages all labels defined in `.github/labels.yml`:
   `📦package: types`, `📦package: constants`, `📦package: playwright`
 - **Repository**: `🔄workflows`, `🛠️scripts`
 
-Release Drafter applies the type and area labels to pull requests;
+Release Drafter applies the type, version and area labels to pull requests;
 see [release-drafter.md](release-drafter.md#auto-labeling-rules). Every label
 it applies must be declared here, or a sync would delete it.
 `dependencies` carries no emoji because Dependabot applies that exact name.

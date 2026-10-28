@@ -75,4 +75,19 @@ describe("labels", () => {
       }
     }
   });
+
+  it("labels a ticked Breaking Changes box as major", () => {
+    const rule = rules.find(({ label }) => label === "🌟major");
+    const source = rule.patterns[0];
+    const regex = new RegExp(source.slice(1, source.lastIndexOf("/")));
+    const template = read(".github/PULL_REQUEST_TEMPLATE.md");
+    const tick = (answer) =>
+      template.replace(`- [ ] ${answer}`, `- [x] ${answer}`);
+
+    assert.ok(template.includes("## Breaking Changes"));
+    assert.equal(regex.test(template), false);
+    assert.equal(regex.test(tick("No")), false);
+    assert.equal(regex.test(tick("Yes")), true);
+    assert.equal(regex.test(tick("Yes").replaceAll("\n", "\r\n")), true);
+  });
 });

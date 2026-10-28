@@ -35,6 +35,12 @@ autolabeler:
     branch:
       - "/^(deps|dependabot)[/-].+/"
 
+  # A breaking change raises the major version. The pull request template's
+  # Breaking Changes section carries the answer as a checkbox.
+  - label: "🌟major"
+    body:
+      - "/## Breaking Changes\\s+[-*] \\[[xX]\\] Yes/"
+
   # Area labels follow the changed files, compared with the pull request's
   # base, so a layer of a stack gets the areas it changes itself. They do not
   # affect the release notes. A pattern starting with / is anchored to the
