@@ -4,20 +4,34 @@ name-template: "v$RESOLVED_VERSION 🚀"
 # tag-template: Specifies the tagging convention for the release version.
 tag-template: "v$RESOLVED_VERSION"
 
+# A changelog category contributes a patch increment unless it sets
+# semver-increment.
 categories:
   - title: 🚀 New Features
-    labels:
-      - "🌱feature"
+    semver-increment: minor
+    when:
+      label: "🌱feature"
   - title: ⚒️ Enhancement
-    labels:
-      - "⚒️enhancement"
+    when:
+      label: "⚒️enhancement"
   - title: 🐛 Bug Fixes
-    labels:
-      - "🐛bug"
-      - "🐞hotfix"
+    when:
+      labels:
+        - "🐛bug"
+        - "🐞hotfix"
   - title: 📄 Documentation
-    labels:
-      - "📝documentation"
+    when:
+      label: "📝documentation"
+
+  # A version-resolver category only affects $RESOLVED_VERSION. The highest
+  # increment among all matching categories wins.
+  - type: version-resolver
+    semver-increment: major
+    when:
+      label: "🌟major"
+  # The fallback when no other category resolves a version.
+  - type: version-resolver
+    semver-increment: patch
 
 # change-template: Defines the format for individual change log entries in the release notes.
 # - `$TITLE`: Represents the title of the change.
@@ -27,25 +41,6 @@ change-template: "- $TITLE @$AUTHOR (#$NUMBER)"
 
 # You can add # and @ to disable mentions, and add ` to disable code blocks.
 change-title-escapes: '\<*_&'
-
-version-resolver:
-  # Specifies labels that trigger a major version bump.
-  major:
-    labels:
-      - "🌟major"
-  # Specifies labels that trigger a minor version bump.
-  minor:
-    labels:
-      - "🌱feature"
-  # Specifies labels that trigger a patch version bump.
-  patch:
-    labels:
-      - "📝documentation"
-      - "⚒️enhancement"
-      - "🐛bug"
-      - "🐞hotfix"
-  # Specifies the default version bump when no labels match.
-  default: patch
 
 template: |
   ## Changes

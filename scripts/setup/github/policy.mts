@@ -274,6 +274,9 @@ export const PROVIDER_SECRETS: readonly string[] = SECRET_VARIABLES;
 const ALLOWED_ACTION_PATTERNS = [
   "dorny/paths-filter@*",
   "release-drafter/release-drafter@*",
+  // The autolabeler of the same repository, which the drafter pattern does
+  // not cover: the pattern matches the action's full path.
+  "release-drafter/release-drafter/autolabeler@*",
   "micnncim/action-label-syncer@*",
 ];
 const ARTIFACT_RETENTION_DAYS = 30;

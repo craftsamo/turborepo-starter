@@ -10,22 +10,38 @@ on:
   pull_request:
     types: [opened, reopened]
 
+permissions:
+  contents: read
+
 jobs:
-  update_release_draft:
-    # Each run rebuilds the draft and the labels from the current state, so a
-    # newer run replaces the one still in progress.
+  # Release Drafter v7 splits labeling off into its own action, so each event
+  # runs the one it needs: a pull request only labels, a push to main only
+  # redrafts. Drafting from a pull request would point the draft at its merge
+  # ref instead of main.
+  label_pull_request:
+    if: github.event_name == 'pull_request'
     concurrency:
-      group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+      group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
       cancel-in-progress: true
+    # A job-level permissions block replaces the workflow-level one, so the
+    # read the action needs to load its configuration is repeated here.
     permissions:
-      contents: write
+      contents: read
       pull-requests: write
     runs-on: ubuntu-latest
     steps:
-      - uses: release-drafter/release-drafter@v6
-        with:
-          # A pull request run only labels. Drafting from it would point the
-          # draft at the pull request's merge ref instead of main.
-          disable-releaser: ${{ github.event_name == 'pull_request' }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: release-drafter/release-drafter/autolabeler@v7
+
+  update_release_draft:
+    if: github.event_name == 'push'
+    # Each run rebuilds the draft from the current state of main, so a newer
+    # run replaces the one still in progress.
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
+    permissions:
+      contents: write
+      pull-requests: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: release-drafter/release-drafter@v7

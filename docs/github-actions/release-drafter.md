@@ -8,27 +8,30 @@
 - Or pushes to `main` branch
 - Pull requests must have labels matching the configuration in
   `.github/release-drafter.yml`
-- Repository must have `contents: write` and `pull-requests: write` permissions
+- The labeling job needs `pull-requests: write`; the drafting job needs
+  `contents: write`
 
 ## How It Works
 
-The workflow automatically creates and updates draft releases based on pull
-requests and commits to the `main` branch using the
-[release-drafter](https://github.com/release-drafter/release-drafter) action.
+The workflow labels pull requests and keeps a draft release up to date with
+the pull requests merged into `main`, using the
+[release-drafter](https://github.com/release-drafter/release-drafter) action
+(v7). Publishing the draft stays a manual step.
 
 ### Process
 
 1. **Trigger**: PR opened/reopened (labels only) or push to `main` (draft only)
-2. **Analyze**: Review PR labels and branch naming patterns
-3. **Categorize**: Group changes by category (Features, Enhancements, Bug Fixes,
-   Documentation)
-4. **Auto-label**: Apply labels based on branch naming or file changes
-5. **Generate**: Create or update draft release notes
-6. **Resolve Version**: Calculate version bump based on labels
+2. **Auto-label**: Apply labels based on branch naming or file changes
+3. **Categorize**: Group the merged pull requests by label (Features,
+   Enhancements, Bug Fixes, Documentation)
+4. **Generate**: Create or update draft release notes
+5. **Resolve Version**: Calculate the version bump from the labels
 
-A newer run for the same pull request or branch cancels the one still in
-progress, since each run rebuilds the draft and the labels from the current
-state.
+Release Drafter v7 ships labeling and drafting as two actions, so the workflow
+runs one job per event: `label_pull_request` on a pull request and
+`update_release_draft` on a push. A newer run for the same pull request or
+branch cancels the one still in progress, since each run rebuilds the labels
+or the draft from the current state.
 
 Labels follow the branch name, which a later push does not change, so a push
 to a pull request does not run the workflow. The `.md` rule below looks at the
@@ -61,13 +64,13 @@ Changes are organized into four categories based on PR labels:
 
 ### Version Resolution
 
-Version bumps are determined by labels on pull requests:
+The highest bump among the merged pull requests wins:
 
-| Version Type | Trigger Labels                                        |
-| ------------ | ----------------------------------------------------- |
-| Major        | `🌟major`                                             |
-| Minor        | `🌱feature`                                           |
-| Patch        | `📝documentation`, `⚒️enhancement`, `🐛bug`, `🐞hotfix` (default) |
+| Version Type | Trigger Labels                     |
+| ------------ | ---------------------------------- |
+| Major        | `🌟major`                          |
+| Minor        | `🌱feature`                        |
+| Patch        | Every other pull request (default) |
 
 ### Auto-labeling Rules
 
