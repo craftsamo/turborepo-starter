@@ -595,9 +595,14 @@ function applyBranchProtection(
   );
 }
 
+// A ruleset the API rejects as invalid is a mistake in the desired ruleset,
+// not a sign that Rulesets are unavailable, so it is not a reason to fall
+// back to classic branch protection.
 function isRulesetUnavailable(error: unknown): boolean {
   return (
-    error instanceof CommandError && [403, 404, 422].includes(error.httpStatus)
+    error instanceof CommandError &&
+    [403, 404, 422].includes(error.httpStatus) &&
+    !error.stderr.includes("Validation Failed")
   );
 }
 
