@@ -21,6 +21,9 @@ module.exports = {
       accept: `node scripts/vrt/main.mts accept`,
       update: `node scripts/vrt/main.mts update`,
     },
+    release: {
+      sync: `node scripts/release/main.mts sync`,
+    },
     prepare: {
       default: `nps prepare.web`,
       web: `pnpm install`,
