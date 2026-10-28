@@ -34,3 +34,51 @@ autolabeler:
   - label: "dependencies"
     branch:
       - "/^(deps|dependabot)[/-].+/"
+
+  # Area labels follow the changed files, compared with the pull request's
+  # base, so a layer of a stack gets the areas it changes itself. They do not
+  # affect the release notes. A pattern starting with / is anchored to the
+  # repository root, and one ending with / takes everything below it.
+  - label: "🌐app: web"
+    files:
+      - "/apps/web/"
+
+  - label: "📦package: constants"
+    files:
+      - "/packages/constants/"
+
+  - label: "📦package: eslint"
+    files:
+      - "/packages/eslint/"
+
+  - label: "📦package: playwright"
+    files:
+      - "/packages/playwright/"
+
+  - label: "📦package: prettier"
+    files:
+      - "/packages/prettier/"
+
+  - label: "📦package: tsconfig"
+    files:
+      - "/packages/tsconfig/"
+
+  - label: "📦package: types"
+    files:
+      - "/packages/types/"
+
+  - label: "📦package: ui"
+    files:
+      - "/packages/ui/"
+
+  - label: "📦package: vitest"
+    files:
+      - "/packages/vitest/"
+
+  - label: "🔄workflows"
+    files:
+      - "/.github/"
+
+  - label: "🛠️scripts"
+    files:
+      - "/scripts/"

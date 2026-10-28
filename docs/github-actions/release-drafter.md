@@ -23,7 +23,8 @@ step.
 
 1. **Trigger**: PR opened/reopened (labels only) or a successful Tests run
    on `main` (draft only)
-2. **Auto-label**: Apply labels based on the branch name
+2. **Auto-label**: Apply labels based on the branch name and the changed
+   files
 3. **Collect**: Find the pull requests whose merge commit landed on `main`
    since the last published release
 4. **Categorize**: Group them by label (Features, Bug Fixes, Enhancements,
@@ -109,6 +110,8 @@ categories live in `.github/release-notes.json`.
 | 🔧 Maintenance   | `🔧maintenance`     |
 | 🧰 Other Changes | (none of the above) |
 
+Area labels such as `🌐app: web` do not pick a category.
+
 ### Version Resolution
 
 The highest bump among the merged pull requests wins, counted from the last
@@ -141,6 +144,21 @@ change (`/` or `-` after it). It picks the release notes category.
 The type never follows the changed files: most pull requests touch Markdown
 such as `AGENTS.md` or `docs/` alongside the code, so a `*.md` rule would mark
 nearly everything as documentation.
+
+**Area** follows the changed files, compared with the pull request's base, so
+each layer of a stack gets the areas it changes itself. Areas do not affect
+the release notes or the version.
+
+| Changed files under | Label               |
+| ------------------- | ------------------- |
+| `apps/web/`         | `🌐app: web`        |
+| `packages/<name>/`  | `📦package: <name>` |
+| `.github/`          | `🔄workflows`       |
+| `scripts/`          | `🛠️scripts`         |
+
+A new app or package needs a rule in `.github/release-drafter.yml` and its
+label in `.github/labels.yml`; `scripts/tests/labels.test.mjs` fails until
+both exist.
 
 ### Version on `main`
 
