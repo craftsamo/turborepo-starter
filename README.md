@@ -210,6 +210,7 @@ list.
 | `nps setup.project`        | Initialize project metadata and licensing   |
 | `nps setup.github`         | Configure GitHub repository settings        |
 | `nps setup.github.secrets` | Configure Repository or Environment secrets |
+| `nps release.sync`         | Set the root version on main to the draft's |
 | `nps docker.build.web`     | Build the web Docker image                  |
 | `nps docker.start.web`     | Start the web container via docker-compose  |
 | `nps start`                | Start the built web app in production mode  |

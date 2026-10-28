@@ -99,3 +99,63 @@ nearly everything as documentation.
 3. **Bug Fix**: Branch name starts with `fix/`
 4. **Hotfix**: Branch name starts with `hotfix/`
 5. **Documentation**: Branch name starts with `docs/`
+
+### Version on `main`
+
+After redrafting, the same job sets the root `package.json` version on `main`
+to the version the draft resolved, when it differs, with a
+`chore(release): set the version to <version>` commit by `github-actions[bot]`.
+So `main` always names the release it is heading for, and the commit a release
+tags carries its version.
+
+The push uses the release deploy key, whose private half is the
+`RELEASE_DEPLOY_KEY` secret. `nps setup.github` creates the key and the secret,
+and adds deploy keys as a bypass actor of the `Starter: protect main` Ruleset,
+so the push goes straight to `main`. GitHub accepts GitHub Actions itself as a
+bypass actor only on organization repositories, which is why a key is used:
+it works on personal repositories as well. Any workflow of this repository can
+read the secret and so push to `main`; a fork's workflow cannot read it.
+
+Unlike a push with `GITHUB_TOKEN`, a push with the key starts workflows: Tests
+runs on the bump commit, and the redraft that follows finds the version
+already set and pushes nothing, so it cannot loop. If `main` moves between the
+checkout and the push, the push is rejected and the job fails; the Tests run
+of that new commit redrafts and bumps again, so nothing needs doing. Without
+the secret, the job warns and leaves the version alone. Classic branch
+protection, which the setup falls back to where Rulesets are unavailable, has
+no such bypass: there the bump fails and the manual command below is the way.
+
+```sh
+nps release.sync
+```
+
+`release.sync` does the same by hand, for when Actions cannot run: it reads the
+one draft release, takes the version from its tag, commits the bump in a
+temporary worktree so the checked-out branch is left alone, and pushes it to
+`main` under your own account, which the Ruleset allows for repository
+administrators. When `main` already carries the version, it says so and
+changes nothing.
+
+Only the root `package.json` follows the release. `apps/*/package.json` keep
+their own versions, which the `Get details` workflow reads for the deployment
+of each app.
+
+## Publishing a Release
+
+Open the draft under Releases, read the notes, and publish it. GitHub creates
+the `v<version>` tag on the head of `main` at that moment. Publish once Release
+Drafter has run for the last merge: the draft then lists that pull request, and
+`main` carries the version.
+
+A pull request that merges before publishing can move the draft to another
+version: a feature raises the minor, a `🌟major` label the major. Release
+Drafter follows it on the next successful Tests run, and sets the new version
+on `main` the same way.
+
+### Rolling Back
+
+A published release is a tag and a page, not a deployment, so a mistake is
+corrected forward: revert the offending pull request on `main` and publish the
+next patch. Deleting a release and its tag leaves the version in the history of
+everyone who fetched it, so only do that for a release published by accident
+before anyone could have seen it.
