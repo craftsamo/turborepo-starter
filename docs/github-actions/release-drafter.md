@@ -4,7 +4,8 @@
 
 ## Prerequisites
 
-- Pull requests must be **opened or reopened**, against any base branch
+- A pull request is **opened, reopened, pushed to or edited**, against any
+  base branch
 - Or the Tests workflow completes successfully on `main`
 - Pull requests must have labels matching `.github/release-drafter.yml`
   (labeling) and `.github/release-notes.json` (notes and version)
@@ -21,8 +22,8 @@ step.
 
 ### Process
 
-1. **Trigger**: PR opened/reopened (labels only) or a successful Tests run
-   on `main` (draft only)
+1. **Trigger**: PR opened, reopened, pushed to or edited (labels only) or a
+   successful Tests run on `main` (draft only)
 2. **Auto-label**: Apply labels based on the branch name, the changed files
    and the description
 3. **Collect**: Find the pull requests whose merge commit landed on `main`
@@ -37,8 +38,9 @@ and `update_release_draft` after a Tests run. A newer run for the same pull
 request or branch cancels the one still in progress, since each run rebuilds
 the labels or the draft from the current state.
 
-Labels follow the branch name, which a later push does not change, so a push
-to a pull request does not run the workflow.
+A push can change the files a pull request touches, and an edit its
+description or its base, so both label it again. Labeling only adds labels; see
+[Auto-labeling Rules](#auto-labeling-rules).
 
 A pull request run only applies labels, whatever the base branch: a stack
 opens each upper pull request on the branch below it and links it to the stack
@@ -125,8 +127,9 @@ published release that is not a prerelease (`0.0.0` before the first):
 
 ### Auto-labeling Rules
 
-Labels are applied when a pull request is opened or reopened. The rules live
-in `.github/release-drafter.yml`, and every rule that matches adds its label.
+Labels are applied when a pull request is opened, reopened, pushed to or
+edited. The rules live in `.github/release-drafter.yml`, and every rule that
+matches adds its label.
 
 **Type** follows the branch name, whose prefix is the commit type of the
 change (`/` or `-` after it). It picks the release notes category.
@@ -162,6 +165,16 @@ the release notes or the version.
 A new app or package needs a rule in `.github/release-drafter.yml` and its
 label in `.github/labels.yml`; `scripts/tests/labels.test.mjs` fails until
 both exist.
+
+Labeling never removes a label. One added by hand stays, and so does one whose
+rule stops matching: a `🌟major` added by a ticked box stays after the box is
+unticked, so remove it by hand, before the merge, or the next draft raises the
+major version. Changing a label after the merge takes effect on the next
+redraft.
+
+Dependabot's own pull requests are not labeled by the workflow: a run
+Dependabot starts gets a read-only token. Dependabot labels them
+`dependencies` itself.
 
 ### Version on `main`
 
