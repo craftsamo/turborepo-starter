@@ -1,4 +1,5 @@
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { createInterface } from "node:readline/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
@@ -20,6 +21,9 @@ import {
   MODEL_VARIABLES,
   parseArguments,
   parseLabels,
+  planReleaseKey,
+  RELEASE_KEY_SECRET,
+  RELEASE_KEY_TITLE,
   REPOSITORY_RULESET_NAME,
   REQUIRED_CHECK,
 } from "./policy.mts";
@@ -35,6 +39,8 @@ import type {
   Label,
   LabelDiff,
   ObjectDiff,
+  ReleaseKeyPlan,
+  ReleaseKeyState,
   RepositoryMetadata,
   RetentionSettings,
   RetentionState,
@@ -606,6 +612,80 @@ function isRulesetUnavailable(error: unknown): boolean {
   );
 }
 
+function getReleaseKeyState(repository: string): ReleaseKeyState {
+  const keys = api<Array<{ id: number; title: string; read_only: boolean }>>(
+    "GET",
+    `/repos/${repository}/keys?per_page=100`,
+  )!;
+  const key = keys.find(({ title }) => title === RELEASE_KEY_TITLE);
+  let secret = true;
+  try {
+    api("GET", `/repos/${repository}/actions/secrets/${RELEASE_KEY_SECRET}`);
+  } catch (error) {
+    if (!(error instanceof CommandError && error.httpStatus === 404)) {
+      throw error;
+    }
+    secret = false;
+  }
+  return { key, secret };
+}
+
+function printReleaseKeyPlan(plan: ReleaseKeyPlan): void {
+  console.log("\nRelease deploy key");
+  if (plan === "keep") console.log("  No changes.");
+  else if (plan === "create") {
+    console.log(
+      `  Create the writable deploy key "${RELEASE_KEY_TITLE}" and the ${RELEASE_KEY_SECRET} secret.`,
+    );
+  } else {
+    console.log(
+      `  Replace the deploy key "${RELEASE_KEY_TITLE}" and the ${RELEASE_KEY_SECRET} secret (one is missing or read-only).`,
+    );
+  }
+}
+
+/**
+ * Create a new key pair, register its public half as a writable deploy key
+ * and store its private half in the secret, then drop the key it replaces.
+ * The private key only ever exists in a temporary directory and the secret.
+ */
+function applyReleaseKey(
+  repository: string,
+  plan: ReleaseKeyPlan,
+  state: ReleaseKeyState,
+): void {
+  if (plan === "keep") return;
+  const directory = mkdtempSync(path.join(tmpdir(), "release-key-"));
+  try {
+    const file = path.join(directory, "key");
+    runCommand("ssh-keygen", [
+      "-t",
+      "ed25519",
+      "-N",
+      "",
+      "-C",
+      `${RELEASE_KEY_TITLE} (${repository})`,
+      "-f",
+      file,
+      "-q",
+    ]);
+    api("POST", `/repos/${repository}/keys`, {
+      title: RELEASE_KEY_TITLE,
+      key: readFileSync(`${file}.pub`, "utf8").trim(),
+      read_only: false,
+    });
+    runCommand(
+      "gh",
+      ["secret", "set", RELEASE_KEY_SECRET, "--repo", repository],
+      { input: readFileSync(file, "utf8") },
+    );
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+  if (state.key) api("DELETE", `/repos/${repository}/keys/${state.key.id}`);
+  console.log(`Applied release deploy key: ${RELEASE_KEY_TITLE}`);
+}
+
 function applyMainProtection(repository: string, integrationId: number): void {
   const desired = buildMainRuleset(integrationId);
   try {
@@ -681,6 +761,8 @@ export async function setupRepository(args: SetupArguments): Promise<void> {
       desiredLabels,
       getCurrentLabels(repository),
     );
+    const releaseKeyState = getReleaseKeyState(repository);
+    const releaseKeyPlan = planReleaseKey(releaseKeyState);
 
     printDiff("Repository settings", repositoryChanges);
     printDiff(
@@ -735,6 +817,7 @@ export async function setupRepository(args: SetupArguments): Promise<void> {
       })),
     );
     printLabelDiff(labelChanges);
+    printReleaseKeyPlan(releaseKeyPlan);
     console.log(`\nMain protection: ${REPOSITORY_RULESET_NAME}`);
     console.log(`Required status check: ${REQUIRED_CHECK}`);
     if (shaPinningRequired) {
@@ -787,6 +870,7 @@ export async function setupRepository(args: SetupArguments): Promise<void> {
       ]);
     }
     applyLabels(repository, labelChanges);
+    applyReleaseKey(repository, releaseKeyPlan, releaseKeyState);
     const integrationId = await runRequiredChecks(repository);
     applyMainProtection(repository, integrationId);
     console.log("\nGitHub repository setup completed.");
