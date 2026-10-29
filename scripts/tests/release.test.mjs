@@ -7,7 +7,9 @@ import {
   currentVersion,
   draftVersion,
   parseDraftArguments,
+  parsePublishArguments,
   parseSyncArguments,
+  unlistedCommits,
 } from "../release/main.mts";
 
 const release = (tag_name, draft) => ({
@@ -136,5 +138,31 @@ describe("parseSyncArguments", () => {
       /--version/,
     );
     assert.throws(() => parseSyncArguments(["--force"]), /Unknown argument/);
+  });
+});
+
+describe("parsePublishArguments", () => {
+  it("takes a dry run and nothing else", () => {
+    assert.deepEqual(parsePublishArguments([]), { dryRun: false });
+    assert.deepEqual(parsePublishArguments(["--dry-run"]), { dryRun: true });
+    assert.throws(() => parsePublishArguments(["--force"]), /Unknown argument/);
+  });
+});
+
+describe("unlistedCommits", () => {
+  it("keeps every commit except the version bumps", () => {
+    const [bump] = bumpMessage("0.12.0");
+    const log = [
+      `${"a".repeat(40)} ${bump}`,
+      `${"b".repeat(40)} Add a page (#64)`,
+      `${"c".repeat(40)} chore(release): something else`,
+      "",
+    ].join("\n");
+    assert.deepEqual(unlistedCommits(log), [
+      `${"b".repeat(40)} Add a page (#64)`,
+      `${"c".repeat(40)} chore(release): something else`,
+    ]);
+    assert.deepEqual(unlistedCommits(`${"a".repeat(40)} ${bump}`), []);
+    assert.deepEqual(unlistedCommits(""), []);
   });
 });

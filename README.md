@@ -211,6 +211,7 @@ list.
 | `nps setup.github`         | Configure GitHub repository settings        |
 | `nps setup.github.secrets` | Configure Repository or Environment secrets |
 | `nps release.draft`        | Draft the next release (`--dry-run` to see) |
+| `nps release.publish`      | Publish the draft on its version commit     |
 | `nps release.sync`         | Set the root version on main to the draft's |
 | `nps docker.build.web`     | Build the web Docker image                  |
 | `nps docker.start.web`     | Start the web container via docker-compose  |

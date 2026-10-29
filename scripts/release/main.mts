@@ -40,9 +40,11 @@ export interface Release {
   tag_name: string;
   name: string;
   html_url: string;
+  target_commitish: string;
 }
 
 const VERSION = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
+const BUMP_SUBJECT_PREFIX = "chore(release): set the version to ";
 
 /**
  * The version a draft release resolves to: its tag without the `v` prefix.
@@ -94,7 +96,7 @@ export function bumpedManifest(manifest: string, version: string): string {
  */
 export function bumpMessage(version: string): [string, string] {
   return [
-    `chore(release): set the version to ${version}`,
+    `${BUMP_SUBJECT_PREFIX}${version}`,
     `The draft release names v${version} as the\n` +
       "next release. Publishing the draft tags main, so the tagged commit\n" +
       "names the version it releases.",
@@ -103,6 +105,30 @@ export function bumpMessage(version: string): [string, string] {
 
 export function currentVersion(manifest: string): string {
   return (JSON.parse(manifest) as { version?: string }).version ?? "";
+}
+
+/**
+ * The commits of `git log --format="%H %s"` output that are not version
+ * bumps: the changes on main that a draft targeting an older commit does
+ * not list.
+ */
+export function unlistedCommits(log: string): string[] {
+  return log
+    .split("\n")
+    .filter(Boolean)
+    .filter(
+      (line) =>
+        !line.slice(line.indexOf(" ") + 1).startsWith(BUMP_SUBJECT_PREFIX),
+    );
+}
+
+export function parsePublishArguments(argv: string[]): { dryRun: boolean } {
+  let dryRun = false;
+  for (const value of argv) {
+    if (value === "--dry-run") dryRun = true;
+    else throw new Error(`Unknown argument: ${value}`);
+  }
+  return { dryRun };
 }
 
 export function parseSyncArguments(argv: string[]): { version?: string } {
@@ -156,11 +182,44 @@ function bumpAndPush(workTree: string, version: string): boolean {
 }
 
 /**
- * Set the root package version on main to the draft release's. With
- * --version, the version is given (Release Drafter passes the one it just
- * resolved) and the current directory is the checkout of main to commit in.
- * Without it, the draft is read from GitHub and the commit is made in a
- * temporary worktree, so the checked-out branch is left alone.
+ * Set the version on main to `version` in a temporary worktree of `base`, so
+ * the checked-out branch is left alone. Returns whether a commit was pushed
+ * and the commit main then ends at.
+ */
+function bumpMain(
+  base: string,
+  version: string,
+): { pushed: boolean; head: string } {
+  const workTree = mkdtempSync(path.join(tmpdir(), "release-"));
+  try {
+    git(["worktree", "add", "--detach", workTree, base]);
+    const pushed = bumpAndPush(workTree, version);
+    return { pushed, head: git(["rev-parse", "HEAD"], workTree) };
+  } finally {
+    try {
+      git(["worktree", "remove", "--force", workTree]);
+    } catch {
+      rmSync(workTree, { recursive: true, force: true });
+      git(["worktree", "prune"]);
+    }
+  }
+}
+
+function readDraft(repository: string): { version: string; draft: Release } {
+  const releases = api<Release[]>(
+    "GET",
+    `/repos/${repository}/releases?per_page=30`,
+  )!;
+  return draftVersion(releases);
+}
+
+/**
+ * Set the root package version on main to the draft release's, without
+ * publishing it. With --version, the version is given (Release Drafter
+ * passes the one it just resolved) and the current directory is the checkout
+ * of main to commit in. Without it, the draft is read from GitHub and the
+ * commit is made in a temporary worktree, so the checked-out branch is left
+ * alone.
  */
 function sync(argv: string[]): void {
   const { version: given } = parseSyncArguments(argv);
@@ -174,34 +233,86 @@ function sync(argv: string[]): void {
     return;
   }
 
-  const repository = getRepositoryName();
-  const releases = api<Release[]>(
-    "GET",
-    `/repos/${repository}/releases?per_page=30`,
-  )!;
-  const { version, draft } = draftVersion(releases);
+  const { version, draft } = readDraft(getRepositoryName());
   console.log(`Draft release: ${draft.name} (${draft.tag_name})`);
-
   git(["fetch", "origin", "main"]);
-  const base = git(["rev-parse", "origin/main"]);
-  const workTree = mkdtempSync(path.join(tmpdir(), "release-"));
-  let pushed: boolean;
-  try {
-    git(["worktree", "add", "--detach", workTree, base]);
-    pushed = bumpAndPush(workTree, version);
-  } finally {
-    try {
-      git(["worktree", "remove", "--force", workTree]);
-    } catch {
-      rmSync(workTree, { recursive: true, force: true });
-      git(["worktree", "prune"]);
-    }
-  }
+  const { pushed } = bumpMain(git(["rev-parse", "origin/main"]), version);
   console.log(
     pushed
-      ? `Set the version to ${version} on main. Publish the draft: ${draft.html_url}`
-      : `main is already at ${version}; publish the draft: ${draft.html_url}`,
+      ? `Set the version to ${version} on main. Publish with nps release.publish.`
+      : `main is already at ${version}. Publish with nps release.publish.`,
   );
+}
+
+/** A release's target as a commit: a SHA as it is, a branch from origin. */
+function targetCommit(target: string): string {
+  return git([
+    "rev-parse",
+    "--verify",
+    `${/^[0-9a-f]{40}$/.test(target) ? target : `origin/${target}`}^{commit}`,
+  ]);
+}
+
+/**
+ * Publish the draft release: set the version on main to the draft's with a
+ * commit, then publish the draft on that commit, so the tag names a commit
+ * that carries its version. It refuses while main has changes the draft does
+ * not list yet, which the redraft after Tests passes on main catches up on.
+ * --dry-run checks and prints what it would do, without doing it.
+ */
+function publish(argv: string[]): void {
+  const { dryRun } = parsePublishArguments(argv);
+  const repository = process.env.GITHUB_REPOSITORY ?? getRepositoryName();
+  const { version, draft } = readDraft(repository);
+  console.log(`Draft release: ${draft.name} (${draft.tag_name})`);
+
+  git(["fetch", "--quiet", "--tags", "origin", "main"]);
+  if (git(["tag", "--list", draft.tag_name])) {
+    throw new Error(
+      `The tag ${draft.tag_name} already exists; publishing would attach the release to it.`,
+    );
+  }
+  const base = git(["rev-parse", "origin/main"]);
+  let target: string;
+  try {
+    target = targetCommit(draft.target_commitish);
+    git(["merge-base", "--is-ancestor", target, base]);
+  } catch {
+    throw new Error(
+      `The draft targets ${draft.target_commitish.slice(0, 7)}, which is not on main. Wait for the Release Drafter run that follows Tests on main.`,
+    );
+  }
+  const unlisted = unlistedCommits(
+    git(["log", "--format=%H %s", `${target}..${base}`]),
+  );
+  if (unlisted.length > 0) {
+    throw new Error(
+      [
+        `main has ${unlisted.length} commit(s) the draft does not list yet:`,
+        ...unlisted.map((line) => `  ${line.slice(0, 7)}${line.slice(40)}`),
+        "Publish once Release Drafter has redrafted after Tests passes on main.",
+      ].join("\n"),
+    );
+  }
+
+  if (dryRun) {
+    console.log(
+      `Would set the version on main (${base.slice(0, 7)}) to ${version} and publish ${draft.tag_name} on it.`,
+    );
+    return;
+  }
+  const { pushed, head } = bumpMain(base, version);
+  console.log(
+    pushed
+      ? `Set the version to ${version} on main (${head.slice(0, 7)}).`
+      : `main is already at ${version} (${head.slice(0, 7)}).`,
+  );
+  const published = api<Release>(
+    "PATCH",
+    `/repos/${repository}/releases/${draft.id}`,
+    { target_commitish: head, draft: false },
+  )!;
+  console.log(`Published ${published.html_url}`);
 }
 
 export function parseDraftArguments(argv: string[]): {
@@ -321,31 +432,43 @@ function sinceDate(tag: string): string {
 
 /**
  * Point the one draft release at `target` with the given tag, name and notes,
- * creating it when there is none.
+ * creating it when there is none. A release published while this run worked
+ * out the notes is left alone: writing it would turn it back into a draft, or
+ * draft its tag a second time. Returns undefined then.
  */
 function writeDraft(
   repository: string,
   release: { tag_name: string; name: string; body: string },
   target: string,
-): string {
-  const drafts = api<Release[]>(
+): string | undefined {
+  const releases = api<Release[]>(
     "GET",
     `/repos/${repository}/releases?per_page=100`,
-  )!.filter((candidate) => candidate.draft);
+  )!;
+  if (releases.some((r) => !r.draft && r.tag_name === release.tag_name)) {
+    return undefined;
+  }
+  const drafts = releases.filter((candidate) => candidate.draft);
   if (drafts.length > 1) {
     throw new Error(
       `Several draft releases (${drafts.map((d) => d.tag_name).join(", ")}); delete the stale ones.`,
     );
   }
   const payload = { ...release, target_commitish: target, draft: true };
-  const written = drafts[0]
-    ? api<Release>(
-        "PATCH",
-        `/repos/${repository}/releases/${drafts[0].id}`,
-        payload,
-      )
-    : api<Release>("POST", `/repos/${repository}/releases`, payload);
-  return written!.html_url;
+  if (drafts[0]) {
+    const current = api<Release>(
+      "GET",
+      `/repos/${repository}/releases/${drafts[0].id}`,
+    )!;
+    if (!current.draft) return undefined;
+    return api<Release>(
+      "PATCH",
+      `/repos/${repository}/releases/${drafts[0].id}`,
+      payload,
+    )!.html_url;
+  }
+  return api<Release>("POST", `/repos/${repository}/releases`, payload)!
+    .html_url;
 }
 
 /**
@@ -400,14 +523,20 @@ function draft(argv: string[]): void {
     console.log(`\n${release.body}`);
     return;
   }
-  console.log(`Drafted ${writeDraft(repository, release, target)}`);
-  if (process.env.GITHUB_OUTPUT) {
+  const written = writeDraft(repository, release, target);
+  console.log(
+    written
+      ? `Drafted ${written}`
+      : `${release.tag_name} was published meanwhile; the draft is left alone.`,
+  );
+  if (written && process.env.GITHUB_OUTPUT) {
     appendFileSync(process.env.GITHUB_OUTPUT, `version=${version}\n`);
   }
 }
 
 const commands: Record<string, (argv: string[]) => void | Promise<void>> = {
   draft,
+  publish,
   sync,
 };
 
@@ -416,7 +545,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const command = commands[name];
   if (!command) {
     console.error(
-      "Usage: node scripts/release/main.mts draft [--target SHA] [--dry-run] | sync [--version X.Y.Z]",
+      "Usage: node scripts/release/main.mts draft [--target SHA] [--dry-run] | publish [--dry-run] | sync [--version X.Y.Z]",
     );
     process.exitCode = 2;
   } else {
