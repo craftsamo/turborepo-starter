@@ -348,8 +348,8 @@ access to the keys.
   `.github/opencode/plugins/` for CI only, or under `.opencode/` to share them
   with local sessions. See [Skills and Plugins](#skills-and-plugins).
 - **OpenCode version**: Change `OPENCODE_VERSION` in `opencode-agent.yml`.
-- **Tests workflow**: `build` starts `tests.yml`; change `TESTS_WORKFLOW` in
-  `scripts/ci/opencode/main.mts` if yours is named differently.
+- **Tests workflow**: `build` starts `tests.yml`; pass another file name as the
+  `ci-workflow` input where `opencode.yml` calls `opencode-agent.yml`.
 
 ## Known Limitations
 

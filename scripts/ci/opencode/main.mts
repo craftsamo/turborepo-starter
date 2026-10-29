@@ -67,7 +67,8 @@ const configDir = path.resolve(
 const workspace = resolveRepositoryRoot();
 const RUN_TIMEOUT_MS = 15 * 60 * 1000;
 const MAX_COMMENT = 60_000;
-const TESTS_WORKFLOW = "tests.yml";
+// The ci-workflow input of opencode-agent.yml sets CI_WORKFLOW.
+const DEFAULT_CI_WORKFLOW = "tests.yml";
 const BOT_NAME = "github-actions[bot]";
 const BOT_EMAIL = "41898282+github-actions[bot]@users.noreply.github.com";
 // A dispatched Tests run is not attached to the pull request, so it cannot
@@ -546,18 +547,21 @@ function formatFailure(agent: AgentName, error: string, foot: string): string {
 }
 
 // Pushes and PRs made with GITHUB_TOKEN start no workflows; workflow_dispatch
-// is the exception, so the Tests workflow is started explicitly.
+// is the exception, so the CI workflow is started explicitly.
 function dispatchTests(repository: string, ref: string): string {
+  const workflow = process.env.CI_WORKFLOW || DEFAULT_CI_WORKFLOW;
   try {
     api(
       "POST",
-      `/repos/${repository}/actions/workflows/${TESTS_WORKFLOW}/dispatches`,
+      `/repos/${repository}/actions/workflows/${workflow}/dispatches`,
       { ref },
     );
-    return `Started the Tests workflow on \`${ref}\`.`;
+    return `Started the ${workflow} workflow on \`${ref}\`.`;
   } catch (error) {
-    console.log(`::warning::Could not start the Tests workflow: ${error}`);
-    return "Could not start the Tests workflow; run it from the Actions tab.";
+    console.log(
+      `::warning::Could not start the ${workflow} workflow: ${error}`,
+    );
+    return `Could not start the ${workflow} workflow; run it from the Actions tab.`;
   }
 }
 
