@@ -1,1 +1,1 @@
-node scripts/check-commit-size.mjs --cached
+pnpm exec repo-kit check commit-size
