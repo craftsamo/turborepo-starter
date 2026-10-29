@@ -1,32 +1,93 @@
 # Read by Release Drafter's autolabeler, which labels a pull request when it
-# is opened. The release notes and the version come from those labels, through
-# .github/release-notes.json and scripts/release.
+# is opened, pushed to or edited. The release notes and the version come from
+# those labels, through .github/release-notes.json and scripts/release.
+#
+# Every rule that matches adds its labels, and none are removed: a label set by
+# hand stays, and so does one whose rule no longer matches.
 
-# Labels follow the branch name only. A file rule such as `*.md` would label
-# most pull requests as documentation, since they touch AGENTS.md or docs
-# alongside the code.
 autolabeler:
-  # Automatically applies the "🌱feature" label based on branch naming patterns.
+  # Type labels follow the branch name, whose prefix is the commit type of the
+  # change. Each branch gets at most one, and it picks the release notes
+  # category. A file rule such as `*.md` would label most pull requests as
+  # documentation, since they touch AGENTS.md or docs alongside the code.
   - label: "🌱feature"
     branch:
       - "/^feat[/-].+/"
 
-  # Automatically applies the "⚒️enhancement" label based on branch naming patterns.
   - label: "⚒️enhancement"
     branch:
-      - "/^(enhance|improve|refactor)[/-].+/"
+      - "/^(enhance|improve|refactor|perf)[/-].+/"
 
-  # Automatically applies the "🐛bug" label based on branch naming patterns.
   - label: "🐛bug"
     branch:
       - "/^fix[/-].+/"
 
-  # Automatically applies the "🐞hotfix" label based on branch naming patterns.
   - label: "🐞hotfix"
     branch:
       - "/^hotfix[/-].+/"
 
-  # Automatically applies the "📝documentation" label based on branch naming patterns.
   - label: "📝documentation"
     branch:
       - "/^docs[/-].+/"
+
+  - label: "🔧maintenance"
+    branch:
+      - "/^(ci|build|chore|test|style|revert)[/-].+/"
+
+  - label: "dependencies"
+    branch:
+      - "/^(deps|dependabot)[/-].+/"
+
+  # A breaking change raises the major version. The pull request template's
+  # Breaking Changes section carries the answer as a checkbox.
+  - label: "🌟major"
+    body:
+      - "/## Breaking Changes\\s+[-*] \\[[xX]\\] Yes/"
+
+  # Area labels follow the changed files, compared with the pull request's
+  # base, so a layer of a stack gets the areas it changes itself. They do not
+  # affect the release notes. A pattern starting with / is anchored to the
+  # repository root, and one ending with / takes everything below it.
+  - label: "🌐app: web"
+    files:
+      - "/apps/web/"
+
+  - label: "📦package: constants"
+    files:
+      - "/packages/constants/"
+
+  - label: "📦package: eslint"
+    files:
+      - "/packages/eslint/"
+
+  - label: "📦package: playwright"
+    files:
+      - "/packages/playwright/"
+
+  - label: "📦package: prettier"
+    files:
+      - "/packages/prettier/"
+
+  - label: "📦package: tsconfig"
+    files:
+      - "/packages/tsconfig/"
+
+  - label: "📦package: types"
+    files:
+      - "/packages/types/"
+
+  - label: "📦package: ui"
+    files:
+      - "/packages/ui/"
+
+  - label: "📦package: vitest"
+    files:
+      - "/packages/vitest/"
+
+  - label: "🔄workflows"
+    files:
+      - "/.github/"
+
+  - label: "🛠️scripts"
+    files:
+      - "/scripts/"

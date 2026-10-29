@@ -125,6 +125,25 @@ describe("releaseChanges", () => {
     );
   });
 
+  it("files upkeep by its type label and ignores area labels", () => {
+    const ci = pr(["🔧maintenance", "🔄workflows"]);
+    const bump = pr(["dependencies"]);
+    const areaOnly = pr(["🌐app: web", "📦package: ui"]);
+    const changes = releaseChanges([ci, bump, areaOnly], config);
+    assert.deepEqual(
+      changes.sections.map(({ title, pullRequests }) => [
+        title,
+        pullRequests.map(({ number }) => number),
+      ]),
+      [
+        ["⬆️ Dependencies", [bump.number]],
+        ["🔧 Maintenance", [ci.number]],
+        ["🧰 Other Changes", [areaOnly.number]],
+      ],
+    );
+    assert.equal(changes.increment, "patch");
+  });
+
   it("raises the version by the highest increment, major above all", () => {
     assert.equal(
       releaseChanges([pr(["🐛bug"]), pr([])], config).increment,

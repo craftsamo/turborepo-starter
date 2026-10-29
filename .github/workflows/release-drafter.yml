@@ -8,12 +8,12 @@ on:
     workflows: [Tests]
     types: [completed]
     branches: [main]
-  # Labels follow the branch name, which a later push does not change, so a
-  # pull request is labeled only when it is opened or reopened. Any base
-  # counts: a stack opens each upper pull request on the branch below it, and
-  # links it to the stack only afterwards.
+  # Labels follow the branch name, the changed files and the body, so a pull
+  # request is labeled again on a push and on an edit, which also covers a
+  # new base. Any base counts: a stack opens each upper pull request on the
+  # branch below it, and links it to the stack only afterwards.
   pull_request:
-    types: [opened, reopened]
+    types: [opened, reopened, synchronize, edited]
 
 permissions:
   contents: read
@@ -25,7 +25,11 @@ jobs:
   # which leaves out the upper layers of a stack merged in one go, since they
   # merge into the branch below them.
   label_pull_request:
-    if: github.event_name == 'pull_request'
+    # A run Dependabot starts gets a read-only token, so labeling would fail;
+    # Dependabot labels its own pull requests as dependencies.
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.actor != 'dependabot[bot]'
     concurrency:
       group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
       cancel-in-progress: true
