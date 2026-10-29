@@ -264,7 +264,7 @@ export interface RulesetInput {
   >;
 }
 
-const REPOSITORY_RULESET_NAME = "Starter: protect main";
+const REPOSITORY_RULESET_NAME = "Protect main";
 const REQUIRED_CHECK = "Required checks";
 
 // The deploy key the Publish Release workflow pushes the root version bump to

@@ -341,7 +341,7 @@ describe("main protection", () => {
       (rule) => rule.type === "required_status_checks",
     );
 
-    assert.equal(ruleset.name, "Starter: protect main");
+    assert.equal(ruleset.name, "Protect main");
     assert.deepEqual(ruleset.conditions.ref_name.include, ["refs/heads/main"]);
     assert.deepEqual(ruleset.bypass_actors, [
       { actor_id: 5, actor_type: "RepositoryRole", bypass_mode: "always" },
