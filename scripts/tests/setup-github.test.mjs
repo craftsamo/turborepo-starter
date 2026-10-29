@@ -468,44 +468,17 @@ describe("labels", () => {
     assert.equal(changes.update[0].desired.description, "Feature addition");
   });
 
-  it("renames the legacy question label without deleting assignments", () => {
-    const desired = [
-      { name: "💬question", description: "Questions", color: "D876E3" },
-    ];
-    const changes = diffLabels(desired, [
-      { name: "💬quesion", description: "Questions", color: "D876E3" },
-    ]);
+  it("renames a label whose name only changes case", () => {
+    const changes = diffLabels(
+      [{ name: "Bug", description: "Bugs", color: "D73A4A" }],
+      [{ name: "bug", description: "Bugs", color: "D73A4A" }],
+    );
 
     assert.equal(changes.create.length, 0);
     assert.equal(changes.remove.length, 0);
-    assert.deepEqual(changes.update, [
-      {
-        current: {
-          name: "💬quesion",
-          description: "Questions",
-          color: "D876E3",
-        },
-        desired: {
-          name: "💬question",
-          description: "Questions",
-          color: "D876E3",
-        },
-      },
-    ]);
-  });
-
-  it("fails closed when both legacy and corrected labels exist", () => {
-    const desired = [
-      { name: "💬question", description: "Questions", color: "D876E3" },
-    ];
-
-    assert.throws(
-      () =>
-        diffLabels(desired, [
-          { name: "💬quesion", description: "Questions", color: "D876E3" },
-          { name: "💬question", description: "Questions", color: "D876E3" },
-        ]),
-      /Merge their assignments manually/,
+    assert.deepEqual(
+      changes.update.map(({ current, desired }) => [current.name, desired.name]),
+      [["bug", "Bug"]],
     );
   });
 });

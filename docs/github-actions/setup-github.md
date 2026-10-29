@@ -52,7 +52,7 @@ final confirmation. Use `--repo owner/repository` to target a repository other
 than the current Git remote.
 
 Label synchronization prunes labels not declared in `.github/labels.yml`. The
-dry run lists every label that would be created, updated, renamed, or deleted.
+dry run lists every label that would be created, updated, or deleted.
 
 ## Main Protection
 

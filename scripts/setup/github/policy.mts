@@ -298,7 +298,6 @@ const ARTIFACT_RETENTION_DAYS = 30;
 // drops the caches of merged branches before they crowd out main's in the
 // repository's 10 GB cache quota.
 const CACHE_RETENTION_DAYS = 3;
-const LABEL_RENAMES = new Map([["💬quesion", "💬question"]]);
 
 export function parseArguments(argv: string[]): SetupArguments {
   const args: SetupArguments = {
@@ -642,39 +641,18 @@ function validateLabel(label: Partial<Label>): Label {
 export function diffLabels(
   desired: Label[],
   current: CurrentLabel[],
-  renames: ReadonlyMap<string, string> = LABEL_RENAMES,
 ): LabelDiff {
   const currentByName = new Map(
     current.map((label) => [label.name.toLowerCase(), label]),
   );
-  for (const [previousName, nextName] of renames) {
-    if (
-      currentByName.has(previousName.toLowerCase()) &&
-      currentByName.has(nextName.toLowerCase())
-    ) {
-      throw new Error(
-        `Cannot migrate label '${previousName}' because '${nextName}' already exists. Merge their assignments manually before setup.`,
-      );
-    }
-  }
   const desiredNames = new Set(
     desired.map((label) => label.name.toLowerCase()),
   );
   const create = [];
   const update = [];
-  const renamedCurrentNames = new Set();
 
   for (const label of desired) {
-    let existing = currentByName.get(label.name.toLowerCase());
-    if (!existing) {
-      const previousName = [...renames.entries()].find(
-        ([, nextName]) => nextName.toLowerCase() === label.name.toLowerCase(),
-      )?.[0];
-      existing = previousName
-        ? currentByName.get(previousName.toLowerCase())
-        : undefined;
-      if (existing) renamedCurrentNames.add(existing.name.toLowerCase());
-    }
+    const existing = currentByName.get(label.name.toLowerCase());
     if (!existing) {
       create.push(label);
       continue;
@@ -689,9 +667,7 @@ export function diffLabels(
   }
 
   const remove = current.filter(
-    (label) =>
-      !desiredNames.has(label.name.toLowerCase()) &&
-      !renamedCurrentNames.has(label.name.toLowerCase()),
+    (label) => !desiredNames.has(label.name.toLowerCase()),
   );
   return { create, update, remove };
 }
