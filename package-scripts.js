@@ -23,6 +23,7 @@ module.exports = {
     },
     release: {
       draft: `node scripts/release/main.mts draft`,
+      publish: `node scripts/release/main.mts publish`,
       sync: `node scripts/release/main.mts sync`,
     },
     prepare: {

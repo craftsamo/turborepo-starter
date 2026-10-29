@@ -211,6 +211,7 @@ list.
 | `nps setup.github`         | Configure GitHub repository settings        |
 | `nps setup.github.secrets` | Configure Repository or Environment secrets |
 | `nps release.draft`        | Draft the next release (`--dry-run` to see) |
+| `nps release.publish`      | Publish the draft on its version commit     |
 | `nps release.sync`         | Set the root version on main to the draft's |
 | `nps docker.build.web`     | Build the web Docker image                  |
 | `nps docker.start.web`     | Start the web container via docker-compose  |
@@ -239,6 +240,7 @@ project standards.
 | **Sync Labels**          | Manual dispatch      | Synchronizes repository labels with `.github/labels.yml` configuration |
 | **Display Details**      | Manual dispatch      | Displays project, apps, and repository information                     |
 | **Release Drafter**      | PR change / Tests ok | Labels pull requests by type and area and drafts categorized releases  |
+| **Publish Release**      | Manual / published   | Sets the version on main and publishes the draft release               |
 | **Tests**                | Push/PR to main      | Runs tests for affected apps and packages                              |
 | **Update VRT baselines** | Manual dispatch      | Renders changed VRT baselines in CI for `nps vrt.accept`               |
 | **Run AI Agent**         | Issue/PR comment     | Plans, builds, reviews, or debugs via `/oc` or `/opencode` commands    |

@@ -6,8 +6,11 @@ import {
   bumpMessage,
   currentVersion,
   draftVersion,
+  isLowerVersion,
   parseDraftArguments,
+  parsePublishArguments,
   parseSyncArguments,
+  unlistedCommits,
 } from "../release/main.mts";
 
 const release = (tag_name, draft) => ({
@@ -136,5 +139,45 @@ describe("parseSyncArguments", () => {
       /--version/,
     );
     assert.throws(() => parseSyncArguments(["--force"]), /Unknown argument/);
+  });
+});
+
+describe("parsePublishArguments", () => {
+  it("takes a dry run and nothing else", () => {
+    assert.deepEqual(parsePublishArguments([]), { dryRun: false });
+    assert.deepEqual(parsePublishArguments(["--dry-run"]), { dryRun: true });
+    assert.throws(() => parsePublishArguments(["--force"]), /Unknown argument/);
+  });
+});
+
+describe("unlistedCommits", () => {
+  it("keeps every commit except the version bumps", () => {
+    const [bump] = bumpMessage("0.12.0");
+    const log = [
+      `${"a".repeat(40)} ${bump}`,
+      `${"b".repeat(40)} Add a page (#64)`,
+      `${"c".repeat(40)} chore(release): something else`,
+      "",
+    ].join("\n");
+    assert.deepEqual(unlistedCommits(log), [
+      `${"b".repeat(40)} Add a page (#64)`,
+      `${"c".repeat(40)} chore(release): something else`,
+    ]);
+    assert.deepEqual(unlistedCommits(`${"a".repeat(40)} ${bump}`), []);
+    assert.deepEqual(unlistedCommits(""), []);
+  });
+});
+
+describe("isLowerVersion", () => {
+  it("orders versions, a prerelease before its release", () => {
+    assert.equal(isLowerVersion("0.11.0", "0.12.0"), true);
+    assert.equal(isLowerVersion("0.12.0", "0.11.9"), false);
+    assert.equal(isLowerVersion("0.9.0", "0.10.0"), true);
+    assert.equal(isLowerVersion("1.0.0", "1.0.0"), false);
+    assert.equal(isLowerVersion("1.0.0-rc.1", "1.0.0"), true);
+    assert.equal(isLowerVersion("1.0.0", "1.0.0-rc.1"), false);
+    assert.equal(isLowerVersion("1.0.0-rc.2", "1.0.0-rc.10"), true);
+    assert.equal(isLowerVersion("1.0.0-beta", "1.0.0-rc"), true);
+    assert.equal(isLowerVersion("1.0.0-rc", "1.0.0-rc.1"), true);
   });
 });
