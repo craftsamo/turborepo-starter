@@ -1,4 +1,10 @@
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import {
+  existsSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { createInterface } from "node:readline/promises";
 import { fileURLToPath } from "node:url";
@@ -25,7 +31,7 @@ import {
   RELEASE_KEY_SECRET,
   RELEASE_KEY_TITLE,
   REPOSITORY_RULESET_NAME,
-  REQUIRED_CHECK,
+  workflowActionPatterns,
 } from "./policy.mts";
 import type {
   ActionsPermissionsState,
@@ -289,6 +295,14 @@ function applyLabels(repository: string, changes: LabelDiff): void {
   }
 }
 
+function readWorkflows(): string[] {
+  const directory = path.join(repositoryRoot, ".github/workflows");
+  if (!existsSync(directory)) return [];
+  return readdirSync(directory)
+    .filter((file) => /\.ya?ml$/.test(file))
+    .map((file) => readFileSync(path.join(directory, file), "utf8"));
+}
+
 function getActionsState(repository: string): ActionsState {
   const permissions = api<ActionsPermissionsState>(
     "GET",
@@ -464,7 +478,10 @@ export function applyCacheRetention(
 const delay = (milliseconds: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, milliseconds));
 
-async function runRequiredChecks(repository: string): Promise<number> {
+async function runRequiredChecks(
+  repository: string,
+  { requiredCheck, ciWorkflow }: SetupArguments,
+): Promise<number> {
   const headSha = api<GitRefResponse>(
     "GET",
     `/repos/${repository}/git/ref/heads/main`,
@@ -476,7 +493,7 @@ async function runRequiredChecks(repository: string): Promise<number> {
       "--repo",
       repository,
       "--workflow",
-      "tests.yml",
+      ciWorkflow,
       "--event",
       "workflow_dispatch",
       "--branch",
@@ -493,7 +510,7 @@ async function runRequiredChecks(repository: string): Promise<number> {
   runCommand("gh", [
     "workflow",
     "run",
-    "tests.yml",
+    ciWorkflow,
     "--repo",
     repository,
     "--ref",
@@ -510,7 +527,7 @@ async function runRequiredChecks(repository: string): Promise<number> {
         "--repo",
         repository,
         "--workflow",
-        "tests.yml",
+        ciWorkflow,
         "--event",
         "workflow_dispatch",
         "--branch",
@@ -525,8 +542,9 @@ async function runRequiredChecks(repository: string): Promise<number> {
     if (run) break;
   }
 
-  if (!run)
-    throw new Error("Could not find the dispatched Tests workflow run.");
+  if (!run) {
+    throw new Error(`Could not find the dispatched ${ciWorkflow} run.`);
+  }
   runCommand(
     "gh",
     [
@@ -551,7 +569,7 @@ async function runRequiredChecks(repository: string): Promise<number> {
     ]),
   ) as WorkflowRun;
   const requiredJob = completedRun.jobs.find(
-    ({ name }) => name === REQUIRED_CHECK,
+    ({ name }) => name === requiredCheck,
   );
   if (
     completedRun.headSha !== headSha ||
@@ -559,30 +577,31 @@ async function runRequiredChecks(repository: string): Promise<number> {
     requiredJob?.conclusion !== "success"
   ) {
     throw new Error(
-      `Tests must report a successful '${REQUIRED_CHECK}' job for the current main commit.`,
+      `${ciWorkflow} must report a successful '${requiredCheck}' job for the current main commit.`,
     );
   }
   const checkRuns = api<CheckRunsResponse>(
     "GET",
     `/repos/${repository}/commits/${headSha}/check-runs?per_page=100`,
   )!.check_runs;
-  const requiredCheck = checkRuns.find(
+  const checkRun = checkRuns.find(
     (check) =>
-      check.name === REQUIRED_CHECK &&
+      check.name === requiredCheck &&
       check.conclusion === "success" &&
       check.app?.slug === "github-actions",
   );
-  if (!requiredCheck?.app?.id) {
+  if (!checkRun?.app?.id) {
     throw new Error(
-      `Could not resolve the GitHub Actions App for '${REQUIRED_CHECK}'.`,
+      `Could not resolve the GitHub Actions App for '${requiredCheck}'.`,
     );
   }
-  return requiredCheck.app.id;
+  return checkRun.app.id;
 }
 
 function applyBranchProtection(
   repository: string,
   integrationId: number,
+  requiredCheck: string,
 ): void {
   let current: BranchProtectionInput = {};
   try {
@@ -597,7 +616,7 @@ function applyBranchProtection(
   api(
     "PUT",
     `/repos/${repository}/branches/main/protection`,
-    buildBranchProtection(current, integrationId),
+    buildBranchProtection(current, integrationId, requiredCheck),
   );
 }
 
@@ -686,8 +705,12 @@ function applyReleaseKey(
   console.log(`Applied release deploy key: ${RELEASE_KEY_TITLE}`);
 }
 
-function applyMainProtection(repository: string, integrationId: number): void {
-  const desired = buildMainRuleset(integrationId);
+function applyMainProtection(
+  repository: string,
+  integrationId: number,
+  requiredCheck: string,
+): void {
+  const desired = buildMainRuleset(integrationId, requiredCheck);
   try {
     const rulesets = api<RulesetResponse[]>(
       "GET",
@@ -709,7 +732,7 @@ function applyMainProtection(repository: string, integrationId: number): void {
     console.warn(
       "Rulesets are unavailable; applying classic branch protection.",
     );
-    applyBranchProtection(repository, integrationId);
+    applyBranchProtection(repository, integrationId, requiredCheck);
   }
 }
 
@@ -741,7 +764,10 @@ export async function setupRepository(args: SetupArguments): Promise<void> {
     const shaPinningRequired = Boolean(
       actionsState.permissions.sha_pinning_required,
     );
-    const actionsSettings = buildActionsSettings({ shaPinningRequired });
+    const actionsSettings = buildActionsSettings({
+      shaPinningRequired,
+      allowedActions: workflowActionPatterns(readWorkflows()),
+    });
     const retentionState = getRetentionState(repository);
     const retentionSettings =
       retentionState &&
@@ -819,7 +845,9 @@ export async function setupRepository(args: SetupArguments): Promise<void> {
     printLabelDiff(labelChanges);
     printReleaseKeyPlan(releaseKeyPlan);
     console.log(`\nMain protection: ${REPOSITORY_RULESET_NAME}`);
-    console.log(`Required status check: ${REQUIRED_CHECK}`);
+    console.log(
+      `Required status check: ${args.requiredCheck} (${args.ciWorkflow})`,
+    );
     if (shaPinningRequired) {
       console.warn(
         "Existing SHA pinning is enabled. Setup will not disable it, but the starter's tag-based actions must be pinned before workflows can run.",
@@ -871,8 +899,8 @@ export async function setupRepository(args: SetupArguments): Promise<void> {
     }
     applyLabels(repository, labelChanges);
     applyReleaseKey(repository, releaseKeyPlan, releaseKeyState);
-    const integrationId = await runRequiredChecks(repository);
-    applyMainProtection(repository, integrationId);
+    const integrationId = await runRequiredChecks(repository, args);
+    applyMainProtection(repository, integrationId, args.requiredCheck);
     console.log("\nGitHub repository setup completed.");
   } finally {
     readline?.close();

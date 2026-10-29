@@ -41,11 +41,14 @@ const VERSION = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
 const BUMP_SUBJECT_PREFIX = "chore(release): set the version to ";
 
 /**
- * The version a draft release resolves to: its tag without the `v` prefix.
+ * The version a draft release resolves to: its tag without the tag prefix.
  * Release Drafter keeps one draft, so a second one is an error to resolve
  * before syncing, not a choice to make here.
  */
-export function draftVersion(releases: Release[]): {
+export function draftVersion(
+  releases: Release[],
+  tagPrefix: string,
+): {
   version: string;
   draft: Release;
 } {
@@ -61,13 +64,15 @@ export function draftVersion(releases: Release[]): {
     );
   }
   const draft = drafts[0]!;
-  const match = /^v(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)$/.exec(draft.tag_name);
-  if (!match) {
+  const version = draft.tag_name.startsWith(tagPrefix)
+    ? draft.tag_name.slice(tagPrefix.length)
+    : "";
+  if (!VERSION.test(version)) {
     throw new Error(
-      `The draft's tag "${draft.tag_name}" is not v<major>.<minor>.<patch>.`,
+      `The draft's tag "${draft.tag_name}" is not ${tagPrefix}<major>.<minor>.<patch>.`,
     );
   }
-  return { version: match[1]!, draft };
+  return { version, draft };
 }
 
 /**
@@ -88,10 +93,13 @@ export function bumpedManifest(manifest: string, version: string): string {
  * The subject and body of the version bump commit. The commit is made with
  * hooks off, so the tests hold the message to the commitlint rules instead.
  */
-export function bumpMessage(version: string): [string, string] {
+export function bumpMessage(
+  version: string,
+  tagPrefix: string,
+): [string, string] {
   return [
     `${BUMP_SUBJECT_PREFIX}${version}`,
-    `The draft release names v${version} as the\n` +
+    `The draft release names ${tagPrefix}${version} as the\n` +
       "next release. Publishing the draft tags main, so the tagged commit\n" +
       "names the version it releases.",
   ];
@@ -176,6 +184,12 @@ function git(args: string[], cwd: string = repositoryRoot): string {
   return runCommand("git", ["-C", cwd, ...args]);
 }
 
+function readNotesConfig(): NotesConfig {
+  return parseNotesConfig(
+    readFileSync(path.join(repositoryRoot, NOTES_CONFIG), "utf8"),
+  );
+}
+
 /**
  * Set the root package version in the given checkout of main to `version`
  * and push the commit to main. Returns false when main already carries it.
@@ -189,7 +203,7 @@ function bumpAndPush(workTree: string, version: string): boolean {
   // The checkout may have no node_modules, so the commit-msg hook's
   // commitlint cannot run there; bumpMessage follows the convention it
   // checks.
-  const [subject, body] = bumpMessage(version);
+  const [subject, body] = bumpMessage(version, readNotesConfig().tagPrefix);
   git(
     [
       "-c",
@@ -236,29 +250,29 @@ function readDraft(repository: string): { version: string; draft: Release } {
     "GET",
     `/repos/${repository}/releases?per_page=30`,
   )!;
-  return draftVersion(releases);
+  return draftVersion(releases, readNotesConfig().tagPrefix);
 }
 
 /**
  * Set the root package version on main to the draft release's, without
  * publishing it. With --version, the version is given (the Publish Release
- * workflow passes the one a release was just published with) and the current
- * directory is the checkout of main to commit in; a version lower than main's
- * is left alone, so a release published for an older line does not move
- * main back. Without it, the draft is read from GitHub and the commit is made
- * in a temporary worktree, so the checked-out branch is left alone.
+ * workflow passes the one a release was just published with) and the
+ * repository root is the checkout of main to commit in; a version lower than
+ * main's is left alone, so a release published for an older line does not
+ * move main back. Without it, the draft is read from GitHub and the commit is
+ * made in a temporary worktree, so the checked-out branch is left alone.
  */
 function sync(argv: string[]): void {
   const { version: given } = parseSyncArguments(argv);
   if (given !== undefined) {
     const current = currentVersion(
-      readFileSync(path.join(process.cwd(), "package.json"), "utf8"),
+      readFileSync(path.join(repositoryRoot, "package.json"), "utf8"),
     );
     if (isLowerVersion(given, current)) {
       console.log(`main is at ${current}, past ${given}; left as it is.`);
       return;
     }
-    const pushed = bumpAndPush(process.cwd(), given);
+    const pushed = bumpAndPush(repositoryRoot, given);
     console.log(
       pushed
         ? `Set the version to ${given} on main.`
@@ -515,9 +529,7 @@ function writeDraft(
 function draft(argv: string[]): void {
   const { target: given, dryRun } = parseDraftArguments(argv);
   const repository = process.env.GITHUB_REPOSITORY ?? getRepositoryName();
-  const config: NotesConfig = parseNotesConfig(
-    readFileSync(path.join(repositoryRoot, NOTES_CONFIG), "utf8"),
-  );
+  const config = readNotesConfig();
 
   git(["fetch", "--quiet", "--tags", "origin", "main"]);
   const target = given ?? git(["rev-parse", "origin/main"]);

@@ -5,6 +5,11 @@ name: OpenCode agent
 
 on:
   workflow_call:
+    inputs:
+      ci-workflow:
+        description: Workflow file that build starts on the branch it pushes
+        type: string
+        default: tests.yml
 
 env:
   OPENCODE_VERSION: 2.0.26
@@ -52,4 +57,5 @@ jobs:
         if: always() && steps.prepare.outputs.agent != ''
         env:
           GH_TOKEN: ${{ github.token }}
+          CI_WORKFLOW: ${{ inputs.ci-workflow }}
         run: node scripts/ci/opencode/main.mts publish

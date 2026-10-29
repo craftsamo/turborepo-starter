@@ -13,6 +13,10 @@ export interface SetupArguments {
   scope?: "repository" | undefined;
   environment?: string | undefined;
   secretName?: string | undefined;
+  // The job every pull request into main must pass, and the workflow that
+  // runs it, for a repository whose CI differs from this starter's.
+  requiredCheck: string;
+  ciWorkflow: string;
 }
 
 export interface Label {
@@ -264,8 +268,9 @@ export interface RulesetInput {
   >;
 }
 
-const REPOSITORY_RULESET_NAME = "Starter: protect main";
+const REPOSITORY_RULESET_NAME = "Protect main";
 const REQUIRED_CHECK = "Required checks";
+const CI_WORKFLOW = "tests.yml";
 
 // The deploy key the Publish Release workflow pushes the root version bump to
 // main with, and the repository secret that holds its private half.
@@ -293,20 +298,11 @@ export function planReleaseKey(state: ReleaseKeyState): ReleaseKeyPlan {
 // from the workflow scripts so the two never drift apart.
 export const MODEL_VARIABLES = ["OPENCODE_MODEL", ...AGENTS.map(agentVariable)];
 export const PROVIDER_SECRETS: readonly string[] = SECRET_VARIABLES;
-const ALLOWED_ACTION_PATTERNS = [
-  "dorny/paths-filter@*",
-  // Release Drafter's autolabeler only; scripts/release drafts the release.
-  // A pattern matches the action's full path, so this one does not allow the
-  // drafter at the repository root.
-  "release-drafter/release-drafter/autolabeler@*",
-  "micnncim/action-label-syncer@*",
-];
 const ARTIFACT_RETENTION_DAYS = 30;
 // GitHub drops a cache unused for 7 days. Three still spans a weekend, and
 // drops the caches of merged branches before they crowd out main's in the
 // repository's 10 GB cache quota.
 const CACHE_RETENTION_DAYS = 3;
-const LABEL_RENAMES = new Map([["💬quesion", "💬question"]]);
 
 export function parseArguments(argv: string[]): SetupArguments {
   const args: SetupArguments = {
@@ -318,7 +314,10 @@ export function parseArguments(argv: string[]): SetupArguments {
     scope: undefined,
     environment: undefined,
     secretName: undefined,
+    requiredCheck: REQUIRED_CHECK,
+    ciWorkflow: CI_WORKFLOW,
   };
+  const ciOptions = new Set<string>();
   const values = [...argv];
 
   if (values[0] === "secrets") {
@@ -338,6 +337,12 @@ export function parseArguments(argv: string[]): SetupArguments {
       args.environment = requireValue(value, values);
     } else if (value === "--name") {
       args.secretName = requireValue(value, values);
+    } else if (value === "--required-check") {
+      args.requiredCheck = requireValue(value, values);
+      ciOptions.add(value);
+    } else if (value === "--ci-workflow") {
+      args.ciWorkflow = requireValue(value, values);
+      ciOptions.add(value);
     } else {
       throw new Error(`Unknown argument: ${value}`);
     }
@@ -357,6 +362,11 @@ export function parseArguments(argv: string[]): SetupArguments {
   }
   if (args.mode === "secrets" && args.defaults) {
     throw new Error("Secrets cannot be configured with --defaults.");
+  }
+  if (args.mode === "secrets" && ciOptions.size > 0) {
+    throw new Error(
+      `${[...ciOptions].join(", ")} cannot be used with the secrets subcommand.`,
+    );
   }
   if ((args.scope || args.environment) && !args.secretName) {
     throw new Error("--scope and --environment require --name.");
@@ -398,10 +408,35 @@ export function buildRepositorySettings(
   };
 }
 
+/**
+ * The allowed-action patterns for every third-party action and reusable
+ * workflow that the given workflow files use, each at any ref. A pattern
+ * matches an action's full path, so allowing an action in a subdirectory,
+ * such as Release Drafter's autolabeler, does not allow the repository's
+ * root action. Local actions, Docker images and GitHub's own actions need no
+ * pattern.
+ */
+export function workflowActionPatterns(workflows: readonly string[]): string[] {
+  const patterns = new Set<string>();
+  for (const source of workflows) {
+    for (const match of source.matchAll(
+      /^\s*(?:-\s*)?uses:\s*["']?([^\s"'#]+)/gm,
+    )) {
+      const action = match[1]!;
+      if (action.startsWith("./") || action.startsWith("docker://")) continue;
+      if (/^(actions|github)\//.test(action)) continue;
+      patterns.add(`${action.replace(/@.*$/, "")}@*`);
+    }
+  }
+  return [...patterns].sort();
+}
+
 export function buildActionsSettings({
   shaPinningRequired = false,
+  allowedActions = [],
 }: {
   shaPinningRequired?: boolean;
+  allowedActions?: readonly string[];
 } = {}): ActionsSettings {
   return {
     permissions: {
@@ -412,7 +447,7 @@ export function buildActionsSettings({
     selectedActions: {
       github_owned_allowed: true,
       verified_allowed: false,
-      patterns_allowed: [...ALLOWED_ACTION_PATTERNS],
+      patterns_allowed: [...allowedActions],
     },
     // `/oc build` opens pull requests with GITHUB_TOKEN. GitHub ties creating
     // and approving into this one setting; the workflow never approves.
@@ -456,7 +491,10 @@ export function buildDependabotSettings({
   return { vulnerability_alerts: true, security_updates: securityUpdates };
 }
 
-export function buildMainRuleset(integrationId: number): RulesetInput {
+export function buildMainRuleset(
+  integrationId: number,
+  requiredCheck: string = REQUIRED_CHECK,
+): RulesetInput {
   return {
     name: REPOSITORY_RULESET_NAME,
     target: "branch",
@@ -504,7 +542,7 @@ export function buildMainRuleset(integrationId: number): RulesetInput {
           do_not_enforce_on_create: false,
           required_status_checks: [
             {
-              context: REQUIRED_CHECK,
+              context: requiredCheck,
               ...(integrationId ? { integration_id: integrationId } : {}),
             },
           ],
@@ -517,9 +555,10 @@ export function buildMainRuleset(integrationId: number): RulesetInput {
 export function buildBranchProtection(
   current: BranchProtectionInput = {},
   integrationId: number,
+  requiredCheck: string = REQUIRED_CHECK,
 ): BranchProtectionOutput {
   const contexts = new Set(current.required_status_checks?.contexts ?? []);
-  contexts.add(REQUIRED_CHECK);
+  contexts.add(requiredCheck);
   const checks = new Map(
     (current.required_status_checks?.checks ?? []).map((check) => [
       `${check.context}:${check.app_id ?? ""}`,
@@ -527,8 +566,8 @@ export function buildBranchProtection(
     ]),
   );
   if (integrationId) {
-    checks.set(`${REQUIRED_CHECK}:${integrationId}`, {
-      context: REQUIRED_CHECK,
+    checks.set(`${requiredCheck}:${integrationId}`, {
+      context: requiredCheck,
       app_id: integrationId,
     });
   }
@@ -625,39 +664,18 @@ function validateLabel(label: Partial<Label>): Label {
 export function diffLabels(
   desired: Label[],
   current: CurrentLabel[],
-  renames: ReadonlyMap<string, string> = LABEL_RENAMES,
 ): LabelDiff {
   const currentByName = new Map(
     current.map((label) => [label.name.toLowerCase(), label]),
   );
-  for (const [previousName, nextName] of renames) {
-    if (
-      currentByName.has(previousName.toLowerCase()) &&
-      currentByName.has(nextName.toLowerCase())
-    ) {
-      throw new Error(
-        `Cannot migrate label '${previousName}' because '${nextName}' already exists. Merge their assignments manually before setup.`,
-      );
-    }
-  }
   const desiredNames = new Set(
     desired.map((label) => label.name.toLowerCase()),
   );
   const create = [];
   const update = [];
-  const renamedCurrentNames = new Set();
 
   for (const label of desired) {
-    let existing = currentByName.get(label.name.toLowerCase());
-    if (!existing) {
-      const previousName = [...renames.entries()].find(
-        ([, nextName]) => nextName.toLowerCase() === label.name.toLowerCase(),
-      )?.[0];
-      existing = previousName
-        ? currentByName.get(previousName.toLowerCase())
-        : undefined;
-      if (existing) renamedCurrentNames.add(existing.name.toLowerCase());
-    }
+    const existing = currentByName.get(label.name.toLowerCase());
     if (!existing) {
       create.push(label);
       continue;
@@ -672,9 +690,7 @@ export function diffLabels(
   }
 
   const remove = current.filter(
-    (label) =>
-      !desiredNames.has(label.name.toLowerCase()) &&
-      !renamedCurrentNames.has(label.name.toLowerCase()),
+    (label) => !desiredNames.has(label.name.toLowerCase()),
   );
   return { create, update, remove };
 }
@@ -696,4 +712,4 @@ export function diffObject<Current extends object, Desired extends object>(
     }));
 }
 
-export { REQUIRED_CHECK, REPOSITORY_RULESET_NAME };
+export { REPOSITORY_RULESET_NAME };

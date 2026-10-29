@@ -2,10 +2,10 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { createInterface } from "node:readline/promises";
-import { fileURLToPath } from "node:url";
 import process from "node:process";
 import type { Interface } from "node:readline/promises";
 
+import { resolveRepositoryRoot } from "../../repository-root.mts";
 import { applyFileTransaction } from "./files.mts";
 import {
   buildProjectPlan,
@@ -22,10 +22,7 @@ import type {
   RootPackage,
 } from "./policy.mts";
 
-const repositoryRoot = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  "../../..",
-);
+const repositoryRoot = resolveRepositoryRoot();
 const guardedPaths = [
   "package.json",
   "README.md",

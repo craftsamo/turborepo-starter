@@ -1,6 +1,4 @@
 import assert from "node:assert/strict";
-import { readdirSync, readFileSync } from "node:fs";
-import path from "node:path";
 import { describe, it } from "node:test";
 
 import {
@@ -19,12 +17,12 @@ import {
   parseLabels,
   planReleaseKey,
   PROVIDER_SECRETS,
+  workflowActionPatterns,
 } from "../setup/github/policy.mts";
 import {
   CommandError,
   ensureEnvironment,
   environmentExists,
-  repositoryRoot,
 } from "../setup/github/lib.mts";
 import {
   applyActionsSettings,
@@ -35,6 +33,8 @@ const httpError = (status, message) =>
   new CommandError("gh api", { stderr: `gh: ${message} (HTTP ${status})` });
 
 describe("parseArguments", () => {
+  const ci = { requiredCheck: "Required checks", ciWorkflow: "tests.yml" };
+
   it("uses interactive repository setup by default", () => {
     assert.deepEqual(parseArguments([]), {
       mode: "setup",
@@ -45,7 +45,28 @@ describe("parseArguments", () => {
       scope: undefined,
       environment: undefined,
       secretName: undefined,
+      ...ci,
     });
+  });
+
+  it("takes the required check and the workflow that runs it", () => {
+    const args = parseArguments([
+      "--required-check",
+      "CI passed",
+      "--ci-workflow",
+      "ci.yml",
+    ]);
+
+    assert.equal(args.requiredCheck, "CI passed");
+    assert.equal(args.ciWorkflow, "ci.yml");
+    assert.throws(
+      () => parseArguments(["--ci-workflow"]),
+      /--ci-workflow requires a value/,
+    );
+    assert.throws(
+      () => parseArguments(["secrets", "--required-check", "CI passed"]),
+      /--required-check cannot be used with the secrets subcommand/,
+    );
   });
 
   it("parses non-interactive setup flags", () => {
@@ -66,6 +87,7 @@ describe("parseArguments", () => {
         scope: undefined,
         environment: undefined,
         secretName: undefined,
+        ...ci,
       },
     );
   });
@@ -88,6 +110,7 @@ describe("parseArguments", () => {
         scope: undefined,
         environment: "production",
         secretName: "DATABASE_URL",
+        ...ci,
       },
     );
   });
@@ -148,7 +171,9 @@ describe("repository settings", () => {
 
 describe("Actions settings", () => {
   it("uses selected actions with a read-only default token that can open PRs", () => {
-    const settings = buildActionsSettings();
+    const settings = buildActionsSettings({
+      allowedActions: ["dorny/paths-filter@*"],
+    });
 
     assert.deepEqual(settings.permissions, {
       enabled: true,
@@ -159,8 +184,6 @@ describe("Actions settings", () => {
     assert.equal(settings.selectedActions.verified_allowed, false);
     assert.deepEqual(settings.selectedActions.patterns_allowed, [
       "dorny/paths-filter@*",
-      "release-drafter/release-drafter/autolabeler@*",
-      "micnncim/action-label-syncer@*",
     ]);
     assert.deepEqual(settings.workflow, {
       default_workflow_permissions: "read",
@@ -168,36 +191,30 @@ describe("Actions settings", () => {
     });
   });
 
-  it("allows every third-party action the workflows use", () => {
-    const workflows = path.join(repositoryRoot, ".github/workflows");
-    const { patterns_allowed } = buildActionsSettings().selectedActions;
-    const allowed = patterns_allowed.map(
-      (pattern) =>
-        new RegExp(
-          `^${pattern.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replaceAll("*", ".*")}$`,
-        ),
-    );
-    const blocked = readdirSync(workflows)
-      .filter((file) => /\.ya?ml$/.test(file))
-      .flatMap((file) =>
-        [
-          ...readFileSync(path.join(workflows, file), "utf8").matchAll(
-            /^\s*(?:-\s*)?uses:\s*["']?([^\s"'#]+)/gm,
-          ),
-        ].map((match) => `${file}: ${match[1]}`),
-      )
-      .filter((entry) => {
-        const action = entry.split(": ")[1];
-        if (action.startsWith("./") || action.startsWith("docker://")) {
-          return false;
-        }
-        // GitHub-owned actions are allowed by github_owned_allowed.
-        if (/^(actions|github)\//.test(action)) return false;
-        return !allowed.some((pattern) => pattern.test(action));
-      });
+  it("allows each third-party action and reusable workflow once, at any ref", () => {
+    const tests = `
+jobs:
+  call:
+    uses: owner/shared/.github/workflows/ci.yml@v1
+  build:
+    steps:
+      - uses: actions/checkout@v7
+      - uses: "dorny/paths-filter@v4" # filter
+      - name: Label
+        uses: release-drafter/release-drafter/autolabeler@0123456789abcdef
+      - uses: ./.github/actions/local
+      - uses: docker://alpine:3
+      - uses: github/codeql-action/init@v3
+`;
+    const labels = "      - uses: dorny/paths-filter@v3\n";
 
-    assert.deepEqual(blocked, []);
+    assert.deepEqual(workflowActionPatterns([tests, labels]), [
+      "dorny/paths-filter@*",
+      "owner/shared/.github/workflows/ci.yml@*",
+      "release-drafter/release-drafter/autolabeler@*",
+    ]);
   });
+
 
   it("preserves an existing SHA pinning requirement", () => {
     assert.equal(
@@ -349,7 +366,7 @@ describe("main protection", () => {
       (rule) => rule.type === "required_status_checks",
     );
 
-    assert.equal(ruleset.name, "Starter: protect main");
+    assert.equal(ruleset.name, "Protect main");
     assert.deepEqual(ruleset.conditions.ref_name.include, ["refs/heads/main"]);
     assert.deepEqual(ruleset.bypass_actors, [
       { actor_id: 5, actor_type: "RepositoryRole", bypass_mode: "always" },
@@ -408,6 +425,21 @@ describe("main protection", () => {
     assert.equal(protection.required_linear_history, true);
     assert.equal(protection.allow_force_pushes, false);
     assert.equal(protection.allow_deletions, false);
+  });
+
+  it("requires the check a repository names instead", () => {
+    const statusRule = buildMainRuleset(15368, "CI passed").rules.find(
+      (rule) => rule.type === "required_status_checks",
+    );
+
+    assert.deepEqual(statusRule.parameters.required_status_checks, [
+      { context: "CI passed", integration_id: 15368 },
+    ]);
+    assert.deepEqual(
+      buildBranchProtection({}, 0, "CI passed").required_status_checks
+        .contexts,
+      ["CI passed"],
+    );
   });
 });
 
@@ -476,44 +508,17 @@ describe("labels", () => {
     assert.equal(changes.update[0].desired.description, "Feature addition");
   });
 
-  it("renames the legacy question label without deleting assignments", () => {
-    const desired = [
-      { name: "💬question", description: "Questions", color: "D876E3" },
-    ];
-    const changes = diffLabels(desired, [
-      { name: "💬quesion", description: "Questions", color: "D876E3" },
-    ]);
+  it("renames a label whose name only changes case", () => {
+    const changes = diffLabels(
+      [{ name: "Bug", description: "Bugs", color: "D73A4A" }],
+      [{ name: "bug", description: "Bugs", color: "D73A4A" }],
+    );
 
     assert.equal(changes.create.length, 0);
     assert.equal(changes.remove.length, 0);
-    assert.deepEqual(changes.update, [
-      {
-        current: {
-          name: "💬quesion",
-          description: "Questions",
-          color: "D876E3",
-        },
-        desired: {
-          name: "💬question",
-          description: "Questions",
-          color: "D876E3",
-        },
-      },
-    ]);
-  });
-
-  it("fails closed when both legacy and corrected labels exist", () => {
-    const desired = [
-      { name: "💬question", description: "Questions", color: "D876E3" },
-    ];
-
-    assert.throws(
-      () =>
-        diffLabels(desired, [
-          { name: "💬quesion", description: "Questions", color: "D876E3" },
-          { name: "💬question", description: "Questions", color: "D876E3" },
-        ]),
-      /Merge their assignments manually/,
+    assert.deepEqual(
+      changes.update.map(({ current, desired }) => [current.name, desired.name]),
+      [["bug", "Bug"]],
     );
   });
 });

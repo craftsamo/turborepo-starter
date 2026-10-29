@@ -31,7 +31,7 @@ The setup manages:
 - Labels from `.github/labels.yml`
 - A writable `Release version bump` deploy key and its `RELEASE_DEPLOY_KEY`
   secret, which Publish Release pushes the root version bump to `main` with
-- A `Starter: protect main` Ruleset
+- A `Protect main` Ruleset
 - Optional repository description, homepage, topics, and OpenCode model
   variables (`OPENCODE_MODEL` and `OPENCODE_MODEL_<AGENT>`, checked in the
   format the workflow accepts)
@@ -52,13 +52,22 @@ final confirmation. Use `--repo owner/repository` to target a repository other
 than the current Git remote.
 
 Label synchronization prunes labels not declared in `.github/labels.yml`. The
-dry run lists every label that would be created, updated, renamed, or deleted.
+dry run lists every label that would be created, updated, or deleted.
 
 ## Main Protection
 
 The managed Ruleset requires pull requests and a successful `Required checks`
 job against the latest `main`. It blocks branch deletion and force pushes while
 allowing repository administrators and deploy keys to bypass the Ruleset.
+
+A repository whose CI differs names its own required job and the workflow that
+runs it:
+
+```sh
+nps "setup.github --required-check 'CI passed' --ci-workflow ci.yml"
+```
+
+They default to `Required checks` and `tests.yml`, this starter's.
 
 The deploy key bypass is what lets Publish Release push the root version bump
 to `main`. Setup creates a key pair locally with `ssh-keygen`, registers the
@@ -78,15 +87,20 @@ request branches, whose default merges `main` into the branch. GitHub still
 offers **Update branch** while a pull request is behind, because the Ruleset
 requires the latest `main`; a local rebase and push clears it.
 
-Setup dispatches and waits for the Tests workflow before creating the Ruleset.
+Setup dispatches and waits for that workflow before creating the Ruleset.
 If Repository Rulesets are unavailable, setup applies equivalent classic branch
 protection without weakening stricter existing protection.
+
+Setup manages the Ruleset by its name. Earlier versions named it
+`Starter: protect main`; setup leaves a Ruleset of that name alone, so delete
+it under **Settings → Rules → Rulesets** once `Protect main` is in place.
 
 ## Actions Permissions
 
 Setup enables Actions with a read-only default `GITHUB_TOKEN` and permits only
-GitHub-owned actions plus the third-party actions used by this starter. A test
-fails when a workflow uses a third-party action missing from that allowlist.
+GitHub-owned actions plus the third-party actions and reusable workflows that
+the files in `.github/workflows` use, each at any ref. After adding one to a
+workflow, run setup again before the workflow can use it.
 
 It also allows Actions to create pull requests, which `/oc build` needs.
 GitHub grants creating and approving pull requests through the same setting.

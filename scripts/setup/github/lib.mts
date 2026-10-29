@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+
+import { resolveRepositoryRoot } from "../../repository-root.mts";
 
 export interface CommandErrorFields {
   command: string;
@@ -39,10 +39,7 @@ export interface PreflightResult {
   state: RepositoryRestState;
 }
 
-export const repositoryRoot = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  "../../..",
-);
+export const repositoryRoot = resolveRepositoryRoot();
 
 export class CommandError extends Error implements CommandErrorFields {
   command: string;

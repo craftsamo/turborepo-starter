@@ -1,8 +1,9 @@
 import { existsSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 
-const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+import { resolveRepositoryRoot } from "./repository-root.mts";
+
+const repoRoot = resolveRepositoryRoot();
 
 if (
   process.env.CI ||

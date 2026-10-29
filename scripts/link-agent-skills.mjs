@@ -20,9 +20,10 @@ import {
   symlinkSync,
 } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 
-const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+import { resolveRepositoryRoot } from "./repository-root.mts";
+
+const repoRoot = resolveRepositoryRoot();
 const canonical = join(repoRoot, ".opencode", "skills");
 
 // Tool-native skill directories that should mirror the canonical source.

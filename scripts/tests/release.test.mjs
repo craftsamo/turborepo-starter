@@ -24,7 +24,7 @@ const release = (tag_name, draft) => ({
 describe("draftVersion", () => {
   it("takes the version from the one draft's tag", () => {
     const releases = [release("v0.10.0", false), release("v0.11.0", true)];
-    assert.deepEqual(draftVersion(releases), {
+    assert.deepEqual(draftVersion(releases, "v"), {
       version: "0.11.0",
       draft: releases[1],
     });
@@ -32,19 +32,31 @@ describe("draftVersion", () => {
 
   it("keeps a prerelease suffix", () => {
     assert.equal(
-      draftVersion([release("v1.0.0-rc.1", true)]).version,
+      draftVersion([release("v1.0.0-rc.1", true)], "v").version,
       "1.0.0-rc.1",
     );
   });
 
+  it("strips the configured tag prefix", () => {
+    assert.equal(
+      draftVersion([release("release-2.0.0", true)], "release-").version,
+      "2.0.0",
+    );
+    assert.equal(draftVersion([release("2.0.0", true)], "").version, "2.0.0");
+  });
+
   it("refuses no draft, several drafts, or a tag of another shape", () => {
-    assert.throws(() => draftVersion([release("v0.10.0", false)]), /No draft/);
+    const releases = (...tags) => tags.map((tag) => release(tag, true));
     assert.throws(
-      () => draftVersion([release("v0.11.0", true), release("v0.12.0", true)]),
+      () => draftVersion([release("v0.10.0", false)], "v"),
+      /No draft/,
+    );
+    assert.throws(
+      () => draftVersion(releases("v0.11.0", "v0.12.0"), "v"),
       /Several draft releases \(v0\.11\.0, v0\.12\.0\)/,
     );
-    assert.throws(() => draftVersion([release("0.11.0", true)]), /not v</);
-    assert.throws(() => draftVersion([release("v0.11", true)]), /not v</);
+    assert.throws(() => draftVersion(releases("0.11.0"), "v"), /not v</);
+    assert.throws(() => draftVersion(releases("v0.11"), "v"), /not v</);
   });
 });
 
@@ -89,7 +101,7 @@ describe("bumpMessage", () => {
   // rules in commitlint.config.js that the message could break.
   it("keeps to the commit convention, even for a long prerelease", () => {
     for (const version of ["0.11.0", "10.20.30-beta.12"]) {
-      const [subject, body] = bumpMessage(version);
+      const [subject, body] = bumpMessage(version, "v");
       const header = /^chore\(release\): (.+)$/.exec(subject);
       assert.ok(header, subject);
       assert.ok(header[1].length <= 50, `subject too long: ${header[1]}`);
@@ -152,7 +164,7 @@ describe("parsePublishArguments", () => {
 
 describe("unlistedCommits", () => {
   it("keeps every commit except the version bumps", () => {
-    const [bump] = bumpMessage("0.12.0");
+    const [bump] = bumpMessage("0.12.0", "v");
     const log = [
       `${"a".repeat(40)} ${bump}`,
       `${"b".repeat(40)} Add a page (#64)`,

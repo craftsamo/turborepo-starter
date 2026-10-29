@@ -224,7 +224,7 @@ commit the release process pushes to `main`, once per release.
 
 The workflow pushes it with the release deploy key, whose private half is the
 `RELEASE_DEPLOY_KEY` secret. `nps setup.github` creates the key and the secret,
-and adds deploy keys as a bypass actor of the `Starter: protect main` Ruleset,
+and adds deploy keys as a bypass actor of the `Protect main` Ruleset,
 so the push goes straight to `main`. GitHub accepts GitHub Actions itself as a
 bypass actor only on organization repositories, which is why a key is used:
 it works on personal repositories as well. Any workflow of this repository can
