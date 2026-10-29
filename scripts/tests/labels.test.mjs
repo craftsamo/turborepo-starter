@@ -3,17 +3,19 @@ import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
 
-import { repositoryRoot } from "../setup/github/lib.mts";
-import { parseLabels } from "../setup/github/policy.mts";
-import { parseNotesConfig } from "../release/notes.mts";
+import { resolveRepositoryRoot } from "../repository-root.mts";
 
+const repositoryRoot = resolveRepositoryRoot();
 const read = (file) => readFileSync(path.join(repositoryRoot, file), "utf8");
 
+// Every label is a `- name: "<label>"` entry, as repo-kit reads them.
 const declared = new Set(
-  parseLabels(read(".github/labels.yml")).map(({ name }) => name),
+  [...read(".github/labels.yml").matchAll(/^- name: "(.+)"$/gm)].map(
+    ([, name]) => JSON.parse(`"${name}"`),
+  ),
 );
 const autolabeler = read(".github/release-drafter.yml");
-const notes = parseNotesConfig(read(".github/release-notes.json"));
+const notes = JSON.parse(read(".github/release-notes.json"));
 
 // Each autolabeler rule names one label and lists its patterns, double-quoted
 // one per line, below it up to the next rule.
@@ -29,6 +31,12 @@ const rules = autolabeler
   }));
 
 describe("labels", () => {
+  it("reads every label of labels.yml", () => {
+    const entries = read(".github/labels.yml").match(/^- name:/gm) ?? [];
+    assert.ok(entries.length > 0);
+    assert.equal(declared.size, entries.length);
+  });
+
   it("reads a pattern for every autolabeler rule", () => {
     assert.ok(rules.length > 0);
     for (const { label, patterns } of rules) {

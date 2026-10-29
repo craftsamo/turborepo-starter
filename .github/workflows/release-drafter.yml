@@ -20,7 +20,7 @@ permissions:
 
 jobs:
   # A pull request only gets its labels, from Release Drafter's autolabeler. A
-  # Tests run on main only redrafts, with scripts/release: Release Drafter
+  # Tests run on main only redrafts, with repo-kit: Release Drafter
   # finds a pull request through the commits it brought to main's history,
   # which leaves out the upper layers of a stack merged in one go, since they
   # merge into the branch below them.
@@ -42,46 +42,13 @@ jobs:
     steps:
       - uses: release-drafter/release-drafter/autolabeler@v7
 
+  # repo-kit's release-draft workflow redrafts from a successful Tests run of
+  # main itself, targeting the commit Tests passed on, and shares a
+  # concurrency group with publishing. The version on main stays as it is
+  # until the draft is published (Publish Release).
   update_release_draft:
-    # Only a successful Tests run of main itself redrafts: a push or a manual
-    # run. The branches filter above matches the head branch's name, so a
-    # pull request from a fork's own main would pass it. A failed run leaves
-    # the draft at the last state of main that passed; a manual run of Tests
-    # on main redrafts once it passes.
-    if: >-
-      github.event_name == 'workflow_run' &&
-      github.event.workflow_run.event != 'pull_request' &&
-      github.event.workflow_run.conclusion == 'success'
-    # Shared with the Publish Release workflow's publish job, so a redraft
-    # never writes the draft while it is being published. Neither cancels a
-    # run in progress; a newer redraft replaces one still waiting, since each
-    # rebuilds the draft from the current state of main.
-    concurrency:
-      group: release-draft
-      cancel-in-progress: false
+    if: github.event_name == 'workflow_run'
     permissions:
       contents: write
       pull-requests: read
-    runs-on: ubuntu-latest
-    env:
-      GH_TOKEN: ${{ github.token }}
-    steps:
-      # The whole history and the tags, to find the commits since the last
-      # release.
-      - uses: actions/checkout@v7
-        with:
-          ref: main
-          fetch-depth: 0
-      - name: Use Node.js 24.x
-        uses: actions/setup-node@v7
-        with:
-          node-version: 24.x
-          package-manager-cache: false
-      # The draft targets the commit Tests passed on. The version on main
-      # stays as it is until the draft is published (Publish Release), so
-      # changes collect in the draft until then. With nothing to release
-      # since the last release, the draft is left alone.
-      - name: Draft the release
-        env:
-          TARGET: ${{ github.event.workflow_run.head_sha }}
-        run: node scripts/release/main.mts draft --target "$TARGET"
+    uses: craftsamo/repo-kit/.github/workflows/release-draft.yml@v1

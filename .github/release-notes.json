@@ -1,5 +1,5 @@
 {
-  "$comment": "Read by scripts/release/main.mts draft. A pull request lands under the first category whose label it carries; the category without labels takes the rest. The next version raises the major for a label in major, else the highest increment of the categories its pull requests land in (patch by default). See docs/github-actions/release-drafter.md.",
+  "$comment": "Read by repo-kit release draft. A pull request lands under the first category whose label it carries; the category without labels takes the rest. The next version raises the major for a label in major, else the highest increment of the categories its pull requests land in (patch by default). See docs/github-actions/release-drafter.md.",
   "name": "v{version} 🚀",
   "tagPrefix": "v",
   "exclude": ["skip-changelog"],

@@ -22,9 +22,9 @@ module.exports = {
       update: `node scripts/vrt/main.mts update`,
     },
     release: {
-      draft: `node scripts/release/main.mts draft`,
-      publish: `node scripts/release/main.mts publish`,
-      sync: `node scripts/release/main.mts sync`,
+      draft: `pnpm exec repo-kit release draft`,
+      publish: `pnpm exec repo-kit release publish`,
+      sync: `pnpm exec repo-kit release sync`,
     },
     prepare: {
       default: `nps prepare.web`,

@@ -73,7 +73,7 @@ full options.
 - **VRT baselines**: `nps vrt.accept` (copy the ones CI rendered for this
   commit), `nps vrt.update` (render them locally in Docker)
 - **Release**: the Release Drafter workflow drafts the next release with
-  `scripts/release`, and changes collect in the draft until it is published;
+  repo-kit, and changes collect in the draft until it is published;
   `nps "release.draft --dry-run"` previews the draft. Publishing stays a
   manual step: `nps release.publish` (or the Publish Release workflow) sets
   the root version on `main` to the draft's and publishes the draft on that

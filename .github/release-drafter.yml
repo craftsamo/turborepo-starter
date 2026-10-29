@@ -1,6 +1,6 @@
 # Read by Release Drafter's autolabeler, which labels a pull request when it
 # is opened, pushed to or edited. The release notes and the version come from
-# those labels, through .github/release-notes.json and scripts/release.
+# those labels, through .github/release-notes.json and repo-kit release draft.
 #
 # Every rule that matches adds its labels, and none are removed: a label set by
 # hand stays, and so does one whose rule no longer matches.
