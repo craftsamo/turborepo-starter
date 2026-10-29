@@ -160,13 +160,13 @@ The OpenCode workflow (`/oc` comments) runs on free models with no setup.
 Configure these optional variables through `nps setup.github` or under
 **Settings > Secrets and variables > Variables** to choose other models:
 
-| Variable                | Default                                       |
-| ----------------------- | --------------------------------------------- |
-| `OPENCODE_MODEL`        | Free models in `.github/opencode/models.json` |
-| `OPENCODE_MODEL_PLAN`   | `OPENCODE_MODEL`                              |
-| `OPENCODE_MODEL_BUILD`  | `OPENCODE_MODEL`                              |
-| `OPENCODE_MODEL_REVIEW` | `OPENCODE_MODEL`                              |
-| `OPENCODE_MODEL_DEBUG`  | `OPENCODE_MODEL`                              |
+| Variable                | Default                |
+| ----------------------- | ---------------------- |
+| `OPENCODE_MODEL`        | repo-kit's free models |
+| `OPENCODE_MODEL_PLAN`   | `OPENCODE_MODEL`       |
+| `OPENCODE_MODEL_BUILD`  | `OPENCODE_MODEL`       |
+| `OPENCODE_MODEL_REVIEW` | `OPENCODE_MODEL`       |
+| `OPENCODE_MODEL_DEBUG`  | `OPENCODE_MODEL`       |
 
 Values are `provider/model` or `provider/model#variant`, optionally
 comma-separated, for example `anthropic/claude-sonnet-5-5#high`.

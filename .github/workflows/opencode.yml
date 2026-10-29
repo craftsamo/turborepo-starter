@@ -12,63 +12,20 @@ on:
 permissions: {}
 
 jobs:
-  # Picks the agent before any token with write access exists, so only build
-  # requests get one.
-  route:
-    # Only people with write access can run the agent and spend the model
-    # budget. A quote reply puts the command after the quote, so this is a
-    # coarse filter; the route step decides whether it is a command.
-    if: >-
-      github.event.comment.user.type != 'Bot' &&
-      (contains(github.event.comment.body, '/oc') ||
-       contains(github.event.comment.body, '/opencode')) &&
-      contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      contents: read
-    outputs:
-      agent: ${{ steps.route.outputs.agent }}
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ github.event.repository.default_branch }}
-          sparse-checkout: scripts/ci
-          persist-credentials: false
-      - name: Use Node.js 24.x
-        uses: actions/setup-node@v7
-        with:
-          node-version: 24.x
-          package-manager-cache: false
-      - name: Route request
-        id: route
-        run: node scripts/ci/opencode/main.mts route
-
-  answer:
-    needs: route
-    if: needs.route.outputs.agent != '' && needs.route.outputs.agent != 'build'
-    concurrency:
-      group: opencode-${{ github.event.issue.number || github.event.pull_request.number }}
-      cancel-in-progress: false
-    permissions:
-      contents: read
-      issues: write
-      pull-requests: write
-    uses: ./.github/workflows/opencode-agent.yml
-    secrets: inherit
-
-  build:
-    needs: route
-    if: needs.route.outputs.agent == 'build'
-    concurrency:
-      group: opencode-${{ github.event.issue.number || github.event.pull_request.number }}
-      cancel-in-progress: false
-    # contents and pull-requests to push and open the PR, actions to start the
-    # Tests workflow, which pushes made with this token do not trigger.
+  # repo-kit's opencode workflow routes the comment first, without a token
+  # that can write, and grants each agent only what it needs of these: the
+  # build agent pushes, opens pull requests and starts the Tests workflow.
+  opencode:
     permissions:
       actions: write
       contents: write
       issues: write
       pull-requests: write
-    uses: ./.github/workflows/opencode-agent.yml
-    secrets: inherit
+    uses: craftsamo/repo-kit/.github/workflows/opencode.yml@v1
+    with:
+      ci-workflow: tests.yml
+    secrets:
+      OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
