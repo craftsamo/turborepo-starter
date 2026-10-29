@@ -69,10 +69,10 @@ checks.
 The workflow uses [dorny/paths-filter](https://github.com/dorny/paths-filter) to
 detect changes:
 
-| Target  | Paths Monitored                                                                             |
-| ------- | ------------------------------------------------------------------------------------------- |
-| scripts | `scripts/**` and the files their tests read: the workflows and `README.md`                  |
-| web     | `apps/web/**`, `packages/**`, the tests workflow, and root toolchain files, except Markdown |
+| Target  | Paths Monitored                                                                                                                                                                                           |
+| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| scripts | `scripts/**`, the tests workflow, and the files the tests read: the label, autolabeler, release notes and pull request template config under `.github/`, `README.md`, and each workspace's `package.json` |
+| web     | `apps/web/**`, `packages/**`, the tests workflow, and root toolchain files, except Markdown                                                                                                               |
 
 Both targets also watch `package.json` and `package-scripts.js`. Markdown under
 the app and the packages is documentation, so it does not count as a web

@@ -245,6 +245,10 @@ project standards.
 | **Update VRT baselines** | Manual dispatch      | Renders changed VRT baselines in CI for `nps vrt.accept`               |
 | **Run AI Agent**         | Issue/PR comment     | Plans, builds, reviews, or debugs via `/oc` or `/opencode` commands    |
 
+Sync Labels, Release Drafter, Publish Release, and Run AI Agent call the
+reusable workflows of [repo-kit](https://github.com/craftsamo/repo-kit), pinned
+to `v1`, so the starter and the repositories made from it share one copy.
+
 ### Documentation
 
 For detailed information about each workflow, including prerequisites,
