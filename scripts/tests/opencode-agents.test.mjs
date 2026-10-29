@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 
 import { AGENTS } from "../ci/opencode/command.mts";
 import { parseDefaultModels } from "../ci/opencode/models.mts";
+import { resolveRepositoryRoot } from "../repository-root.mts";
 
 const configDir = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -292,7 +293,7 @@ describe("CI instructions", () => {
 // OpenCode merges a project agent over the CI agent with the same id, and the
 // project's model and permission rules win.
 describe("project config", () => {
-  const repoRoot = path.resolve(configDir, "../..");
+  const repoRoot = resolveRepositoryRoot();
   const ids = agents.map((agent) => agent.name);
 
   it("defines no agent that would override a CI agent", () => {

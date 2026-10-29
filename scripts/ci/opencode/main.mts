@@ -15,6 +15,7 @@ import {
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { resolveRepositoryRoot } from "../../repository-root.mts";
 import {
   buildBranchName,
   fallbackBuildSummary,
@@ -57,11 +58,13 @@ import {
   type RunResult,
 } from "./runner.mts";
 
-const root = path.resolve(
+// The agent config ships with these scripts, while the repository the agent
+// works on is the one the workflow checked out.
+const configDir = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
-  "../../..",
+  "../../../.github/opencode",
 );
-const configDir = path.join(root, ".github", "opencode");
+const workspace = resolveRepositoryRoot();
 const RUN_TIMEOUT_MS = 15 * 60 * 1000;
 const MAX_COMMENT = 60_000;
 const TESTS_WORKFLOW = "tests.yml";
@@ -141,7 +144,7 @@ function setOutput(name: string, value: string): void {
 
 function run(command: string, args: string[], input?: string): string {
   return execFileSync(command, args, {
-    cwd: root,
+    cwd: workspace,
     encoding: "utf8",
     input,
     maxBuffer: 64 * 1024 * 1024,
@@ -359,7 +362,7 @@ function prepare(): void {
       "--no-checkout",
       "--separate-git-dir",
       build.gitDir,
-      root,
+      workspace,
       build.workTree,
     ]);
     const git = buildGitArgs(build);
@@ -368,7 +371,7 @@ function prepare(): void {
         ...git,
         "fetch",
         "--quiet",
-        root,
+        workspace,
         `+${HEAD_REF}:${HEAD_REF}`,
         `+${BASE_REF}:${BASE_REF}`,
       ]);
@@ -480,7 +483,7 @@ function runAgent(): void {
     const source = resolveModelSource(meta.agent, process.env, defaults);
     const xdg = path.join(dir, "xdg");
     cpSync(configDir, path.join(xdg, "opencode"), { recursive: true });
-    const cwd = meta.build?.workTree ?? root;
+    const cwd = meta.build?.workTree ?? workspace;
     result = runWithFallback(source, (model) =>
       runOpenCode(meta.agent, model, prompt, xdg, cwd),
     );
