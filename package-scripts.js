@@ -13,8 +13,8 @@ module.exports = {
     setup: {
       project: `node scripts/setup/project/index.mts`,
       github: {
-        default: `node scripts/setup/github/repository.mts`,
-        secrets: `node scripts/setup/github/secrets.mts`,
+        default: `pnpm exec repo-kit setup github`,
+        secrets: `pnpm exec repo-kit setup secrets`,
       },
     },
     vrt: {
