@@ -2,93 +2,28 @@
 
 **File**: `.github/workflows/release-drafter.yml`
 
-## Prerequisites
-
-- A pull request is **opened, reopened, pushed to or edited**, against any
-  base branch
-- Or the Tests workflow completes successfully on `main`
-- Pull requests must have labels matching `.github/release-drafter.yml`
-  (labeling) and `.github/release-notes.json` (notes and version)
-- The labeling job needs `pull-requests: write`; the drafting job needs
-  `contents: write`
-
 ## How It Works
 
-The workflow labels pull requests and keeps a draft release up to date with
-the pull requests merged into `main`. Labeling uses the autolabeler of
-[release-drafter](https://github.com/release-drafter/release-drafter) (v7);
-the draft is written by `scripts/release`. Publishing the draft stays a manual
-step, with `nps release.publish` or the Publish Release workflow
-(`.github/workflows/publish-release.yml`); see
-[Publishing a Release](#publishing-a-release).
+The workflow labels pull requests and keeps one draft release up to date with
+the pull requests merged into `main`:
 
-### Process
-
-1. **Trigger**: PR opened, reopened, pushed to or edited (labels only) or a
-   successful Tests run on `main` (draft only)
-2. **Auto-label**: Apply labels based on the branch name, the changed files
-   and the description
-3. **Collect**: Find the pull requests whose merge commit landed on `main`
-   since the last published release
-4. **Categorize**: Group them by label (Features, Bug Fixes, Enhancements,
-   Documentation, Dependencies, Maintenance, Other Changes)
-5. **Resolve Version**: Calculate the version bump from the labels
-6. **Generate**: Create or update the one draft release
-
-The workflow runs one job per event: `label_pull_request` on a pull request
-and `update_release_draft` after a Tests run. A newer labeling run for the same
-pull request cancels the one still in progress, since each run rebuilds the
-labels from the current state. Redrafting shares a concurrency group with
-publishing instead and never cancels: a newer redraft replaces one still
-waiting, and none writes the draft while it is being published.
-
-A push can change the files a pull request touches, and an edit its
-description or its base, so both label it again. Labeling only adds labels; see
-[Auto-labeling Rules](#auto-labeling-rules).
-
-A pull request run only applies labels, whatever the base branch: a stack
-opens each upper pull request on the branch below it and links it to the stack
-only afterwards, so a `main` filter would miss it. Only `main` redrafts the
-release; a draft built from a pull request run would target the pull request's
-merge ref instead of `main`.
-
-### Stacked Pull Requests
-
-A stack merged in one go lands every layer on `main` with one merge commit,
-but only its lowest pull request targeted `main`; the upper ones merged into
-the branch below them. Release Drafter's own drafting finds a pull request
-through the commits it brought to `main`'s history, which only counts pull
-requests that targeted `main`, so it would leave the upper layers out of the
-notes and their labels out of the version.
-
-`scripts/release` instead searches the pull requests merged since the last
-release, in any branch, and keeps those whose merge commit is in the range of
-the release. Every layer of a stack records the same merge commit, so every
-layer is listed, however many there are. A pull request merged into another
-long-lived branch is left out, since its merge commit is not in the range.
+- **Labels**: when a pull request is opened, reopened, pushed to or edited,
+  against any base branch, the autolabeler of
+  [release-drafter](https://github.com/release-drafter/release-drafter) (v7)
+  applies the rules of `.github/release-drafter.yml`.
+- **Draft**: when the Tests workflow passes on `main`,
+  [repo-kit's `release-draft` workflow](https://github.com/craftsamo/repo-kit#release-draft-release-publish-release-sync)
+  rewrites the draft from the pull requests whose merge commit landed on
+  `main` since the last release, so every layer of a stacked pull request is
+  listed. The draft targets the commit Tests passed on; a `main` commit that
+  fails its checks leaves the draft at the last state that passed.
 
 ```sh
 nps "release.draft --dry-run"
 ```
 
-prints the draft the next run would write, without writing it.
-
-### Drafting After Tests
-
-The draft follows `main` through the Tests workflow rather than the push
-itself: `update_release_draft` runs on `workflow_run` when Tests completes on
-`main`, and only when it succeeded on a push or a manual run (never on a pull
-request, whose head branch a fork may also call `main`). The draft targets the
-commit Tests passed on, and publishing tags that commit plus the version
-commit on top of it, nothing else. A
-`main` commit that fails its checks leaves the draft at the last state that
-passed, and the next successful run catches the draft up. Tests runs on every
-push to `main`, including one that only touches documentation, so every `main`
-commit reaches this trigger. Re-running a failed Tests run, or dispatching it
-manually on `main`, redrafts once it passes.
-
-With nothing to release since the last release (no pull request, or only
-`skip-changelog` ones), the run leaves the draft and the version alone.
+prints the draft the next run would write, without writing it. Publishing the
+draft stays a manual step; see [Publishing a Release](#publishing-a-release).
 
 ### Release Naming
 
@@ -132,9 +67,8 @@ published release that is not a prerelease (`0.0.0` before the first):
 
 ### Auto-labeling Rules
 
-Labels are applied when a pull request is opened, reopened, pushed to or
-edited. The rules live in `.github/release-drafter.yml`, and every rule that
-matches adds its label.
+The rules live in `.github/release-drafter.yml`, and every rule that matches
+adds its label.
 
 **Type** follows the branch name, whose prefix is the commit type of the
 change (`/` or `-` after it). It picks the release notes category.
@@ -174,8 +108,7 @@ both exist.
 Labeling never removes a label. One added by hand stays, and so does one whose
 rule stops matching: a `🌟major` added by a ticked box stays after the box is
 unticked, so remove it by hand, before the merge, or the next draft raises the
-major version. Changing a label after the merge takes effect on the next
-redraft.
+major version.
 
 Dependabot's own pull requests are not labeled by the workflow: a run
 Dependabot starts gets a read-only token. Dependabot labels them
@@ -183,78 +116,34 @@ Dependabot starts gets a read-only token. Dependabot labels them
 
 ## Publishing a Release
 
-Changes collect in the draft until it is published. Each merge updates the
-draft's notes, and its version when a pull request raises the increment (a
-feature the minor, a `🌟major` label the major), but leaves the version on
-`main` alone.
-
-Publish once the draft lists what you want to release:
+Changes collect in the draft until it is published. Publish once the draft
+lists what you want to release:
 
 ```sh
 nps "release.publish --dry-run"
 nps release.publish
 ```
 
-or run the **Publish Release** workflow from the Actions tab. Either one:
+or run the **Publish Release** workflow (`.github/workflows/publish-release.yml`)
+from the Actions tab. Either one sets the root `package.json` version on `main`
+to the draft's with a `chore(release): set the version to <version>` commit,
+then publishes the draft on that commit, so the `v<version>` tag names a
+commit that carries its version. It refuses while `main` has commits the
+draft does not list yet.
 
-1. Checks that the draft lists everything on `main`. It refuses while `main`
-   has commits after the one the draft targets, other than version commits:
-   the redraft that follows Tests on `main` catches the draft up. It also
-   refuses when the draft's tag already exists.
-2. Sets the root `package.json` version on `main` to the draft's with a
-   `chore(release): set the version to <version>` commit, unless `main`
-   already carries it.
-3. Publishes the draft on that commit, so GitHub creates the `v<version>` tag
-   on a commit that carries its version.
-
-`--dry-run` runs the checks and prints what it would do. A run that stops
-between the version commit and the publish can simply run again: it finds the
-version set and publishes.
-
-A redraft that finds the draft already published, by either route, leaves it
-alone rather than turning it back into a draft.
-
-A release the workflow publishes uses `GITHUB_TOKEN`, so it starts no other
-workflow; one published with `nps release.publish` does.
-
-### Version on `main`
-
-`main` names the latest published release, and the version commit is the only
-commit the release process pushes to `main`, once per release.
-
-The workflow pushes it with the release deploy key, whose private half is the
-`RELEASE_DEPLOY_KEY` secret. `nps setup.github` creates the key and the secret,
-and adds deploy keys as a bypass actor of the `Protect main` Ruleset,
-so the push goes straight to `main`. GitHub accepts GitHub Actions itself as a
-bypass actor only on organization repositories, which is why a key is used:
-it works on personal repositories as well. Any workflow of this repository can
-read the secret and so push to `main`; a fork's workflow cannot read it.
-Without the secret, the workflow fails and points at `nps release.publish`,
-which pushes under your own account, as the Ruleset allows for repository
-administrators. Classic branch protection, which the setup falls back to where
+The workflow pushes the version commit with the `RELEASE_DEPLOY_KEY` deploy
+key, which `nps setup.github` creates; see
+[GitHub Repository Setup](setup-github.md). `nps release.publish` pushes under
+your own account instead, as the Ruleset allows for repository
+administrators. Classic branch protection, which setup falls back to where
 Rulesets are unavailable, has no deploy key bypass: publish with the command
 there.
 
-Unlike a push with `GITHUB_TOKEN`, a push with the key starts workflows: Tests
-runs on the version commit, and the redraft that follows finds nothing merged
-since the new release and leaves the draft alone.
-
-Publishing the draft from the Releases page instead tags the commit the draft
-targets, which still carries the previous version. The Publish Release
-workflow then sets the version on `main` to the release's, so `main` names the
-latest release again, but the tagged commit does not carry its version: prefer
-the command or the workflow. A prerelease, or a release for an older line,
-leaves `main` alone.
-
-```sh
-nps release.sync
-```
-
-sets the version on `main` to the draft's without publishing: it reads the one
-draft release, takes the version from its tag, commits the version in a
-temporary worktree so the checked-out branch is left alone, and pushes it to
-`main` under your own account. When `main` already carries the version, it
-says so and changes nothing.
+A release published on the Releases page tags the commit the draft targets,
+which still carries the previous version; the workflow then sets the version
+on `main` to the release's. Prefer the command or the workflow.
+`nps release.sync` sets the version on `main` to the draft's without
+publishing.
 
 Only the root `package.json` follows the release. `apps/*/package.json` keep
 their own versions, which the `Get details` workflow reads for the deployment

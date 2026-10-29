@@ -82,3 +82,7 @@ allowBuilds:
   sharp: true
   # msw ships an `msw-cli` postinstall used by the Vitest test suite.
   msw: true
+
+# Versions installed before pnpm's minimum release age had passed for them.
+minimumReleaseAgeExclude:
+  - "@craftsamo/repo-kit@1.0.0"

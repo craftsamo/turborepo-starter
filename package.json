@@ -8,12 +8,13 @@
   "scripts": {
     "build": "turbo run build",
     "commit": "cz",
-    "postinstall": "node -e \"for(const f of['scripts/link-agent-skills.mjs','scripts/sync-agents.mjs'])if(require('fs').existsSync(f))require('child_process').execFileSync(process.execPath,[f],{stdio:'inherit'})\"",
+    "postinstall": "node -e \"const fs=require('fs');if(fs.existsSync('.git')&&fs.existsSync('node_modules/@craftsamo/repo-kit'))require('child_process').execFileSync('repo-kit',['agents','sync'],{stdio:'inherit'})\"",
     "prepare": "node -e \"const f='scripts/install-husky.mjs';if(require('fs').existsSync(f))require('child_process').execFileSync(process.execPath,[f],{stdio:'inherit'})\""
   },
   "devDependencies": {
     "@commitlint/cli": "^19.6.1",
     "@commitlint/config-conventional": "^19.6.0",
+    "@craftsamo/repo-kit": "^1.0.0",
     "@types/node": "^24.13.2",
     "@typescript/native": "npm:typescript@7.0.2",
     "commitizen": "^4.3.1",

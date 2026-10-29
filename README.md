@@ -27,11 +27,11 @@ configurations.
 - **Testing**: Vitest setup for unit and integration tests
 - **Git Workflow**: Commitizen and Commitlint for conventional commits
 - **AI Agent Skills**: on-demand skills in `.opencode/skills/`, shared across
-  Claude Code, Codex, Gemini CLI, Copilot, and Grok Build. Tool-native skill
-  links (`.agents/skills/`, `.claude/skills/`) and agent definitions
-  (`.grok/agents/` from canonical `.opencode/agents/`) are generated on
-  `pnpm install` (POSIX symlink / Windows junction, no admin needed);
-  per-package `AGENTS.md` is auto-loaded as instructions
+  Claude Code, Codex, Gemini CLI, Copilot, and Grok Build. On `pnpm install`,
+  [repo-kit](https://github.com/craftsamo/repo-kit) adds its shared skills and
+  subagents and links them for each tool (`.agents/skills/`, `.claude/skills/`,
+  `.grok/agents/` and the like); per-package `AGENTS.md` is auto-loaded as
+  instructions
 - **Best Practices**: Optimized configurations and development guidelines
 
 ## 🛠 Tech Stack
@@ -160,13 +160,13 @@ The OpenCode workflow (`/oc` comments) runs on free models with no setup.
 Configure these optional variables through `nps setup.github` or under
 **Settings > Secrets and variables > Variables** to choose other models:
 
-| Variable                | Default                                       |
-| ----------------------- | --------------------------------------------- |
-| `OPENCODE_MODEL`        | Free models in `.github/opencode/models.json` |
-| `OPENCODE_MODEL_PLAN`   | `OPENCODE_MODEL`                              |
-| `OPENCODE_MODEL_BUILD`  | `OPENCODE_MODEL`                              |
-| `OPENCODE_MODEL_REVIEW` | `OPENCODE_MODEL`                              |
-| `OPENCODE_MODEL_DEBUG`  | `OPENCODE_MODEL`                              |
+| Variable                | Default                |
+| ----------------------- | ---------------------- |
+| `OPENCODE_MODEL`        | repo-kit's free models |
+| `OPENCODE_MODEL_PLAN`   | `OPENCODE_MODEL`       |
+| `OPENCODE_MODEL_BUILD`  | `OPENCODE_MODEL`       |
+| `OPENCODE_MODEL_REVIEW` | `OPENCODE_MODEL`       |
+| `OPENCODE_MODEL_DEBUG`  | `OPENCODE_MODEL`       |
 
 Values are `provider/model` or `provider/model#variant`, optionally
 comma-separated, for example `anthropic/claude-sonnet-5-5#high`.
@@ -244,6 +244,10 @@ project standards.
 | **Tests**                | Push/PR to main      | Runs tests for affected apps and packages                              |
 | **Update VRT baselines** | Manual dispatch      | Renders changed VRT baselines in CI for `nps vrt.accept`               |
 | **Run AI Agent**         | Issue/PR comment     | Plans, builds, reviews, or debugs via `/oc` or `/opencode` commands    |
+
+Sync Labels, Release Drafter, Publish Release, and Run AI Agent call the
+reusable workflows of [repo-kit](https://github.com/craftsamo/repo-kit), pinned
+to `v1`, so the starter and the repositories made from it share one copy.
 
 ### Documentation
 

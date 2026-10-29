@@ -6,15 +6,14 @@ const ciPath = path.resolve(__dirname, "out");
 
 module.exports = {
   scripts: {
-    link: `node scripts/link-agent-skills.mjs`,
     sync: {
-      agents: `node scripts/sync-agents.mjs`,
+      agents: `pnpm exec repo-kit agents sync`,
     },
     setup: {
       project: `node scripts/setup/project/index.mts`,
       github: {
-        default: `node scripts/setup/github/repository.mts`,
-        secrets: `node scripts/setup/github/secrets.mts`,
+        default: `pnpm exec repo-kit setup github`,
+        secrets: `pnpm exec repo-kit setup secrets`,
       },
     },
     vrt: {
@@ -22,9 +21,9 @@ module.exports = {
       update: `node scripts/vrt/main.mts update`,
     },
     release: {
-      draft: `node scripts/release/main.mts draft`,
-      publish: `node scripts/release/main.mts publish`,
-      sync: `node scripts/release/main.mts sync`,
+      draft: `pnpm exec repo-kit release draft`,
+      publish: `pnpm exec repo-kit release publish`,
+      sync: `pnpm exec repo-kit release sync`,
     },
     prepare: {
       default: `nps prepare.web`,

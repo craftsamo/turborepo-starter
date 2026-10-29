@@ -60,11 +60,13 @@ jobs:
           filters: |
             # The repository scripts and every file their tests read.
             scripts:
-              - '.github/opencode/**'
-              - '.github/workflows/**'
-              - '.opencode/{agent,agents,mode,modes}/**'
-              - '.opencode/opencode.{json,jsonc}'
-              - 'opencode.{json,jsonc}'
+              - '.github/labels.yml'
+              - '.github/PULL_REQUEST_TEMPLATE.md'
+              - '.github/release-drafter.yml'
+              - '.github/release-notes.json'
+              - '.github/workflows/tests.yml'
+              - 'apps/*/package.json'
+              - 'packages/*/package.json'
               - 'package.json'
               - 'package-scripts.js'
               - 'README.md'

@@ -6,29 +6,20 @@
 
 - Manual trigger via GitHub Actions UI (`workflow_dispatch`)
 - Labels configuration file must exist (`.github/labels.yml`)
-- Repository must have `pull-requests: write` permissions
 
 ## How It Works
 
-The workflow automatically synchronizes repository labels with the configuration
-defined in `.github/labels.yml` using the
-[action-label-syncer](https://github.com/micnncim/action-label-syncer) action.
+The workflow calls
+[repo-kit's `labels-sync` workflow](https://github.com/craftsamo/repo-kit#labels-sync),
+pinned to `v1`, which makes the repository's labels the ones
+`.github/labels.yml` declares:
 
-### Process
+1. **Create** the labels the file declares and the repository lacks
+2. **Update** the color and description of changed ones; a label whose name
+   only changes case is renamed, keeping its issues and pull requests
+3. **Prune** the labels the file does not declare
 
-1. **Trigger**: Manual workflow dispatch from GitHub Actions UI
-2. **Checkout**: Clone the repository to access `.github/labels.yml`
-3. **Sync**: Compare repository labels with configuration file
-4. **Apply**: Create, update, or delete labels as needed
-5. **Prune**: Remove labels that are not defined in configuration
-
-### Configuration
-
-The sync operation uses the following settings:
-
-| Setting | Value | Description                                        |
-| ------- | ----- | -------------------------------------------------- |
-| `prune` | true  | Delete labels that are not in `.github/labels.yml` |
+`nps setup.github` applies the same labels.
 
 ### Labels Managed
 
