@@ -14,12 +14,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import {
-  api,
-  getRepositoryName,
-  repositoryRoot,
-  runCommand,
-} from "../setup/github/lib.mts";
+import { api, getRepositoryName, repositoryRoot, runCommand } from "./gh.mts";
 
 export const ARTIFACT_NAME = "vrt-baselines";
 
