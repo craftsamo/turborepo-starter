@@ -60,6 +60,15 @@ The managed Ruleset requires pull requests and a successful `Required checks`
 job against the latest `main`. It blocks branch deletion and force pushes while
 allowing repository administrators and deploy keys to bypass the Ruleset.
 
+A repository whose CI differs names its own required job and the workflow that
+runs it:
+
+```sh
+nps "setup.github --required-check 'CI passed' --ci-workflow ci.yml"
+```
+
+They default to `Required checks` and `tests.yml`, this starter's.
+
 The deploy key bypass is what lets Publish Release push the root version bump
 to `main`. Setup creates a key pair locally with `ssh-keygen`, registers the
 public half as the writable `Release version bump` deploy key, stores the
@@ -78,7 +87,7 @@ request branches, whose default merges `main` into the branch. GitHub still
 offers **Update branch** while a pull request is behind, because the Ruleset
 requires the latest `main`; a local rebase and push clears it.
 
-Setup dispatches and waits for the Tests workflow before creating the Ruleset.
+Setup dispatches and waits for that workflow before creating the Ruleset.
 If Repository Rulesets are unavailable, setup applies equivalent classic branch
 protection without weakening stricter existing protection.
 

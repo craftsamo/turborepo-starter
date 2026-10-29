@@ -33,6 +33,8 @@ const httpError = (status, message) =>
   new CommandError("gh api", { stderr: `gh: ${message} (HTTP ${status})` });
 
 describe("parseArguments", () => {
+  const ci = { requiredCheck: "Required checks", ciWorkflow: "tests.yml" };
+
   it("uses interactive repository setup by default", () => {
     assert.deepEqual(parseArguments([]), {
       mode: "setup",
@@ -43,7 +45,28 @@ describe("parseArguments", () => {
       scope: undefined,
       environment: undefined,
       secretName: undefined,
+      ...ci,
     });
+  });
+
+  it("takes the required check and the workflow that runs it", () => {
+    const args = parseArguments([
+      "--required-check",
+      "CI passed",
+      "--ci-workflow",
+      "ci.yml",
+    ]);
+
+    assert.equal(args.requiredCheck, "CI passed");
+    assert.equal(args.ciWorkflow, "ci.yml");
+    assert.throws(
+      () => parseArguments(["--ci-workflow"]),
+      /--ci-workflow requires a value/,
+    );
+    assert.throws(
+      () => parseArguments(["secrets", "--required-check", "CI passed"]),
+      /--required-check cannot be used with the secrets subcommand/,
+    );
   });
 
   it("parses non-interactive setup flags", () => {
@@ -64,6 +87,7 @@ describe("parseArguments", () => {
         scope: undefined,
         environment: undefined,
         secretName: undefined,
+        ...ci,
       },
     );
   });
@@ -86,6 +110,7 @@ describe("parseArguments", () => {
         scope: undefined,
         environment: "production",
         secretName: "DATABASE_URL",
+        ...ci,
       },
     );
   });
@@ -400,6 +425,21 @@ describe("main protection", () => {
     assert.equal(protection.required_linear_history, true);
     assert.equal(protection.allow_force_pushes, false);
     assert.equal(protection.allow_deletions, false);
+  });
+
+  it("requires the check a repository names instead", () => {
+    const statusRule = buildMainRuleset(15368, "CI passed").rules.find(
+      (rule) => rule.type === "required_status_checks",
+    );
+
+    assert.deepEqual(statusRule.parameters.required_status_checks, [
+      { context: "CI passed", integration_id: 15368 },
+    ]);
+    assert.deepEqual(
+      buildBranchProtection({}, 0, "CI passed").required_status_checks
+        .contexts,
+      ["CI passed"],
+    );
   });
 });
 

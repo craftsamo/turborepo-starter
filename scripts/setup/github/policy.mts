@@ -13,6 +13,10 @@ export interface SetupArguments {
   scope?: "repository" | undefined;
   environment?: string | undefined;
   secretName?: string | undefined;
+  // The job every pull request into main must pass, and the workflow that
+  // runs it, for a repository whose CI differs from this starter's.
+  requiredCheck: string;
+  ciWorkflow: string;
 }
 
 export interface Label {
@@ -266,6 +270,7 @@ export interface RulesetInput {
 
 const REPOSITORY_RULESET_NAME = "Protect main";
 const REQUIRED_CHECK = "Required checks";
+const CI_WORKFLOW = "tests.yml";
 
 // The deploy key the Publish Release workflow pushes the root version bump to
 // main with, and the repository secret that holds its private half.
@@ -309,7 +314,10 @@ export function parseArguments(argv: string[]): SetupArguments {
     scope: undefined,
     environment: undefined,
     secretName: undefined,
+    requiredCheck: REQUIRED_CHECK,
+    ciWorkflow: CI_WORKFLOW,
   };
+  const ciOptions = new Set<string>();
   const values = [...argv];
 
   if (values[0] === "secrets") {
@@ -329,6 +337,12 @@ export function parseArguments(argv: string[]): SetupArguments {
       args.environment = requireValue(value, values);
     } else if (value === "--name") {
       args.secretName = requireValue(value, values);
+    } else if (value === "--required-check") {
+      args.requiredCheck = requireValue(value, values);
+      ciOptions.add(value);
+    } else if (value === "--ci-workflow") {
+      args.ciWorkflow = requireValue(value, values);
+      ciOptions.add(value);
     } else {
       throw new Error(`Unknown argument: ${value}`);
     }
@@ -348,6 +362,11 @@ export function parseArguments(argv: string[]): SetupArguments {
   }
   if (args.mode === "secrets" && args.defaults) {
     throw new Error("Secrets cannot be configured with --defaults.");
+  }
+  if (args.mode === "secrets" && ciOptions.size > 0) {
+    throw new Error(
+      `${[...ciOptions].join(", ")} cannot be used with the secrets subcommand.`,
+    );
   }
   if ((args.scope || args.environment) && !args.secretName) {
     throw new Error("--scope and --environment require --name.");
@@ -472,7 +491,10 @@ export function buildDependabotSettings({
   return { vulnerability_alerts: true, security_updates: securityUpdates };
 }
 
-export function buildMainRuleset(integrationId: number): RulesetInput {
+export function buildMainRuleset(
+  integrationId: number,
+  requiredCheck: string = REQUIRED_CHECK,
+): RulesetInput {
   return {
     name: REPOSITORY_RULESET_NAME,
     target: "branch",
@@ -520,7 +542,7 @@ export function buildMainRuleset(integrationId: number): RulesetInput {
           do_not_enforce_on_create: false,
           required_status_checks: [
             {
-              context: REQUIRED_CHECK,
+              context: requiredCheck,
               ...(integrationId ? { integration_id: integrationId } : {}),
             },
           ],
@@ -533,9 +555,10 @@ export function buildMainRuleset(integrationId: number): RulesetInput {
 export function buildBranchProtection(
   current: BranchProtectionInput = {},
   integrationId: number,
+  requiredCheck: string = REQUIRED_CHECK,
 ): BranchProtectionOutput {
   const contexts = new Set(current.required_status_checks?.contexts ?? []);
-  contexts.add(REQUIRED_CHECK);
+  contexts.add(requiredCheck);
   const checks = new Map(
     (current.required_status_checks?.checks ?? []).map((check) => [
       `${check.context}:${check.app_id ?? ""}`,
@@ -543,8 +566,8 @@ export function buildBranchProtection(
     ]),
   );
   if (integrationId) {
-    checks.set(`${REQUIRED_CHECK}:${integrationId}`, {
-      context: REQUIRED_CHECK,
+    checks.set(`${requiredCheck}:${integrationId}`, {
+      context: requiredCheck,
       app_id: integrationId,
     });
   }
@@ -689,4 +712,4 @@ export function diffObject<Current extends object, Desired extends object>(
     }));
 }
 
-export { REQUIRED_CHECK, REPOSITORY_RULESET_NAME };
+export { REPOSITORY_RULESET_NAME };
