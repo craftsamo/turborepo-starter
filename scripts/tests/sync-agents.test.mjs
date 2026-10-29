@@ -42,7 +42,7 @@ Fixture body with a quote block:
 
 function runSync(root) {
   return execFileSync(process.execPath, [scriptPath], {
-    env: { ...process.env, SYNC_AGENTS_ROOT: root },
+    env: { ...process.env, REPOSITORY_ROOT: root },
     encoding: "utf8",
   });
 }
@@ -195,7 +195,7 @@ All capabilities fixture.
     writeFileSync(conflictPath, "hand-written, no marker\n");
 
     const { status, stderr } = spawnSync(process.execPath, [scriptPath], {
-      env: { ...process.env, SYNC_AGENTS_ROOT: root },
+      env: { ...process.env, REPOSITORY_ROOT: root },
       encoding: "utf8",
     });
 
@@ -329,7 +329,7 @@ Body.
 
     try {
       const { status, stderr } = spawnSync(process.execPath, [scriptPath], {
-        env: { ...process.env, SYNC_AGENTS_ROOT: root },
+        env: { ...process.env, REPOSITORY_ROOT: root },
         encoding: "utf8",
       });
       assert.equal(status, 0);
@@ -358,7 +358,7 @@ Body.
 
     try {
       const { status, stderr } = spawnSync(process.execPath, [scriptPath], {
-        env: { ...process.env, SYNC_AGENTS_ROOT: root },
+        env: { ...process.env, REPOSITORY_ROOT: root },
         encoding: "utf8",
       });
       assert.equal(status, 0);
@@ -374,7 +374,7 @@ Body.
     const emptyRoot = mkdtempSync(join(tmpdir(), "sync-agents-empty-"));
     try {
       const output = execFileSync(process.execPath, [scriptPath], {
-        env: { ...process.env, SYNC_AGENTS_ROOT: emptyRoot },
+        env: { ...process.env, REPOSITORY_ROOT: emptyRoot },
         encoding: "utf8",
         stdio: ["ignore", "pipe", "pipe"],
       });
