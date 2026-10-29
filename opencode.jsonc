@@ -1,5 +1,11 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "references": {
+    "repo-kit": {
+      "repository": "craftsamo/repo-kit",
+      "description": "Use when changing or debugging what repo-kit provides here: the setup, release, label and /oc workflows, the shared agents and skills, and the commit size check. Its main can be ahead of the v1 this repository pins; node_modules/@craftsamo/repo-kit/package.json has the installed version.",
+    },
+  },
   "permissions": [
     { "action": "edit", "resource": "*", "effect": "ask" },
     { "action": "shell", "resource": "*", "effect": "ask" },
