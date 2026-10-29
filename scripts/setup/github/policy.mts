@@ -293,14 +293,6 @@ export function planReleaseKey(state: ReleaseKeyState): ReleaseKeyPlan {
 // from the workflow scripts so the two never drift apart.
 export const MODEL_VARIABLES = ["OPENCODE_MODEL", ...AGENTS.map(agentVariable)];
 export const PROVIDER_SECRETS: readonly string[] = SECRET_VARIABLES;
-const ALLOWED_ACTION_PATTERNS = [
-  "dorny/paths-filter@*",
-  // Release Drafter's autolabeler only; scripts/release drafts the release.
-  // A pattern matches the action's full path, so this one does not allow the
-  // drafter at the repository root.
-  "release-drafter/release-drafter/autolabeler@*",
-  "micnncim/action-label-syncer@*",
-];
 const ARTIFACT_RETENTION_DAYS = 30;
 // GitHub drops a cache unused for 7 days. Three still spans a weekend, and
 // drops the caches of merged branches before they crowd out main's in the
@@ -398,10 +390,35 @@ export function buildRepositorySettings(
   };
 }
 
+/**
+ * The allowed-action patterns for every third-party action and reusable
+ * workflow that the given workflow files use, each at any ref. A pattern
+ * matches an action's full path, so allowing an action in a subdirectory,
+ * such as Release Drafter's autolabeler, does not allow the repository's
+ * root action. Local actions, Docker images and GitHub's own actions need no
+ * pattern.
+ */
+export function workflowActionPatterns(workflows: readonly string[]): string[] {
+  const patterns = new Set<string>();
+  for (const source of workflows) {
+    for (const match of source.matchAll(
+      /^\s*(?:-\s*)?uses:\s*["']?([^\s"'#]+)/gm,
+    )) {
+      const action = match[1]!;
+      if (action.startsWith("./") || action.startsWith("docker://")) continue;
+      if (/^(actions|github)\//.test(action)) continue;
+      patterns.add(`${action.replace(/@.*$/, "")}@*`);
+    }
+  }
+  return [...patterns].sort();
+}
+
 export function buildActionsSettings({
   shaPinningRequired = false,
+  allowedActions = [],
 }: {
   shaPinningRequired?: boolean;
+  allowedActions?: readonly string[];
 } = {}): ActionsSettings {
   return {
     permissions: {
@@ -412,7 +429,7 @@ export function buildActionsSettings({
     selectedActions: {
       github_owned_allowed: true,
       verified_allowed: false,
-      patterns_allowed: [...ALLOWED_ACTION_PATTERNS],
+      patterns_allowed: [...allowedActions],
     },
     // `/oc build` opens pull requests with GITHUB_TOKEN. GitHub ties creating
     // and approving into this one setting; the workflow never approves.

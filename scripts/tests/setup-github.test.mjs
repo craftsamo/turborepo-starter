@@ -1,6 +1,4 @@
 import assert from "node:assert/strict";
-import { readdirSync, readFileSync } from "node:fs";
-import path from "node:path";
 import { describe, it } from "node:test";
 
 import {
@@ -19,12 +17,12 @@ import {
   parseLabels,
   planReleaseKey,
   PROVIDER_SECRETS,
+  workflowActionPatterns,
 } from "../setup/github/policy.mts";
 import {
   CommandError,
   ensureEnvironment,
   environmentExists,
-  repositoryRoot,
 } from "../setup/github/lib.mts";
 import {
   applyActionsSettings,
@@ -148,7 +146,9 @@ describe("repository settings", () => {
 
 describe("Actions settings", () => {
   it("uses selected actions with a read-only default token that can open PRs", () => {
-    const settings = buildActionsSettings();
+    const settings = buildActionsSettings({
+      allowedActions: ["dorny/paths-filter@*"],
+    });
 
     assert.deepEqual(settings.permissions, {
       enabled: true,
@@ -159,8 +159,6 @@ describe("Actions settings", () => {
     assert.equal(settings.selectedActions.verified_allowed, false);
     assert.deepEqual(settings.selectedActions.patterns_allowed, [
       "dorny/paths-filter@*",
-      "release-drafter/release-drafter/autolabeler@*",
-      "micnncim/action-label-syncer@*",
     ]);
     assert.deepEqual(settings.workflow, {
       default_workflow_permissions: "read",
@@ -168,36 +166,30 @@ describe("Actions settings", () => {
     });
   });
 
-  it("allows every third-party action the workflows use", () => {
-    const workflows = path.join(repositoryRoot, ".github/workflows");
-    const { patterns_allowed } = buildActionsSettings().selectedActions;
-    const allowed = patterns_allowed.map(
-      (pattern) =>
-        new RegExp(
-          `^${pattern.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replaceAll("*", ".*")}$`,
-        ),
-    );
-    const blocked = readdirSync(workflows)
-      .filter((file) => /\.ya?ml$/.test(file))
-      .flatMap((file) =>
-        [
-          ...readFileSync(path.join(workflows, file), "utf8").matchAll(
-            /^\s*(?:-\s*)?uses:\s*["']?([^\s"'#]+)/gm,
-          ),
-        ].map((match) => `${file}: ${match[1]}`),
-      )
-      .filter((entry) => {
-        const action = entry.split(": ")[1];
-        if (action.startsWith("./") || action.startsWith("docker://")) {
-          return false;
-        }
-        // GitHub-owned actions are allowed by github_owned_allowed.
-        if (/^(actions|github)\//.test(action)) return false;
-        return !allowed.some((pattern) => pattern.test(action));
-      });
+  it("allows each third-party action and reusable workflow once, at any ref", () => {
+    const tests = `
+jobs:
+  call:
+    uses: owner/shared/.github/workflows/ci.yml@v1
+  build:
+    steps:
+      - uses: actions/checkout@v7
+      - uses: "dorny/paths-filter@v4" # filter
+      - name: Label
+        uses: release-drafter/release-drafter/autolabeler@0123456789abcdef
+      - uses: ./.github/actions/local
+      - uses: docker://alpine:3
+      - uses: github/codeql-action/init@v3
+`;
+    const labels = "      - uses: dorny/paths-filter@v3\n";
 
-    assert.deepEqual(blocked, []);
+    assert.deepEqual(workflowActionPatterns([tests, labels]), [
+      "dorny/paths-filter@*",
+      "owner/shared/.github/workflows/ci.yml@*",
+      "release-drafter/release-drafter/autolabeler@*",
+    ]);
   });
+
 
   it("preserves an existing SHA pinning requirement", () => {
     assert.equal(

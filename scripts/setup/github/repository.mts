@@ -1,4 +1,10 @@
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import {
+  existsSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { createInterface } from "node:readline/promises";
 import { fileURLToPath } from "node:url";
@@ -26,6 +32,7 @@ import {
   RELEASE_KEY_TITLE,
   REPOSITORY_RULESET_NAME,
   REQUIRED_CHECK,
+  workflowActionPatterns,
 } from "./policy.mts";
 import type {
   ActionsPermissionsState,
@@ -287,6 +294,14 @@ function applyLabels(repository: string, changes: LabelDiff): void {
       `/repos/${repository}/labels/${encodeURIComponent(label.name)}`,
     );
   }
+}
+
+function readWorkflows(): string[] {
+  const directory = path.join(repositoryRoot, ".github/workflows");
+  if (!existsSync(directory)) return [];
+  return readdirSync(directory)
+    .filter((file) => /\.ya?ml$/.test(file))
+    .map((file) => readFileSync(path.join(directory, file), "utf8"));
 }
 
 function getActionsState(repository: string): ActionsState {
@@ -741,7 +756,10 @@ export async function setupRepository(args: SetupArguments): Promise<void> {
     const shaPinningRequired = Boolean(
       actionsState.permissions.sha_pinning_required,
     );
-    const actionsSettings = buildActionsSettings({ shaPinningRequired });
+    const actionsSettings = buildActionsSettings({
+      shaPinningRequired,
+      allowedActions: workflowActionPatterns(readWorkflows()),
+    });
     const retentionState = getRetentionState(repository);
     const retentionSettings =
       retentionState &&

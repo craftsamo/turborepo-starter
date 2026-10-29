@@ -85,8 +85,9 @@ protection without weakening stricter existing protection.
 ## Actions Permissions
 
 Setup enables Actions with a read-only default `GITHUB_TOKEN` and permits only
-GitHub-owned actions plus the third-party actions used by this starter. A test
-fails when a workflow uses a third-party action missing from that allowlist.
+GitHub-owned actions plus the third-party actions and reusable workflows that
+the files in `.github/workflows` use, each at any ref. After adding one to a
+workflow, run setup again before the workflow can use it.
 
 It also allows Actions to create pull requests, which `/oc build` needs.
 GitHub grants creating and approving pull requests through the same setting.
