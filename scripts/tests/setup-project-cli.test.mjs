@@ -61,9 +61,9 @@ turborepo-starter/
 
 Old license text.
 `;
-const projectScriptSource = path.resolve(
+const scriptsSource = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
-  "../setup/project",
+  "..",
 );
 const metadataArguments = [
   "--name",
@@ -94,9 +94,11 @@ function answers(overrides = {}) {
 function createFixture(t) {
   const root = mkdtempSync(path.join(tmpdir(), "setup-project-"));
   t.after(() => rmSync(root, { recursive: true, force: true }));
-  const scriptDirectory = path.join(root, "scripts/setup/project");
-  mkdirSync(scriptDirectory, { recursive: true });
-  cpSync(projectScriptSource, scriptDirectory, { recursive: true });
+  for (const file of ["setup/project", "repository-root.mts"]) {
+    const target = path.join(root, "scripts", file);
+    mkdirSync(path.dirname(target), { recursive: true });
+    cpSync(path.join(scriptsSource, file), target, { recursive: true });
+  }
   writeFileSync(
     path.join(root, "package.json"),
     `${JSON.stringify(currentPackage, null, 2)}\n`,

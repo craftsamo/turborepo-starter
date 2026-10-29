@@ -242,23 +242,23 @@ function readDraft(repository: string): { version: string; draft: Release } {
 /**
  * Set the root package version on main to the draft release's, without
  * publishing it. With --version, the version is given (the Publish Release
- * workflow passes the one a release was just published with) and the current
- * directory is the checkout of main to commit in; a version lower than main's
- * is left alone, so a release published for an older line does not move
- * main back. Without it, the draft is read from GitHub and the commit is made
- * in a temporary worktree, so the checked-out branch is left alone.
+ * workflow passes the one a release was just published with) and the
+ * repository root is the checkout of main to commit in; a version lower than
+ * main's is left alone, so a release published for an older line does not
+ * move main back. Without it, the draft is read from GitHub and the commit is
+ * made in a temporary worktree, so the checked-out branch is left alone.
  */
 function sync(argv: string[]): void {
   const { version: given } = parseSyncArguments(argv);
   if (given !== undefined) {
     const current = currentVersion(
-      readFileSync(path.join(process.cwd(), "package.json"), "utf8"),
+      readFileSync(path.join(repositoryRoot, "package.json"), "utf8"),
     );
     if (isLowerVersion(given, current)) {
       console.log(`main is at ${current}, past ${given}; left as it is.`);
       return;
     }
-    const pushed = bumpAndPush(process.cwd(), given);
+    const pushed = bumpAndPush(repositoryRoot, given);
     console.log(
       pushed
         ? `Set the version to ${given} on main.`

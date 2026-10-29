@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
-import { fileURLToPath } from "node:url";
 
+import { resolveRepositoryRoot } from "../repository-root.mts";
 import { resolveAnswers, updateReadme } from "../setup/project/policy.mts";
 
 const currentReadme = `# Welcome to the Turborepo Starter!
@@ -85,7 +85,7 @@ describe("README updates", () => {
 
   it("removes setup-only guidance from the real starter README", () => {
     const realReadme = readFileSync(
-      path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../README.md"),
+      path.join(resolveRepositoryRoot(), "README.md"),
       "utf8",
     );
     const result = updateReadme(
