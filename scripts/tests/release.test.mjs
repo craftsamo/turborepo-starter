@@ -6,6 +6,7 @@ import {
   bumpMessage,
   currentVersion,
   draftVersion,
+  isLowerVersion,
   parseDraftArguments,
   parsePublishArguments,
   parseSyncArguments,
@@ -164,5 +165,19 @@ describe("unlistedCommits", () => {
     ]);
     assert.deepEqual(unlistedCommits(`${"a".repeat(40)} ${bump}`), []);
     assert.deepEqual(unlistedCommits(""), []);
+  });
+});
+
+describe("isLowerVersion", () => {
+  it("orders versions, a prerelease before its release", () => {
+    assert.equal(isLowerVersion("0.11.0", "0.12.0"), true);
+    assert.equal(isLowerVersion("0.12.0", "0.11.9"), false);
+    assert.equal(isLowerVersion("0.9.0", "0.10.0"), true);
+    assert.equal(isLowerVersion("1.0.0", "1.0.0"), false);
+    assert.equal(isLowerVersion("1.0.0-rc.1", "1.0.0"), true);
+    assert.equal(isLowerVersion("1.0.0", "1.0.0-rc.1"), false);
+    assert.equal(isLowerVersion("1.0.0-rc.2", "1.0.0-rc.10"), true);
+    assert.equal(isLowerVersion("1.0.0-beta", "1.0.0-rc"), true);
+    assert.equal(isLowerVersion("1.0.0-rc", "1.0.0-rc.1"), true);
   });
 });

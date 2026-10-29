@@ -18,7 +18,9 @@ The workflow labels pull requests and keeps a draft release up to date with
 the pull requests merged into `main`. Labeling uses the autolabeler of
 [release-drafter](https://github.com/release-drafter/release-drafter) (v7);
 the draft is written by `scripts/release`. Publishing the draft stays a manual
-step.
+step, with `nps release.publish` or the Publish Release workflow
+(`.github/workflows/publish-release.yml`); see
+[Publishing a Release](#publishing-a-release).
 
 ### Process
 
@@ -34,9 +36,11 @@ step.
 6. **Generate**: Create or update the one draft release
 
 The workflow runs one job per event: `label_pull_request` on a pull request
-and `update_release_draft` after a Tests run. A newer run for the same pull
-request or branch cancels the one still in progress, since each run rebuilds
-the labels or the draft from the current state.
+and `update_release_draft` after a Tests run. A newer labeling run for the same
+pull request cancels the one still in progress, since each run rebuilds the
+labels from the current state. Redrafting shares a concurrency group with
+publishing instead and never cancels: a newer redraft replaces one still
+waiting, and none writes the draft while it is being published.
 
 A push can change the files a pull request touches, and an edit its
 description or its base, so both label it again. Labeling only adds labels; see
@@ -75,7 +79,8 @@ The draft follows `main` through the Tests workflow rather than the push
 itself: `update_release_draft` runs on `workflow_run` when Tests completes on
 `main`, and only when it succeeded on a push or a manual run (never on a pull
 request, whose head branch a fork may also call `main`). The draft targets the
-commit Tests passed on, so publishing it tags exactly what was checked. A
+commit Tests passed on, and publishing tags that commit plus the version
+commit on top of it, nothing else. A
 `main` commit that fails its checks leaves the draft at the last state that
 passed, and the next successful run catches the draft up. Tests runs on every
 push to `main`, including one that only touches documentation, so every `main`
@@ -176,57 +181,84 @@ Dependabot's own pull requests are not labeled by the workflow: a run
 Dependabot starts gets a read-only token. Dependabot labels them
 `dependencies` itself.
 
+## Publishing a Release
+
+Changes collect in the draft until it is published. Each merge updates the
+draft's notes, and its version when a pull request raises the increment (a
+feature the minor, a `🌟major` label the major), but leaves the version on
+`main` alone.
+
+Publish once the draft lists what you want to release:
+
+```sh
+nps "release.publish --dry-run"
+nps release.publish
+```
+
+or run the **Publish Release** workflow from the Actions tab. Either one:
+
+1. Checks that the draft lists everything on `main`. It refuses while `main`
+   has commits after the one the draft targets, other than version commits:
+   the redraft that follows Tests on `main` catches the draft up. It also
+   refuses when the draft's tag already exists.
+2. Sets the root `package.json` version on `main` to the draft's with a
+   `chore(release): set the version to <version>` commit, unless `main`
+   already carries it.
+3. Publishes the draft on that commit, so GitHub creates the `v<version>` tag
+   on a commit that carries its version.
+
+`--dry-run` runs the checks and prints what it would do. A run that stops
+between the version commit and the publish can simply run again: it finds the
+version set and publishes.
+
+A redraft that finds the draft already published, by either route, leaves it
+alone rather than turning it back into a draft.
+
+A release the workflow publishes uses `GITHUB_TOKEN`, so it starts no other
+workflow; one published with `nps release.publish` does.
+
 ### Version on `main`
 
-After redrafting, the same job sets the root `package.json` version on `main`
-to the draft's version, when it differs, with a
-`chore(release): set the version to <version>` commit by `github-actions[bot]`.
-So `main` always names the release it is heading for, and the commit a release
-tags carries its version.
+`main` names the latest published release, and the version commit is the only
+commit the release process pushes to `main`, once per release.
 
-The push uses the release deploy key, whose private half is the
+The workflow pushes it with the release deploy key, whose private half is the
 `RELEASE_DEPLOY_KEY` secret. `nps setup.github` creates the key and the secret,
 and adds deploy keys as a bypass actor of the `Starter: protect main` Ruleset,
 so the push goes straight to `main`. GitHub accepts GitHub Actions itself as a
 bypass actor only on organization repositories, which is why a key is used:
 it works on personal repositories as well. Any workflow of this repository can
 read the secret and so push to `main`; a fork's workflow cannot read it.
+Without the secret, the workflow fails and points at `nps release.publish`,
+which pushes under your own account, as the Ruleset allows for repository
+administrators. Classic branch protection, which the setup falls back to where
+Rulesets are unavailable, has no deploy key bypass: publish with the command
+there.
 
 Unlike a push with `GITHUB_TOKEN`, a push with the key starts workflows: Tests
-runs on the bump commit, and the redraft that follows targets it, finds the
-version already set and pushes nothing, so it cannot loop. If `main` moves
-between the checkout and the push, the push is rejected and the job fails; the
-Tests run of that new commit redrafts and bumps again, so nothing needs doing.
-Without the secret, the job warns and leaves the version alone. Classic branch
-protection, which the setup falls back to where Rulesets are unavailable, has
-no such bypass: there the bump fails and the manual command below is the way.
+runs on the version commit, and the redraft that follows finds nothing merged
+since the new release and leaves the draft alone.
+
+Publishing the draft from the Releases page instead tags the commit the draft
+targets, which still carries the previous version. The Publish Release
+workflow then sets the version on `main` to the release's, so `main` names the
+latest release again, but the tagged commit does not carry its version: prefer
+the command or the workflow. A prerelease, or a release for an older line,
+leaves `main` alone.
 
 ```sh
 nps release.sync
 ```
 
-`release.sync` does the same by hand, for when Actions cannot run: it reads the
-one draft release, takes the version from its tag, commits the bump in a
+sets the version on `main` to the draft's without publishing: it reads the one
+draft release, takes the version from its tag, commits the version in a
 temporary worktree so the checked-out branch is left alone, and pushes it to
-`main` under your own account, which the Ruleset allows for repository
-administrators. When `main` already carries the version, it says so and
-changes nothing.
+`main` under your own account. When `main` already carries the version, it
+says so and changes nothing.
 
 Only the root `package.json` follows the release. `apps/*/package.json` keep
 their own versions, which the `Get details` workflow reads for the deployment
 of each app.
-
-## Publishing a Release
-
-Open the draft under Releases, read the notes, and publish it. GitHub creates
-the `v<version>` tag on the commit the draft targets. Publish once the run that
-follows the version bump has redrafted: the draft then targets the bump commit,
-which carries the version.
-
-A pull request that merges before publishing can move the draft to another
-version: a feature raises the minor, a `🌟major` label the major. The workflow
-follows it on the next successful Tests run, and sets the new version on
-`main` the same way.
 
 ### Rolling Back
 

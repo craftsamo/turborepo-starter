@@ -1,0 +1,95 @@
+name: Publish Release
+
+on:
+  # Publish the draft release from the Actions tab: set the version on main to
+  # the draft's with a commit, then publish the draft on that commit, so the
+  # tag names a commit that carries its version. `nps release.publish` does
+  # the same from a checkout.
+  workflow_dispatch:
+  # A release published on the Releases page instead tags the commit the
+  # draft targeted, before any version bump. Set the version on main
+  # afterwards, so main still names the latest release.
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    if: github.event_name == 'workflow_dispatch'
+    # Shared with Release Drafter's drafting job, so a redraft never writes
+    # the draft while it is being published.
+    concurrency:
+      group: release-draft
+      cancel-in-progress: false
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    env:
+      # A secret cannot appear in a step's if, so whether it is set is read
+      # here once.
+      RELEASE_KEY_SET: ${{ secrets.RELEASE_DEPLOY_KEY != '' }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Require the release deploy key
+        if: env.RELEASE_KEY_SET != 'true'
+        run: |
+          echo "::error::RELEASE_DEPLOY_KEY is not set, so the version bump cannot be pushed to main. Run nps setup.github to create it, or nps release.publish to publish from a checkout."
+          exit 1
+      # The push uses the release deploy key, which the main ruleset lets
+      # through (the GitHub setup creates the key and adds deploy keys as a
+      # bypass actor). The history and the tags check that the draft lists
+      # everything on main.
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+          ssh-key: ${{ secrets.RELEASE_DEPLOY_KEY }}
+      - name: Use Node.js 24.x
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24.x
+          package-manager-cache: false
+      - name: Publish the draft release
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          node scripts/release/main.mts publish
+
+  set_version:
+    # A prerelease does not move main. A release published by the job above
+    # uses GITHUB_TOKEN and starts no workflow; one published with
+    # nps release.publish finds main already at its version.
+    if: github.event_name == 'release' && !github.event.release.prerelease
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.event.release.tag_name }}
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_KEY_SET: ${{ secrets.RELEASE_DEPLOY_KEY != '' }}
+    steps:
+      - name: Warn that the version cannot be set
+        if: env.RELEASE_KEY_SET != 'true'
+        run: echo "::warning::RELEASE_DEPLOY_KEY is not set, so the version on main stays as it is. Run nps setup.github to create it, or nps release.sync to set the version by hand."
+      - uses: actions/checkout@v7
+        if: env.RELEASE_KEY_SET == 'true'
+        with:
+          ref: main
+          ssh-key: ${{ secrets.RELEASE_DEPLOY_KEY }}
+      - name: Use Node.js 24.x
+        if: env.RELEASE_KEY_SET == 'true'
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24.x
+          package-manager-cache: false
+      # A version lower than main's, from a release for an older line, leaves
+      # main alone.
+      - name: Set the version on main to the release's
+        if: env.RELEASE_KEY_SET == 'true'
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          node scripts/release/main.mts sync --version "${TAG#v}"

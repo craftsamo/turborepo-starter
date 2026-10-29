@@ -73,10 +73,12 @@ full options.
 - **VRT baselines**: `nps vrt.accept` (copy the ones CI rendered for this
   commit), `nps vrt.update` (render them locally in Docker)
 - **Release**: the Release Drafter workflow drafts the next release with
-  `scripts/release` and keeps the root version on `main` at the draft's;
-  `nps "release.draft --dry-run"` previews the draft, and `nps release.sync`
-  sets the version by hand when Actions cannot run. Publishing the draft
-  stays manual, see `docs/github-actions/release-drafter.md`
+  `scripts/release`, and changes collect in the draft until it is published;
+  `nps "release.draft --dry-run"` previews the draft. Publishing stays a
+  manual step: `nps release.publish` (or the Publish Release workflow) sets
+  the root version on `main` to the draft's and publishes the draft on that
+  commit; `nps release.sync` sets the version alone. See
+  `docs/github-actions/release-drafter.md`
 
 Workspace apps participate by defining `test`, `test:ci`, and `test:e2e`
 package scripts. E2E tasks run concurrently, so each app must isolate ports,

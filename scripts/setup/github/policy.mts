@@ -267,8 +267,8 @@ export interface RulesetInput {
 const REPOSITORY_RULESET_NAME = "Starter: protect main";
 const REQUIRED_CHECK = "Required checks";
 
-// The deploy key Release Drafter pushes the root version bump to main with,
-// and the repository secret that holds its private half.
+// The deploy key the Publish Release workflow pushes the root version bump to
+// main with, and the repository secret that holds its private half.
 export const RELEASE_KEY_TITLE = "Release version bump";
 export const RELEASE_KEY_SECRET = "RELEASE_DEPLOY_KEY";
 
@@ -467,7 +467,7 @@ export function buildMainRuleset(integrationId: number): RulesetInput {
         actor_type: "RepositoryRole",
         bypass_mode: "always",
       },
-      // Deploy keys, so that Release Drafter can push the root version bump
+      // Deploy keys, so that Publish Release can push the root version bump
       // to main with the release deploy key. GitHub accepts GitHub Actions as
       // a bypass actor only on organization repositories; a deploy key works
       // on personal ones as well.

@@ -1,10 +1,4 @@
-import {
-  appendFileSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -105,6 +99,38 @@ export function bumpMessage(version: string): [string, string] {
 
 export function currentVersion(manifest: string): string {
   return (JSON.parse(manifest) as { version?: string }).version ?? "";
+}
+
+/**
+ * Whether version `a` comes before `b`. A prerelease comes before the
+ * release it leads to; two prereleases of one version compare by their
+ * suffix, numerically where both parts are numbers.
+ */
+export function isLowerVersion(a: string, b: string): boolean {
+  const parse = (version: string) => {
+    const [core = "", pre] = version.split(/-(.*)/s);
+    return { core: core.split(".").map(Number), pre };
+  };
+  const left = parse(a);
+  const right = parse(b);
+  for (let index = 0; index < 3; index++) {
+    const difference = (left.core[index] ?? 0) - (right.core[index] ?? 0);
+    if (difference !== 0) return difference < 0;
+  }
+  if (left.pre === undefined || right.pre === undefined) {
+    return left.pre !== undefined && right.pre === undefined;
+  }
+  const leftParts = left.pre.split(".");
+  const rightParts = right.pre.split(".");
+  for (let index = 0; index < leftParts.length; index++) {
+    const l = leftParts[index]!;
+    const r = rightParts[index];
+    if (r === undefined) return false;
+    if (l === r) continue;
+    const numeric = /^\d+$/.test(l) && /^\d+$/.test(r);
+    return numeric ? Number(l) < Number(r) : l < r;
+  }
+  return leftParts.length < rightParts.length;
 }
 
 /**
@@ -215,15 +241,23 @@ function readDraft(repository: string): { version: string; draft: Release } {
 
 /**
  * Set the root package version on main to the draft release's, without
- * publishing it. With --version, the version is given (Release Drafter
- * passes the one it just resolved) and the current directory is the checkout
- * of main to commit in. Without it, the draft is read from GitHub and the
- * commit is made in a temporary worktree, so the checked-out branch is left
- * alone.
+ * publishing it. With --version, the version is given (the Publish Release
+ * workflow passes the one a release was just published with) and the current
+ * directory is the checkout of main to commit in; a version lower than main's
+ * is left alone, so a release published for an older line does not move
+ * main back. Without it, the draft is read from GitHub and the commit is made
+ * in a temporary worktree, so the checked-out branch is left alone.
  */
 function sync(argv: string[]): void {
   const { version: given } = parseSyncArguments(argv);
   if (given !== undefined) {
+    const current = currentVersion(
+      readFileSync(path.join(process.cwd(), "package.json"), "utf8"),
+    );
+    if (isLowerVersion(given, current)) {
+      console.log(`main is at ${current}, past ${given}; left as it is.`);
+      return;
+    }
     const pushed = bumpAndPush(process.cwd(), given);
     console.log(
       pushed
@@ -474,10 +508,9 @@ function writeDraft(
 /**
  * Draft the next release from the pull requests whose merge commit landed on
  * main since the last release, up to `--target` (the head of main by
- * default). It prints the version and, in a workflow, sets the `version`
- * output for the step that sets it on main. With nothing to release it
- * leaves the draft alone and sets no output. --dry-run prints the draft
- * without writing it.
+ * default). It prints the version; the version on main changes only when the
+ * draft is published (or with sync). With nothing to release it leaves the
+ * draft alone. --dry-run prints the draft without writing it.
  */
 function draft(argv: string[]): void {
   const { target: given, dryRun } = parseDraftArguments(argv);
@@ -529,9 +562,6 @@ function draft(argv: string[]): void {
       ? `Drafted ${written}`
       : `${release.tag_name} was published meanwhile; the draft is left alone.`,
   );
-  if (written && process.env.GITHUB_OUTPUT) {
-    appendFileSync(process.env.GITHUB_OUTPUT, `version=${version}\n`);
-  }
 }
 
 const commands: Record<string, (argv: string[]) => void | Promise<void>> = {

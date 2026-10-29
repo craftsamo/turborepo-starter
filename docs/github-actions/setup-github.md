@@ -30,7 +30,7 @@ The setup manages:
 - Secret scanning with push protection and Dependabot alerts
 - Labels from `.github/labels.yml`
 - A writable `Release version bump` deploy key and its `RELEASE_DEPLOY_KEY`
-  secret, which Release Drafter pushes the root version bump to `main` with
+  secret, which Publish Release pushes the root version bump to `main` with
 - A `Starter: protect main` Ruleset
 - Optional repository description, homepage, topics, and OpenCode model
   variables (`OPENCODE_MODEL` and `OPENCODE_MODEL_<AGENT>`, checked in the
@@ -60,7 +60,7 @@ The managed Ruleset requires pull requests and a successful `Required checks`
 job against the latest `main`. It blocks branch deletion and force pushes while
 allowing repository administrators and deploy keys to bypass the Ruleset.
 
-The deploy key bypass is what lets Release Drafter push the root version bump
+The deploy key bypass is what lets Publish Release push the root version bump
 to `main`. Setup creates a key pair locally with `ssh-keygen`, registers the
 public half as the writable `Release version bump` deploy key, stores the
 private half in the `RELEASE_DEPLOY_KEY` secret, and deletes the local copy. It
