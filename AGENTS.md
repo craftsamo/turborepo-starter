@@ -35,9 +35,11 @@ conflict", or "fork" alone are not sufficient to trigger `sync-upstream`.
 
 ## Agent Routing
 
-The repository defines shared subagents in `.opencode/agents/`, mirrored to
-tool-native definitions (Claude Code, Codex CLI, Gemini CLI, Copilot CLI, Grok
-Build) on install, including `.grok/agents/`.
+`pnpm install` runs `repo-kit agents sync`, which installs repo-kit's shared
+subagents in `.opencode/agents/` and their tool-native definitions (Claude
+Code, Codex CLI, Gemini CLI, Copilot CLI, Grok Build), along with its shared
+skills. The generated files are not committed; a file of the same name without
+repo-kit's generated marker replaces the shared one.
 
 Use `reviewer` for a broad read-only scan of a change before commit or PR:
 project conventions, AGENTS.md violations, obvious bugs, missing tests, and

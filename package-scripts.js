@@ -6,9 +6,8 @@ const ciPath = path.resolve(__dirname, "out");
 
 module.exports = {
   scripts: {
-    link: `node scripts/link-agent-skills.mjs`,
     sync: {
-      agents: `node scripts/sync-agents.mjs`,
+      agents: `pnpm exec repo-kit agents sync`,
     },
     setup: {
       project: `node scripts/setup/project/index.mts`,

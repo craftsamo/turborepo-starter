@@ -52,13 +52,4 @@ yarn-error.log*
 # (e.g. GITHUB_OUTPUT=gh_output ./step.sh)
 gh_output
 
-# generated agent-skill links (created by scripts/link-agent-skills.mjs on install)
-/.agents/skills
-/.claude/skills
-
-# generated tool-native agent definitions (created by scripts/sync-agents.mjs on install)
-/.claude/agents
-/.codex/agents
-/.gemini/agents
-/.github/agents
-/.grok/agents
+# repo-kit agents sync lists the files it generates in .git/info/exclude.
