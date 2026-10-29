@@ -85,4 +85,4 @@ allowBuilds:
 
 # Versions installed before pnpm's minimum release age had passed for them.
 minimumReleaseAgeExclude:
-  - "@craftsamo/repo-kit@1.0.0"
+  - "@craftsamo/repo-kit@1.0.1"
