@@ -15,7 +15,6 @@
   },
   "include": [
     "*.mts",
-    "ci/**/*.mts",
     "setup/**/*.mts",
     "vrt/**/*.mts"
   ]
