@@ -3,7 +3,7 @@
   "references": {
     "repo-kit": {
       "repository": "craftsamo/repo-kit",
-      "description": "Use when changing or debugging what repo-kit provides here: the setup, release, label and /oc workflows, the shared agents and skills, and the commit size check. Its main can be ahead of the v1 this repository pins; node_modules/@craftsamo/repo-kit/package.json has the installed version.",
+      "description": "Use when changing or debugging what repo-kit provides here: the setup, release, label and /oc workflows, the shared agents and skills, and the commit size check. Its default branch can be ahead of the installed release; check node_modules/@craftsamo/repo-kit/package.json for the installed version.",
     },
   },
   "permissions": [
