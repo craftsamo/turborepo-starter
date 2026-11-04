@@ -45,6 +45,8 @@ overrides:
   # postcss 8.4.31 up to a patched 8.5.x. Require 8.5.18 for the later path
   # disclosure fix shared by all consumers.
   "postcss": "^8.5.18"
+  # GHSA-2v37-7h3g-55p8: keep all PostCSS consumers on patched nanoid 3.x.
+  "postcss>nanoid": "^3.3.19"
   # GHSA-rgj7-g3m4-5g8c: Next.js still requests sharp ^0.35.3, so force the
   # patched 0.35.4+ line until Next.js raises its optional dependency range.
   "sharp": "^0.35.5"
