@@ -7,7 +7,6 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
-    "commit": "cz",
     "postinstall": "node -e \"const fs=require('fs');if(fs.existsSync('.git')&&fs.existsSync('node_modules/@craftsamo/repo-kit'))require('child_process').execFileSync('repo-kit',['agents','sync'],{stdio:'inherit'})\"",
     "prepare": "node -e \"const f='scripts/install-husky.mjs';if(require('fs').existsSync(f))require('child_process').execFileSync(process.execPath,[f],{stdio:'inherit'})\""
   },
@@ -17,9 +16,6 @@
     "@craftsamo/repo-kit": "^1.2.0",
     "@types/node": "^24.13.2",
     "@typescript/native": "npm:typescript@7.0.2",
-    "commitizen": "^4.3.1",
-    "cz-conventional-changelog": "^3.3.0",
-    "cz-customizable": "^7.4.0",
     "husky": "^9.1.7",
     "turbo": "2.9.14",
     "typescript": "npm:@typescript/typescript6@6.0.2"
@@ -27,13 +23,5 @@
   "engines": {
     "node": ">=24"
   },
-  "packageManager": "pnpm@11.5.3",
-  "config": {
-    "commitizen": {
-      "path": "./node_modules/cz-customizable",
-      "cz-customizable": {
-        "config": ".cz-config.js"
-      }
-    }
-  }
+  "packageManager": "pnpm@11.5.3"
 }

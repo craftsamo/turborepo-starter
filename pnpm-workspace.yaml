@@ -33,14 +33,9 @@ overrides:
   "flatted": "^3.4.2"
   "handlebars": "^4.7.9"
   "vite": "^7.3.7"
-  "lodash": "^4.18.1"
-  "tmp": "^0.2.4"
   "js-yaml": "^4.3.2"
   "tar": "^7.5.11"
   "rollup": "^4.59.0"
-  # GHSA-3g3m-2fjr-6pw4 / CVE-2026-118773: AbortSignal cancellation bypass,
-  # fixed in glob 14.0.2.
-  "glob": "^14.0.2"
   # GHSA-g3hv-75wg-m249: globparts amplification DoS, fixed only in
   # minimatch 11.0.1. eslint and @eslint/* still declare minimatch 3.x and
   # typescript-eslint 10.x; they only use the Minimatch class and the named
