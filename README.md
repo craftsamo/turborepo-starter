@@ -25,7 +25,8 @@ configurations.
   CSS
 - **Code Quality**: ESLint, Prettier, and Husky for consistent code standards
 - **Testing**: Vitest setup for unit and integration tests
-- **Git Workflow**: Commitizen and Commitlint for conventional commits
+- **Git Workflow**: Commitlint checks every commit message against
+  Conventional Commits in the `commit-msg` hook
 - **AI Agent Skills**: on-demand skills in `.opencode/skills/`, shared across
   Claude Code, Codex, Gemini CLI, Copilot, and Grok Build. On `pnpm install`,
   [repo-kit](https://github.com/craftsamo/repo-kit) adds its shared skills and
