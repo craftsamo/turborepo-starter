@@ -35,8 +35,8 @@ importers:
         specifier: ^19.6.0
         version: 19.8.1
       '@craftsamo/repo-kit':
-        specifier: ^1.2.0
-        version: 1.2.0
+        specifier: ^1.4.0
+        version: 1.4.0
       '@types/node':
         specifier: ^24.13.2
         version: 24.13.2
@@ -525,8 +525,8 @@ packages:
     resolution: {integrity: sha512-/yCrWGCoA1SVKOks25EGadP9Pnj0oAIHGpl2wH2M2Y46dPM2ueb8wyCVOD7O3WCTkaJ0IkKvzhl1JY7+uCT2Dw==}
     engines: {node: '>=v18'}
 
-  '@craftsamo/repo-kit@1.2.0':
-    resolution: {integrity: sha512-dqvlrVj3OXNp87X2L0J/fV06l08TtE+Ib3wJCx6jU+6lrQ5jDOzRTMI7EEfI3PLBTBr2hzVZPjQC42XMLDUvaQ==}
+  '@craftsamo/repo-kit@1.4.0':
+    resolution: {integrity: sha512-J5kvck7o9ZPPmqhoS3xgHh0NHlUxXsOs2Kg2U7zxbVEKpNqGESb9ng0FjFn4VztVyJCdxB9E2wFN0E+Ctw1rmg==}
     engines: {node: '>=24'}
     hasBin: true
 
@@ -5062,7 +5062,7 @@ snapshots:
       '@types/conventional-commits-parser': 5.0.2
       chalk: 5.6.2
 
-  '@craftsamo/repo-kit@1.2.0': {}
+  '@craftsamo/repo-kit@1.4.0': {}
 
   '@csstools/color-helpers@5.1.0': {}
 
