@@ -13,7 +13,7 @@
   "devDependencies": {
     "@commitlint/cli": "^19.6.1",
     "@commitlint/config-conventional": "^19.6.0",
-    "@craftsamo/repo-kit": "^1.2.0",
+    "@craftsamo/repo-kit": "^1.4.0",
     "@types/node": "^24.13.2",
     "@typescript/native": "npm:typescript@7.0.2",
     "husky": "^9.1.7",
