@@ -32,7 +32,6 @@ overrides:
   "postcss-selector-parser": "^7.1.6"
   "flatted": "^3.4.2"
   "handlebars": "^4.7.9"
-  "brace-expansion": "^2.1.7"
   "vite": "^7.3.7"
   "lodash": "^4.18.1"
   "tmp": "^0.2.4"
@@ -40,13 +39,16 @@ overrides:
   "tar": "^7.5.11"
   "rollup": "^4.59.0"
   # GHSA-3g3m-2fjr-6pw4 / CVE-2026-118773: AbortSignal cancellation bypass,
-  # fixed in glob 14.0.2. glob 14 needs minimatch 11, which in turn needs
-  # brace-expansion 5, so scope both to glob's subtree and keep the other
-  # minimatch consumers (eslint, typescript-eslint) on 9.x.
+  # fixed in glob 14.0.2.
   "glob": "^14.0.2"
-  "glob>minimatch": "^11.0.3"
-  "minimatch@11>brace-expansion": "^5.0.12"
-  "minimatch": "^9.0.7"
+  # GHSA-g3hv-75wg-m249: globparts amplification DoS, fixed only in
+  # minimatch 11.0.1. eslint and @eslint/* still declare minimatch 3.x and
+  # typescript-eslint 10.x; they only use the Minimatch class and the named
+  # minimatch(), which 11 keeps. eslint-plugin-react calls the module as a
+  # function, which fails since minimatch 9 (no default export), in rules this
+  # config leaves off. minimatch 11 needs brace-expansion 5.
+  "minimatch": "^11.0.3"
+  "brace-expansion": "^5.0.12"
   # Dependabot #3 (GHSA-qx2v-qp2m-jg93 / CVE-2026-41305): force next's bundled
   # postcss 8.4.31 up to a patched 8.5.x. Require 8.5.18 for the later path
   # disclosure fix shared by all consumers.
