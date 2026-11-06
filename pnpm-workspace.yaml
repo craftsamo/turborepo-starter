@@ -39,7 +39,13 @@ overrides:
   "js-yaml": "^4.3.2"
   "tar": "^7.5.11"
   "rollup": "^4.59.0"
-  "glob": "^10.5.0"
+  # GHSA-3g3m-2fjr-6pw4 / CVE-2026-118773: AbortSignal cancellation bypass,
+  # fixed in glob 14.0.2. glob 14 needs minimatch 11, which in turn needs
+  # brace-expansion 5, so scope both to glob's subtree and keep the other
+  # minimatch consumers (eslint, typescript-eslint) on 9.x.
+  "glob": "^14.0.2"
+  "glob>minimatch": "^11.0.3"
+  "minimatch@11>brace-expansion": "^5.0.12"
   "minimatch": "^9.0.7"
   # Dependabot #3 (GHSA-qx2v-qp2m-jg93 / CVE-2026-41305): force next's bundled
   # postcss 8.4.31 up to a patched 8.5.x. Require 8.5.18 for the later path
