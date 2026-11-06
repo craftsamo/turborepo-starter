@@ -83,11 +83,15 @@ describe("README updates", () => {
     assert.match(result, /## Support\n\nContact support\./);
   });
 
-  it("removes setup-only guidance from the real starter README", () => {
-    const realReadme = readFileSync(
-      path.join(resolveRepositoryRoot(), "README.md"),
-      "utf8",
-    );
+  const realReadme = readFileSync(
+    path.join(resolveRepositoryRoot(), "README.md"),
+    "utf8",
+  );
+  const hasSetupGuidance = /nps setup\.project/.test(realReadme);
+
+  it("removes setup-only guidance from the real starter README", {
+    skip: !hasSetupGuidance && "README no longer has the starter's setup guidance",
+  }, () => {
     const result = updateReadme(
       realReadme,
       "turborepo-starter",
