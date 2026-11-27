@@ -1,6 +1,15 @@
 import { cva } from 'class-variance-authority';
 
 /**
+ * Defines `--bottom-nav-clearance` on the element it is applied to (the
+ * `<body>`) while a floating bottom bar is rendered below `sm`: the space the
+ * bar takes from the viewport bottom plus a small gap. Unset otherwise, so
+ * consumers read it as `var(--bottom-nav-clearance, 0px)`.
+ */
+export const bottomNavClearance =
+  'max-sm:has-[[data-slot=bottom-bar][data-variant=floating]]:[--bottom-nav-clearance:calc(9rem+env(safe-area-inset-bottom))]';
+
+/**
  * Shared surface treatment so the top and bottom chrome stay visually aligned.
  *
  * `glass` follows the system glass of iOS and macOS: a thin translucent fill

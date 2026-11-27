@@ -24,6 +24,7 @@ const routes = [
 const toolbar = (page: Page) => page.locator('header[data-variant]');
 const toolbarNav = (page: Page) => toolbar(page).getByRole('navigation');
 const bottomNav = (page: Page) => page.locator('nav[data-variant]');
+const bottomBar = (page: Page) => page.locator('[data-slot="bottom-bar"]');
 const screen = (page: Page) => page.locator('main[data-mode]');
 
 for (const { path, heading } of routes) {
@@ -52,17 +53,56 @@ for (const { path, heading } of routes) {
         label: 'Toolbar vs page heading',
       });
 
-      // Bottom: after scrolling to the end, the (possibly floating) bottom nav
-      // must not cover the footer — the Screen spacer must keep it clear.
+      // Bottom: after scrolling to the end, the (possibly floating) bottom bar
+      // must not cover the last content. A page ending in the shared Footer
+      // lets the footer take the clearance itself; any other page relies on
+      // the Screen spacer.
       await screen(page).evaluate((el) => {
         el.scrollTo({ top: el.scrollHeight, behavior: 'instant' });
       });
-      await expectNoOverlap(bottomNav(page), page.locator('footer'), {
-        label: 'BottomNav vs footer',
-      });
+      // The bar slides back in at the end of the page; measure it once its
+      // transform transition has finished.
+      await expect(bottomBar(page)).not.toHaveAttribute('data-hidden');
+      await bottomBar(page).evaluate((el) =>
+        Promise.all(el.getAnimations().map((animation) => animation.finished)),
+      );
+
+      const footer = screen(page).locator(':scope > [data-slot="footer"]:last-child');
+      if ((await footer.count()) > 0) {
+        await expectNoOverlap(bottomBar(page), footer.locator(':scope > :first-child'), {
+          label: 'Bottom bar vs footer row',
+        });
+        const [footerBox, screenBox] = await Promise.all([
+          footer.boundingBox(),
+          screen(page).boundingBox(),
+        ]);
+        const emptyBand = screenBox!.y + screenBox!.height - (footerBox!.y + footerBox!.height);
+        expect(
+          Math.abs(emptyBand),
+          `footer must reach the end of the scroll region (${Math.round(emptyBand)}px empty band)`,
+        ).toBeLessThanOrEqual(1);
+      } else {
+        await expectNoOverlap(bottomBar(page), screen(page).locator(':scope > :last-child'), {
+          label: 'Bottom bar vs last content',
+        });
+      }
     });
   });
 }
+
+test.describe('layout invariants: bottom bar clearance', () => {
+  test('is defined exactly while the floating bottom bar is shown', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByRole('heading', { name: routes[0].heading })).toBeVisible();
+    const clearance = await page.evaluate(() =>
+      getComputedStyle(document.body).getPropertyValue('--bottom-nav-clearance').trim(),
+    );
+    const floating = await page
+      .locator('[data-slot="bottom-bar"][data-variant="floating"]')
+      .isVisible();
+    expect(clearance !== '', `--bottom-nav-clearance is "${clearance}"`).toBe(floating);
+  });
+});
 
 test.describe('layout invariants: snap mode', () => {
   test('showcase snap sections each fill the screen', async ({ page }) => {

@@ -3,7 +3,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@workspace/ui/lib/utils';
 
 const screenVariants = cva(
-  "flex min-h-0 flex-1 flex-col after:block after:h-[calc(9rem+env(safe-area-inset-bottom))] after:shrink-0 after:content-[''] sm:after:hidden",
+  "flex min-h-0 flex-1 flex-col after:block after:h-[var(--bottom-nav-clearance,0px)] after:shrink-0 after:snap-end after:content-[''] has-[>[data-slot=footer]:last-child]:after:hidden",
   {
     variants: {
       mode: {
@@ -33,12 +33,15 @@ type ScreenProps = ComponentProps<'main'> & VariantProps<typeof screenVariants>;
  * It fills the app-shell frame (the route-group layout's `h-svh` flex column)
  * as a `flex-1` child and scrolls internally, so the chrome around it (toolbar,
  * bottom nav) stays pinned. It is itself a flex column, so a `flex-1` page
- * child fills the space above the footer. A mobile-only trailing spacer keeps
- * final content clear of the overlaid floating bottom navigation. Every app
- * page (the 404 document is the exception) roots its tree here. `mode` defaults
- * to natural document flow; `full` and `snap` make descendant `Section`
- * primitives fill this region, with `snap` also enabling mandatory scroll
- * snapping.
+ * child fills the space above the footer. A trailing spacer as tall as
+ * `--bottom-nav-clearance` (zero unless a floating bottom bar overlays the page
+ * on mobile) keeps final content clear of that bar; when the page ends with a
+ * `Footer`, the footer takes the clearance itself and the spacer is skipped. In
+ * `snap` mode the spacer is also a snap point, so the true end stays reachable.
+ * Every app page (the 404 document is the exception) roots its tree here.
+ * `mode` defaults to natural document flow; `full` and `snap` make descendant
+ * `Section` primitives fill this region, with `snap` also enabling mandatory
+ * scroll snapping.
  */
 export const Screen = ({ mode, smooth, hideScrollbar, className, ...props }: ScreenProps) => (
   <main
