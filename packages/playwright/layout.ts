@@ -20,7 +20,8 @@ export const expectNoHorizontalOverflow = async (page: Page) => {
 
 /**
  * Exactly one of the given locators must be visible — e.g. the responsive
- * chrome contract: Toolbar (sm+) XOR BottomNav (mobile), never both or none.
+ * chrome contract: the Toolbar's nav (sm+) XOR the BottomNav (mobile), never
+ * both or none.
  */
 export const expectExactlyOneVisible = async (locators: Locator[], label = 'locators') => {
   const visibilities = await Promise.all(locators.map((locator) => locator.isVisible()));

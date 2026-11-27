@@ -22,6 +22,7 @@ const routes = [
 ] as const;
 
 const toolbar = (page: Page) => page.locator('header[data-variant]');
+const toolbarNav = (page: Page) => toolbar(page).getByRole('navigation');
 const bottomNav = (page: Page) => page.locator('nav[data-variant]');
 const screen = (page: Page) => page.locator('main[data-mode]');
 
@@ -36,8 +37,9 @@ for (const { path, heading } of routes) {
       await expectNoHorizontalOverflow(page);
     });
 
-    test('shows exactly one primary navigation for the viewport', async ({ page }) => {
-      await expectExactlyOneVisible([toolbar(page), bottomNav(page)], 'Toolbar / BottomNav');
+    test('shows the top bar and exactly one primary navigation', async ({ page }) => {
+      await expect(toolbar(page)).toBeVisible();
+      await expectExactlyOneVisible([toolbarNav(page), bottomNav(page)], 'Toolbar nav / BottomNav');
     });
 
     test('screen owns scrolling, not the window', async ({ page }) => {
