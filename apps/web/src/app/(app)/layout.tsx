@@ -1,7 +1,13 @@
 import type { LayoutProps } from '@workspace/types/web';
-import { BottomNav, Toolbar, type NavigationVariant } from '@/components/Navigation';
+import {
+  BottomNav,
+  Toolbar,
+  type NavigationSurface,
+  type NavigationVariant,
+} from '@/components/Navigation';
 
 const navigationVariant: NavigationVariant = 'floating';
+const navigationSurface: NavigationSurface = 'glass';
 
 /**
  * Layout for the main app route group.
@@ -17,9 +23,9 @@ const navigationVariant: NavigationVariant = 'floating';
 export default async function AppLayout(props: LayoutProps) {
   return (
     <div className='flex h-svh flex-col overflow-hidden'>
-      <Toolbar variant={navigationVariant} />
+      <Toolbar variant={navigationVariant} surface={navigationSurface} />
       {props.children}
-      <BottomNav variant={navigationVariant} />
+      <BottomNav variant={navigationVariant} surface={navigationSurface} />
     </div>
   );
 }

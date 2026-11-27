@@ -38,14 +38,15 @@ const toolbarSurfaceVariants = cva('h-12', {
 
 /**
  * Top toolbar shown from the `sm` breakpoint up. Docked mode stays in the
- * app-shell flow while floating mode overlays the viewport as an inset Liquid
- * Glass surface. Hidden on mobile, where the `BottomNav` takes over.
+ * app-shell flow while floating mode overlays the viewport as an inset
+ * capsule. `surface` picks an opaque or a glass fill. Hidden on mobile, where
+ * the `BottomNav` takes over.
  */
-export const Toolbar = ({ variant = 'docked' }: NavigationVariantProps) => (
+export const Toolbar = ({ variant = 'docked', surface = 'solid' }: NavigationVariantProps) => (
   <header
     className={cn(
       toolbarVariants({ variant }),
-      variant === 'docked' && navigationSurfaceVariants({ variant }),
+      variant === 'docked' && navigationSurfaceVariants({ variant, surface }),
     )}
     data-variant={variant}
   >
@@ -55,9 +56,7 @@ export const Toolbar = ({ variant = 'docked' }: NavigationVariantProps) => (
         justify='between'
         className={cn(
           toolbarSurfaceVariants({ variant }),
-          variant === 'floating' && navigationSurfaceVariants({ variant }),
-          variant === 'floating' &&
-            'bg-background/85 from-white/45 to-white/10 shadow-[0_12px_40px_rgba(15,23,42,0.2)] dark:bg-secondary/80 dark:from-white/14 dark:to-white/5 dark:shadow-[0_12px_40px_rgba(0,0,0,0.5)]',
+          variant === 'floating' && navigationSurfaceVariants({ variant, surface }),
         )}
       >
         <nav aria-label='Primary'>

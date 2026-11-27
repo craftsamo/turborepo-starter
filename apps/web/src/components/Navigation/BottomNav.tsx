@@ -54,11 +54,11 @@ const tabVariants = cva(
 /**
  * Bottom tab bar shown below the `sm` breakpoint. It lives outside the scroll
  * region, so docked mode stays in the app-shell flow while floating mode
- * overlays the viewport as an inset Liquid Glass capsule. Both modes honor the
- * safe-area inset on notched devices. Hidden from `sm` up, where the `Toolbar`
- * takes over.
+ * overlays the viewport as an inset capsule. `surface` picks an opaque or a
+ * glass fill. Both modes honor the safe-area inset on notched devices. Hidden
+ * from `sm` up, where the `Toolbar` takes over.
  */
-export const BottomNav = ({ variant = 'docked' }: NavigationVariantProps) => {
+export const BottomNav = ({ variant = 'docked', surface = 'solid' }: NavigationVariantProps) => {
   const pathname = usePathname();
   const { toggle } = useThemeToggle();
 
@@ -67,9 +67,7 @@ export const BottomNav = ({ variant = 'docked' }: NavigationVariantProps) => {
       aria-label='Primary'
       className={cn(
         bottomNavVariants({ variant }),
-        navigationSurfaceVariants({ variant }),
-        variant === 'floating' &&
-          'bg-background/85 from-white/45 to-white/10 shadow-[0_12px_40px_rgba(15,23,42,0.2)] dark:bg-secondary/80 dark:from-white/14 dark:to-white/5 dark:shadow-[0_12px_40px_rgba(0,0,0,0.5)]',
+        navigationSurfaceVariants({ variant, surface }),
       )}
       data-variant={variant}
     >
