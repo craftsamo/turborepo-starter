@@ -94,11 +94,12 @@ src/
   does not own app-level scroll/snap rules.
 - **Bottom-bar clearance**: `--bottom-nav-clearance` is defined on `<body>`
   (root layout adds `bottomNavClearance` from `@/components/Navigation`) only
-  while a floating bottom bar is rendered below `sm`; read it as
-  `var(--bottom-nav-clearance, 0px)`. `Screen` ends with a spacer of that
-  height (a snap stop in snap mode) unless its last child is the shared
-  `Footer` (`data-slot='footer'`), which pads its bottom by it instead; the
-  Toaster offsets read it too. Never hard-code the bar's height elsewhere.
+  while a floating bottom bar is rendered below `sm` (sized per `labels`
+  mode); read it as `var(--bottom-nav-clearance, 0px)`. `Screen` ends with a
+  spacer of that height (a snap stop in snap mode) unless its last child is
+  the shared `Footer` (`data-slot='footer'`), which pads its bottom by it
+  instead; the Toaster offsets read it too. Never hard-code the bar's height
+  elsewhere.
 - **Navigation style**: `Toolbar` (every viewport: logo only on mobile; from
   `sm` also the primary links in `<nav aria-label='Primary'>` and the theme
   toggle outside the nav; 48px tall, 64px from `sm`) and `BottomNav` (below
@@ -114,9 +115,11 @@ src/
   The `BottomNav` is a `div[data-slot='bottom-bar']` whose `<nav>` holds only
   destination tabs, icons over visible labels like the iOS tab bar; when
   floating, the current tab sits on a neutral inset pill with a primary-color
-  label. The theme toggle stays outside the nav: on its own round button above
-  the bar when floating, at the end of the row when docked. A floating bar
-  slides away while the Screen scrolls down and returns on scroll up, near
+  label. `labels` (`visible` default / `hidden`) picks whether the tabs show
+  their text; hidden labels stay as accessible names and the floating bar turns
+  compact. The theme toggle stays outside the nav: on its own round button
+  above the bar when floating, at the end of the row when docked. A floating
+  bar slides away while the Screen scrolls down and returns on scroll up, near
   either end of the page and when focus enters it (`useHideOnScroll`), and
   stays on screen while focus is inside it; with reduced motion it does not
   slide, and a docked bar never hides.

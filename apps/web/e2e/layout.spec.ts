@@ -97,10 +97,30 @@ test.describe('layout invariants: bottom bar clearance', () => {
     const clearance = await page.evaluate(() =>
       getComputedStyle(document.body).getPropertyValue('--bottom-nav-clearance').trim(),
     );
-    const floating = await page
-      .locator('[data-slot="bottom-bar"][data-variant="floating"]')
-      .isVisible();
+    const bar = page.locator('[data-slot="bottom-bar"][data-variant="floating"]');
+    const floating = await bar.isVisible();
     expect(clearance !== '', `--bottom-nav-clearance is "${clearance}"`).toBe(floating);
+    if (!floating) return;
+
+    // The bar sits at the top of the page, so wait for any transition to settle.
+    await bar.evaluate((el) => Promise.all(el.getAnimations().map((a) => a.finished)));
+    const labels = await bar.getAttribute('data-labels');
+    const { px, footprint } = await bar.evaluate((el) => {
+      const probe = document.createElement('div');
+      probe.style.height = 'var(--bottom-nav-clearance, 0px)';
+      document.body.append(probe);
+      const px = probe.getBoundingClientRect().height;
+      probe.remove();
+      return { px, footprint: window.innerHeight - el.getBoundingClientRect().top };
+    });
+    expect(
+      px,
+      `clearance ${px}px must cover the bar (${footprint}px, data-labels=${labels})`,
+    ).toBeGreaterThanOrEqual(footprint);
+    expect(
+      px - footprint,
+      `clearance ${px}px leaves a small gap over the bar (${footprint}px, data-labels=${labels})`,
+    ).toBeLessThanOrEqual(16);
   });
 });
 

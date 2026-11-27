@@ -8,7 +8,7 @@ import { cn } from '@workspace/ui/lib/utils';
 import { useThemeToggle } from '../Theme';
 import { navItems } from './items';
 import { navigationSurfaceVariants } from './styles';
-import type { NavigationVariantProps } from './types';
+import type { BottomNavProps } from './types';
 import { useHideOnScroll } from './useHideOnScroll';
 
 const bottomBarVariants = cva('z-40 sm:hidden', {
@@ -36,8 +36,12 @@ const tabVariants = cva(
   {
     variants: {
       variant: {
-        docked: 'h-12',
-        floating: 'h-14 gap-0.5 rounded-full',
+        docked: '',
+        floating: 'rounded-full',
+      },
+      labels: {
+        visible: '',
+        hidden: '',
       },
       active: {
         true: '',
@@ -45,6 +49,9 @@ const tabVariants = cva(
       },
     },
     compoundVariants: [
+      { variant: 'docked', className: 'h-12' },
+      { variant: 'floating', labels: 'visible', className: 'h-14 gap-0.5' },
+      { variant: 'floating', labels: 'hidden', className: 'h-11' },
       { variant: 'docked', active: true, className: 'text-foreground' },
       {
         variant: 'docked',
@@ -65,6 +72,7 @@ const tabVariants = cva(
     ],
     defaultVariants: {
       variant: 'docked',
+      labels: 'visible',
       active: false,
     },
   },
@@ -86,9 +94,14 @@ const ThemeIcons = () => (
  * honor the safe-area inset and are hidden from `sm` up, where the `Toolbar`
  * takes over. When floating it slides away while the page scrolls down and
  * returns on scroll up, at either end of the page and when focus enters it (see
- * `useHideOnScroll`); it stays on screen while focus is inside it.
+ * `useHideOnScroll`); it stays on screen while focus is inside it. `labels`
+ * hides the tab text (kept as accessible names) for a compact icon-only bar.
  */
-export const BottomNav = ({ variant = 'docked', surface = 'solid' }: NavigationVariantProps) => {
+export const BottomNav = ({
+  variant = 'docked',
+  surface = 'solid',
+  labels = 'visible',
+}: BottomNavProps) => {
   const pathname = usePathname();
   const { toggle } = useThemeToggle();
   const { hidden, show } = useHideOnScroll(pathname);
@@ -98,6 +111,7 @@ export const BottomNav = ({ variant = 'docked', surface = 'solid' }: NavigationV
     <div
       data-slot='bottom-bar'
       data-variant={variant}
+      data-labels={labels}
       data-hidden={slidAway || undefined}
       onFocus={show}
       className={cn(
@@ -138,10 +152,10 @@ export const BottomNav = ({ variant = 'docked', surface = 'solid' }: NavigationV
                   href={item.href}
                   aria-current={active ? 'page' : undefined}
                   {...(item.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                  className={tabVariants({ variant, active })}
+                  className={tabVariants({ variant, labels, active })}
                 >
                   <Icon aria-hidden='true' className='size-5' />
-                  <span>{item.label}</span>
+                  <span className={labels === 'hidden' ? 'sr-only' : undefined}>{item.label}</span>
                 </Link>
               </li>
             );
@@ -153,10 +167,10 @@ export const BottomNav = ({ variant = 'docked', surface = 'solid' }: NavigationV
           type='button'
           onClick={toggle}
           aria-label='Toggle color theme'
-          className={cn(tabVariants({ variant }), 'w-20 shrink-0 border-0 bg-transparent')}
+          className={cn(tabVariants({ variant, labels }), 'w-20 shrink-0 border-0 bg-transparent')}
         >
           <ThemeIcons />
-          <span>Theme</span>
+          <span className={labels === 'hidden' ? 'sr-only' : undefined}>Theme</span>
         </button>
       )}
     </div>

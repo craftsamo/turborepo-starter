@@ -2,6 +2,7 @@ import type { LayoutProps } from '@workspace/types/web';
 import {
   BottomNav,
   Toolbar,
+  type NavigationLabels,
   type NavigationSurface,
   type NavigationVariant,
 } from '@/components/Navigation';
@@ -12,6 +13,8 @@ const toolbarVariant: NavigationVariant = 'docked';
 const bottomNavVariant: NavigationVariant = 'floating';
 /** System-style glass, like the iOS tab bar. */
 const bottomNavSurface: NavigationSurface = 'glass';
+/** Tab labels under the icons, like the iOS tab bar; `hidden` makes an icon-only bar. */
+const bottomNavLabels: NavigationLabels = 'visible';
 
 /**
  * Layout for the main app route group.
@@ -29,7 +32,7 @@ export default async function AppLayout(props: LayoutProps) {
     <div className='flex h-svh flex-col overflow-hidden'>
       <Toolbar variant={toolbarVariant} />
       {props.children}
-      <BottomNav variant={bottomNavVariant} surface={bottomNavSurface} />
+      <BottomNav variant={bottomNavVariant} surface={bottomNavSurface} labels={bottomNavLabels} />
     </div>
   );
 }

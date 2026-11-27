@@ -117,6 +117,21 @@ describe('BottomNav', () => {
     expect(names).toEqual(navItems.map((item) => item.label));
   });
 
+  it.each(['docked', 'floating'] as const)(
+    'keeps hidden labels as accessible names when %s',
+    async (variant) => {
+      await act(async () => {
+        render(<BottomNav variant={variant} labels='hidden' />);
+      });
+
+      for (const item of navItems) {
+        expect(screen.getByRole('link', { name: item.label })).toBeInTheDocument();
+      }
+      expect(screen.getByRole('button', { name: 'Toggle color theme' })).toBeInTheDocument();
+      expect(getBar()).toHaveAttribute('data-labels', 'hidden');
+    },
+  );
+
   it('marks the parent toolbar item active on a nested route', async () => {
     await act(async () => {
       render(<ToolbarLink href='/showcase' label='Showcase' />);

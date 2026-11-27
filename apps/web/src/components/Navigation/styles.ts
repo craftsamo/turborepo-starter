@@ -3,11 +3,16 @@ import { cva } from 'class-variance-authority';
 /**
  * Defines `--bottom-nav-clearance` on the element it is applied to (the
  * `<body>`) while a floating bottom bar is rendered below `sm`: the space the
- * bar takes from the viewport bottom plus a small gap. Unset otherwise, so
- * consumers read it as `var(--bottom-nav-clearance, 0px)`.
+ * bar takes from the viewport bottom plus a 0.625rem gap. The bar is theme
+ * button 2.75rem + 0.5rem gap + nav 2.75rem (icon-only) or 3.5rem (labels) +
+ * 0.5rem padding + 2px border + 1rem offset, so the value is 9rem with labels
+ * and 8.25rem icon-only. Unset otherwise, so consumers read it as
+ * `var(--bottom-nav-clearance, 0px)`.
  */
-export const bottomNavClearance =
-  'max-sm:has-[[data-slot=bottom-bar][data-variant=floating]]:[--bottom-nav-clearance:calc(9rem+env(safe-area-inset-bottom))]';
+export const bottomNavClearance = [
+  'max-sm:has-[[data-slot=bottom-bar][data-variant=floating][data-labels=visible]]:[--bottom-nav-clearance:calc(9rem+env(safe-area-inset-bottom))]',
+  'max-sm:has-[[data-slot=bottom-bar][data-variant=floating][data-labels=hidden]]:[--bottom-nav-clearance:calc(8.25rem+env(safe-area-inset-bottom))]',
+].join(' ');
 
 /**
  * Shared surface treatment so the top and bottom chrome stay visually aligned.
