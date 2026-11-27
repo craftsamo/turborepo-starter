@@ -3,7 +3,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@workspace/ui/lib/utils';
 
 const screenVariants = cva(
-  "flex min-h-0 flex-1 flex-col after:block after:h-[calc(4.75rem+env(safe-area-inset-bottom))] after:shrink-0 after:content-[''] sm:after:hidden",
+  "flex min-h-0 flex-1 flex-col after:block after:h-[calc(9rem+env(safe-area-inset-bottom))] after:shrink-0 after:content-[''] sm:after:hidden",
   {
     variants: {
       mode: {
