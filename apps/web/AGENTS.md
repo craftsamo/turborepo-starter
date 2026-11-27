@@ -17,7 +17,7 @@ src/
     layout.tsx              # root layout — slim: Providers + Toaster + body lock only
     global-not-found.tsx    # 404 document (self-contained: Container + Heading + Text + inline back link)
     (app)/                  # main route group — owns page chrome (app shell)
-      layout.tsx            # h-svh frame: Toolbar (sm+) + page-owned Screen + BottomNav (xs)
+      layout.tsx            # h-svh frame: Toolbar (logo; nav sm+) + page-owned Screen + BottomNav (xs)
       page.tsx              # home page — composes Screen + Section(s) + Footer
   components/               # app-wide shared components (server-safe primitives + chrome)
     index.ts                # barrel: Center, Container, Heading, Screen, Section, Stack, Text (server-safe only)
@@ -28,7 +28,7 @@ src/
     Section.tsx             # semantic page section; follows parent Screen mode
     Center.tsx              # centering frame (axis + min: none/screen); asChild
     Stack.tsx               # flex stack primitive + VStack/HStack presets (gap/align/justify/wrap/collapse); asChild
-    Navigation/             # responsive chrome: Toolbar (sm+) + BottomNav (xs); docked/floating variants
+    Navigation/             # chrome: Toolbar (every viewport; nav sm+) + BottomNav (xs); variant docked/floating × surface solid/glass
     Footer/                 # app footer (minimal, slim)
     Providers/              # client providers (ReduxTool, NextTheme) — 'use client'
   store/
@@ -80,25 +80,49 @@ src/
 - **App shell & scrolling**: page chrome lives in a route-group layout, not the
   root layout, as an app shell. The `(app)` group's `layout.tsx` is a
   fixed-height flex column (`h-svh`, `overflow-hidden`) that never scrolls: the
-  `Toolbar` (sm+) is pinned at the top and the `BottomNav` (mobile) at the
-  bottom. Each page (or nested route-group layout) places a `Screen` (`<main>`,
-  `flex-1`) between them, chooses `mode` (`flow` default / `full` / `snap`),
-  composes one or more `Section` children, and places `Footer` explicitly when
-  wanted. `Section` reads its parent Screen mode: `flow` keeps natural height,
-  `full` fills the visible region, and `snap` also adds snap points. Because the
-  chrome sits outside `Screen`, it stays put while only page content scrolls.
+  `Toolbar` is pinned at the top on every viewport (mobile: logo only) and the
+  `BottomNav` (mobile) at the bottom. Each page (or nested route-group layout)
+  places a `Screen` (`<main>`, `flex-1`) between them, chooses `mode` (`flow`
+  default / `full` / `snap`), composes one or more `Section` children, and
+  places `Footer` explicitly when wanted. `Section` reads its parent Screen
+  mode: `flow` keeps natural height, `full` fills the visible region, and
+  `snap` also adds snap points. Because the chrome sits outside `Screen`, it
+  stays put while only page content scrolls.
   The root layout locks `<body>` (`overflow-hidden`) and sets
   `viewport-fit=cover` for the bottom nav's safe-area inset. Add `smooth` /
   `hideScrollbar` to Screen as needed. The shared `globals.css` intentionally
   does not own app-level scroll/snap rules.
-- **Navigation style**: `Toolbar` and `BottomNav` share a
-  `NavigationVariant` (`docked` / `floating`). Set the variant once in the
-  `(app)` layout and pass it to both components. `docked` is the edge-to-edge
-  default; `floating` is an inset Liquid Glass treatment (translucent surface,
-  strong blur, subtle border/shadow, rounded capsule). The floating mobile bar
-  is a compact icon-only capsule; the docked bar keeps visible labels. Keep the
-  two chrome surfaces on the same variant so the responsive switch feels
-  coherent.
+- **Bottom-bar clearance**: `--bottom-nav-clearance` is defined on `<body>`
+  (root layout adds `bottomNavClearance` from `@/components/Navigation`) only
+  while a floating bottom bar is rendered below `sm` (sized per `labels`
+  mode); read it as `var(--bottom-nav-clearance, 0px)`. `Screen` ends with a
+  spacer of that height (a snap stop in snap mode) unless its last child is
+  the shared `Footer` (`data-slot='footer'`), which pads its bottom by it
+  instead; the Toaster offsets read it too. Never hard-code the bar's height
+  elsewhere.
+- **Navigation style**: `Toolbar` (every viewport: logo only on mobile; from
+  `sm` also the primary links in `<nav aria-label='Primary'>` and the theme
+  toggle outside the nav; 48px tall, 64px from `sm`) and `BottomNav` (below
+  `sm`) take two independent props. `NavigationVariant`: `docked` is attached
+  to the screen edge in the app-shell flow, `floating` is an inset capsule
+  overlaying the page. `NavigationSurface`: `solid` (default) is opaque,
+  `glass` is iOS/macOS system glass (thin translucent theme-surface fill over a
+  strong, color-lifting blur, one bright rim with a top highlight, soft neutral
+  shadow; opaque where `backdrop-filter` is unsupported). Shared styles live in
+  `Navigation/styles.ts` (`navigationSurfaceVariants`). Set them in the `(app)`
+  layout (`toolbarVariant = 'docked'`, `bottomNavVariant = 'floating'`,
+  `bottomNavSurface = 'glass'`); the two components need not share a variant.
+  The `BottomNav` is a `div[data-slot='bottom-bar']` whose `<nav>` holds only
+  destination tabs, icons over visible labels like the iOS tab bar; when
+  floating, the current tab sits on a neutral inset pill with a primary-color
+  label. `labels` (`visible` default / `hidden`) picks whether the tabs show
+  their text; hidden labels stay as accessible names and the floating bar turns
+  compact. The theme toggle stays outside the nav: on its own round button
+  above the bar when floating, at the end of the row when docked. A floating
+  bar slides away while the Screen scrolls down and returns on scroll up, near
+  either end of the page and when focus enters it (`useHideOnScroll`), and
+  stays on screen while focus is inside it; with reduced motion it does not
+  slide, and a docked bar never hides.
 - **Middleware**: compose with `chain([...factories])` in `proxy.ts`. Each
   factory is `(proxy: NextProxy) => NextProxy`. Add new middleware in
   `middlewares/`, export from `middlewares/index.ts`, then register in the

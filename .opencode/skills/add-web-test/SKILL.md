@@ -95,9 +95,10 @@ Playwright layers (`add-e2e-test`) — jsdom computes no CSS layout, so a
 layout assertion here tests nothing.
 
 - **Component** (`_components/`, `@workspace/ui`): roles, ARIA attributes,
-  accessible names; the *semantic* difference between variants (e.g. a
-  `floating` nav renders `sr-only` labels, an active tab gets
-  `aria-current`); handler wiring (click/submit fires, dispatches); controlled
+  accessible names; the *semantic* difference between variants (e.g. only
+  destinations sit inside the nav landmark, an active tab gets
+  `aria-current`, the floating bar exposes `data-hidden` while scrolled
+  away); handler wiring (click/submit fires, dispatches); controlled
   state transitions. DOM *order* is fine (`getAllByRole` sequence) — DOM
   *position* is not.
 - **Page** (async server component): the `h1` and load-bearing copy; link

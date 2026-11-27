@@ -3,7 +3,9 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import NextTopLoader from 'nextjs-toploader';
 import type { LayoutProps } from '@workspace/types/web';
 import { Toaster } from '@workspace/ui/components/sonner';
+import { cn } from '@workspace/ui/lib/utils';
 import '@workspace/ui/globals.css';
+import { bottomNavClearance } from '@/components/Navigation';
 import { ReduxToolProvider, ThemeProvider } from '@/components/Providers';
 
 const baseUrl = process.env.WEB_BASE_URL ?? 'http://localhost';
@@ -59,13 +61,24 @@ export default async function RootLayout(props: LayoutProps) {
   return (
     <html lang='en' suppressHydrationWarning>
       <body
-        className={`${fontSans.variable} ${fontMono.variable} font-sans antialiased overflow-hidden`}
+        className={cn(
+          fontSans.variable,
+          fontMono.variable,
+          'font-sans antialiased overflow-hidden',
+          bottomNavClearance,
+        )}
       >
         <ReduxToolProvider>
           <ThemeProvider attribute='class' defaultTheme='system' enableSystem>
             {props.children}
             <NextTopLoader color='var(--primary)' height={2} shadow={false} showSpinner={false} />
-            <Toaster mobileOffset={{ bottom: 'calc(5rem + env(safe-area-inset-bottom))' }} />
+            <Toaster
+              offset={{ bottom: 'max(24px, var(--bottom-nav-clearance, 0px))' }}
+              mobileOffset={{
+                bottom:
+                  'max(calc(5rem + env(safe-area-inset-bottom)), var(--bottom-nav-clearance, 0px))',
+              }}
+            />
           </ThemeProvider>
         </ReduxToolProvider>
       </body>

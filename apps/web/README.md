@@ -12,14 +12,14 @@ ensure code quality.
 src/
 ├── app/                     # Next.js App Router (pages and layouts)
 │   ├── (app)/               # Main route group — app shell chrome
-│   │   ├── layout.tsx       # h-svh frame: Toolbar + page content + BottomNav
+│   │   ├── layout.tsx       # h-svh frame: Toolbar (logo; nav sm+) + page content + BottomNav (xs)
 │   │   └── page.tsx         # Screen + mode-aware Section(s) + Footer
 │   ├── global-not-found.tsx # 404 document (self-contained)
 │   └── layout.tsx           # Root layout (slim: Providers + Toaster)
 ├── components/              # Shared server-safe primitives + chrome
 │   ├── Center / Stack       # Layout primitives (VStack/HStack presets)
 │   ├── Container / Screen   # Page width + mode-aware scroll region
-│   ├── Navigation / Footer  # App chrome (docked/floating Toolbar + BottomNav)
+│   ├── Navigation / Footer  # App chrome (Toolbar + BottomNav; docked/floating × solid/glass)
 │   └── Providers/           # State management & theme providers
 ├── lib/                     # Utility functions
 ├── middlewares/             # Next.js middleware

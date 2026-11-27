@@ -54,22 +54,29 @@ co-locating route-specific components.
    `Params` in `packages/types/src/web/layout.ts`.)
 
    Page chrome lives in a route-group `layout.tsx`, not the page, as a fixed
-   app-shell frame: `Toolbar` (sm+) at the top and `BottomNav` (mobile) at the
-   bottom. Each page (or a nested route-group layout) owns the `Screen` between
-   them so it can choose `mode` (`flow` default / `full` / `snap`) and place its
-   `Footer` explicitly. `Section` follows the parent Screen mode automatically:
-   natural height in `flow`, full visible height in `full`, and full height plus
-   snap points in `snap`.
+   app-shell frame: `Toolbar` (every viewport; logo only on mobile) at the top
+   and `BottomNav` (mobile) at the bottom. Each page (or a nested route-group
+   layout) owns the `Screen` between them so it can choose `mode` (`flow`
+   default / `full` / `snap`) and place its `Footer` explicitly. `Section`
+   follows the parent Screen mode automatically: natural height in `flow`, full
+   visible height in `full`, and full height plus snap points in `snap`.
    ```tsx
    // app/(app)/layout.tsx
-   import { BottomNav, Toolbar, type NavigationVariant } from '@/components/Navigation';
+   import {
+     BottomNav,
+     Toolbar,
+     type NavigationSurface,
+     type NavigationVariant,
+   } from '@/components/Navigation';
 
-   const navigationVariant: NavigationVariant = 'floating';
+   const toolbarVariant: NavigationVariant = 'docked';
+   const bottomNavVariant: NavigationVariant = 'floating';
+   const bottomNavSurface: NavigationSurface = 'glass';
 
    <div className='flex h-svh flex-col overflow-hidden'>
-     <Toolbar variant={navigationVariant} />
+     <Toolbar variant={toolbarVariant} />
      {children}
-     <BottomNav variant={navigationVariant} />
+     <BottomNav variant={bottomNavVariant} surface={bottomNavSurface} />
    </div>
    ```
 
