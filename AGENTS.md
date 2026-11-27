@@ -101,6 +101,10 @@ that can actually observe the failure it guards against:
   Chromium: no horizontal overflow, exactly one primary nav per viewport,
   Screen-owned scrolling, chrome never covering content, full/snap sections
   filling the screen.
+- **Playwright contrast** (`e2e/a11y.spec.ts` + `expectNoContrastViolations`) —
+  axe's WCAG AA `color-contrast` rule per route x viewport x color scheme in
+  real Chromium, the text-contrast failures neither jsdom nor pixel diffs can
+  name.
 - **Playwright VRT** (`e2e/vrt.spec.ts`) — pixel comparison against committed
   baselines per route x viewport x color scheme. Baselines render on Linux
   (CI) only; when screenshots change, CI uploads the new ones and
@@ -109,10 +113,11 @@ that can actually observe the failure it guards against:
 
 **Definition of done**: a change touching layout, chrome, breakpoints, or
 theming is not covered until a geometry invariant and/or VRT shot exercises
-it — passing functional tests alone prove nothing about layout. Follow the
-`add-e2e-test` skill when adding routes or browser apps. Per-subject
-assertion placement (component / page / slice / flow → which layer asserts
-what) is detailed in the `add-web-test` and `add-e2e-test` skills.
+it (theme color changes: the contrast spec) — passing functional tests alone
+prove nothing about layout. Follow the `add-e2e-test` skill when adding routes
+or browser apps. Per-subject assertion placement (component / page / slice /
+flow → which layer asserts what) is detailed in the `add-web-test` and
+`add-e2e-test` skills.
 
 ## App- and Package-specific Guidelines
 

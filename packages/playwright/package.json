@@ -4,6 +4,7 @@
   "private": true,
   "main": "./index.ts",
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.1",
     "@playwright/test": "^1.61.1"
   }
 }
