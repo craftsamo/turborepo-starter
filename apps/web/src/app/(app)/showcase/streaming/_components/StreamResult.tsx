@@ -20,7 +20,7 @@ export const StreamResult = async ({ resultPromise }: StreamResultProps) => {
         <HeadingRow title={result.title} />
         <Text variant='muted'>{result.description}</Text>
       </VStack>
-      <span className='w-fit rounded-full bg-primary/10 px-3 py-1 font-mono text-xs font-semibold text-primary'>
+      <span className='w-fit rounded-full bg-primary/10 px-3 py-1 dark:bg-primary/5 font-mono text-xs font-semibold text-primary'>
         resolved after {result.delayMs.toLocaleString('en-US')} ms
       </span>
     </VStack>

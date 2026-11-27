@@ -62,7 +62,7 @@ const tabVariants = cva(
         variant: 'floating',
         active: true,
         className:
-          'bg-foreground/[0.07] text-primary dark:bg-primary/25 dark:text-primary-foreground',
+          'bg-foreground/[0.07] text-primary dark:bg-primary/25 dark:text-foreground',
       },
       {
         variant: 'floating',
