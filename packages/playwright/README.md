@@ -13,6 +13,8 @@ layout-regression test helpers for browser apps in the monorepo.
   `expectSectionsFillScreen`). jsdom cannot compute CSS layout and
   `toBeVisible()` passes on visually broken pages; these helpers assert the
   layout contracts directly from real browser geometry.
+- `a11y.ts` — `expectNoContrastViolations`: axe's `color-contrast` rule only
+  (WCAG AA text contrast), measured in real Chromium.
 - `vrt.ts` — visual-regression helpers (`vrt`, `isVrtPlatform`,
   `hasVrtBaselines`, `isVrtUpdate`). Baselines are rendered on Linux (CI)
   only; other platforms skip.

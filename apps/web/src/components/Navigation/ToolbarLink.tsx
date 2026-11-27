@@ -23,7 +23,7 @@ export const ToolbarLink = ({ className, external, href, label, ...props }: Tool
       className={cn(
         className,
         active &&
-          'bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary dark:bg-primary/25 dark:text-primary-foreground dark:hover:bg-primary/30 dark:hover:text-primary-foreground',
+          'bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary dark:bg-primary/25 dark:text-foreground dark:hover:bg-primary/30 dark:hover:text-foreground',
       )}
       {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
       {...props}

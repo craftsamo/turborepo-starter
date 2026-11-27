@@ -1,3 +1,4 @@
+export { expectNoContrastViolations } from './a11y';
 export { createPlaywrightConfig, type PlaywrightConfigOptions } from './config';
 export {
   expectExactlyOneVisible,

@@ -1,7 +1,7 @@
 ---
 name: add-e2e-test
 description: |-
-  Use when adding or updating Playwright E2E coverage for a browser app — functional flows, layout geometry invariants (overflow, chrome, scrolling, snap), or visual regression (VRT) baselines — and when wiring a new route or a new browser app into the E2E safety net. Covers the @workspace/playwright config factory and helpers, the layout.spec.ts / vrt.spec.ts patterns, Linux-only VRT baselines, and accepting CI-rendered baselines with `nps vrt.accept`. Trigger keywords: "e2e", "playwright", "layout test", "geometry invariant", "VRT", "visual regression", "screenshot test", "baseline".
+  Use when adding or updating Playwright E2E coverage for a browser app — functional flows, layout geometry invariants (overflow, chrome, scrolling, snap), text color contrast, or visual regression (VRT) baselines — and when wiring a new route or a new browser app into the E2E safety net. Covers the @workspace/playwright config factory and helpers, the layout.spec.ts / a11y.spec.ts / vrt.spec.ts patterns, Linux-only VRT baselines, and accepting CI-rendered baselines with `nps vrt.accept`. Trigger keywords: "e2e", "playwright", "layout test", "geometry invariant", "contrast", "a11y", "VRT", "visual regression", "screenshot test", "baseline".
 license: MIT
 compatibility: opencode
 metadata:
@@ -14,8 +14,9 @@ metadata:
 
 Add Playwright E2E coverage that actually catches layout and visual
 regressions. Functional flows prove the app works; geometry invariants prove
-it is not visually broken; VRT proves it still looks the same. Every route
-must be covered by all three, at every viewport project.
+it is not visually broken; the contrast check proves its text stays readable;
+VRT proves it still looks the same. Every route must be covered by all four,
+at every viewport project.
 
 </Goal>
 
@@ -36,10 +37,12 @@ the root AGENTS.md.
     `mobile`), local `next start` server, VRT tolerances.
   - Geometry helpers: `expectNoHorizontalOverflow`, `expectExactlyOneVisible`,
     `expectNoOverlap`, `expectScreenOwnsScroll`, `expectSectionsFillScreen`.
+  - Contrast helper: `expectNoContrastViolations` (axe `color-contrast` only).
   - VRT helpers: `vrt`, `isVrtPlatform`, `isVrtUpdate`, `hasVrtBaselines`.
 - App specs: `apps/web/e2e/`
   - `showcase.spec.ts` — functional flows (navigation, interaction, state).
   - `layout.spec.ts` — geometry invariants per route x viewport.
+  - `a11y.spec.ts` — text contrast per route x viewport x color scheme.
   - `vrt.spec.ts` — screenshot comparison per route x viewport x color scheme.
 - Baselines: `apps/web/e2e/vrt.spec.ts-snapshots/` (Linux-rendered, committed).
 - Baseline refresh: a failing `e2e` job in `.github/workflows/tests.yml`, or
@@ -53,8 +56,10 @@ the root AGENTS.md.
 
 <Steps>
 
-1. **New route?** Add it to BOTH route lists:
-   - `layout.spec.ts` `routes` array (path + a stable `h1` heading text), and
+1. **New route?** Add it to ALL THREE route lists:
+   - `layout.spec.ts` `routes` array (path + a stable `h1` heading text),
+   - `a11y.spec.ts` `routes` array (path + a `ready` function that waits for
+     the heading and all streamed content, so it is contrast-checked too), and
    - `vrt.spec.ts` `shots` array (path, slug, and a `ready` function that
      waits until the page is deterministic — resolve all Suspense/streamed
      content before capturing).
@@ -68,13 +73,23 @@ the root AGENTS.md.
    force `scroll-behavior: auto` / `scroll-snap-type: none` temporarily;
    `boundingBox()` throws on never-attached locators (guard with `count()`).
 
-3. **VRT capture rules**: use the `vrt(page, name)` helper (waits for fonts
+3. **Contrast check**: `a11y.spec.ts` calls `expectNoContrastViolations(page)`
+   per route x color scheme (set with `page.emulateMedia` before `goto`, then
+   wait for the `<html>` class so axe does not read pre-hydration colors). It
+   runs only axe's `color-contrast` rule (WCAG AA); `incomplete` results
+   (text over images or gradients) are not failures. A failure lists each
+   node's selector and axe's summary, e.g. "Element has insufficient color
+   contrast of 3.2 (foreground color: #..., background color: #...,
+   expected contrast ratio of 4.5:1)" — fix the theme token, never the
+   assertion.
+
+4. **VRT capture rules**: use the `vrt(page, name)` helper (waits for fonts
    and images); wait for streamed/async content in `ready` first; drive dark
    mode via `page.emulateMedia({ colorScheme: 'dark' })` (next-themes follows
    the system scheme). Never capture non-deterministic content — wait for it
    to settle or `mask` it.
 
-4. **Baselines**: VRT compares only on Linux (`isVrtPlatform`) because font
+5. **Baselines**: VRT compares only on Linux (`isVrtPlatform`) because font
    rasterization differs per OS; other platforms skip. After adding shots or
    making an intentional visual change, push: the CI `e2e` job fails on the
    new or changed screenshots, renders them again, and uploads them. Run
@@ -84,10 +99,10 @@ the root AGENTS.md.
    (Actions → workflow_dispatch) and `nps vrt.accept`. With Docker running,
    `nps vrt.update` does either without a CI round trip.
 
-5. **New browser app?** Call `createPlaywrightConfig()` from the app's
+6. **New browser app?** Call `createPlaywrightConfig()` from the app's
    `playwright.config.ts` with a distinct `portEnvVar` / `defaultPort` (Turbo
    runs E2E tasks concurrently), define `test:e2e` in its `package.json`, and
-   create the same three spec files. Add `@workspace/playwright` to its
+   create the same spec files. Add `@workspace/playwright` to its
    `devDependencies` so `turbo prune` keeps it in CI.
 
 </Steps>
@@ -102,6 +117,9 @@ Each spec file has a distinct job; keep assertions in the right one:
 - **Layout spec** (`layout.spec.ts`): geometry invariants only. At most one
   copy assertion per route — the `h1` anchor that proves the page loaded.
   If you are asserting text beyond that, it is in the wrong file.
+- **Contrast spec** (`a11y.spec.ts`): WCAG AA text contrast via axe's
+  `color-contrast` rule only; no other axe rules and no layout or copy
+  assertions.
 - **VRT spec** (`vrt.spec.ts`): appearance. The work goes into determinism:
   a `ready` that resolves all streamed/async content, and `mask` for
   anything inherently unstable (clocks, avatars, live data).
@@ -126,7 +144,8 @@ Routing by change type:
 
 | Change | Touch |
 | --- | --- |
-| New route | `routes` in `layout.spec.ts` + `shots` in `vrt.spec.ts` |
+| New route | `routes` in `layout.spec.ts` + `a11y.spec.ts`, `shots` in `vrt.spec.ts` |
+| Theme color change | Covered by `a11y.spec.ts`; accept VRT baselines |
 | New chrome / layout primitive | Helper in `@workspace/playwright` + specs |
 | New interaction flow | Functional spec (+ Vitest for component behavior) |
 | Critical in-page arrangement | Route-specific assertion in `layout.spec.ts` |
@@ -152,7 +171,7 @@ Routing by change type:
 - Do NOT generate or commit VRT baselines from macOS/Windows — they will fail
   in CI; only images rendered in the Playwright image (`nps vrt.accept`,
   `nps vrt.update`) are valid baselines.
-- Do NOT add a route without extending BOTH `layout.spec.ts` and
+- Do NOT add a route without extending `layout.spec.ts`, `a11y.spec.ts` and
   `vrt.spec.ts` — an uncovered route reintroduces the "tests pass but layout
   breaks" gap this layer exists to close.
 - Do NOT hand-copy config between apps — extend `createPlaywrightConfig()`.
