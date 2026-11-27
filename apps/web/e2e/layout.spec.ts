@@ -71,3 +71,36 @@ test.describe('layout invariants: snap mode', () => {
     await expectSectionsFillScreen(page);
   });
 });
+
+test.describe('layout invariants: floating bottom bar', () => {
+  test('stays on screen while focus is inside it', async ({ page }) => {
+    // The showcase is long enough on mobile to scroll away from both ends.
+    await page.goto('/showcase');
+    await expect(page.getByRole('heading', { name: routes[1].heading })).toBeVisible();
+    const bar = page.locator('[data-slot="bottom-bar"][data-variant="floating"]');
+    test.skip(!(await bar.isVisible()), 'the floating bottom bar shows only below sm');
+
+    // Step one snap section at a time.
+    const scrollToSection = (index: number) =>
+      screen(page).evaluate(
+        (el, i) => el.scrollTo({ top: el.clientHeight * i, behavior: 'instant' }),
+        index,
+      );
+    // Retry until hydration has attached the scroll listener.
+    await expect(async () => {
+      await scrollToSection(0);
+      await scrollToSection(1);
+      await expect(bar).toHaveAttribute('data-hidden', 'true', { timeout: 500 });
+    }).toPass();
+
+    // Focus reveals the bar; scrolling on must not move the focused tab away.
+    await bar.getByRole('link').first().focus();
+    await scrollToSection(2);
+    await expect(bar).toHaveAttribute('data-hidden', 'true');
+    await bar.evaluate((el) => Promise.all(el.getAnimations().map((a) => a.finished)));
+    const box = await bar.boundingBox();
+    expect(box!.y + box!.height, 'focused bar must stay inside the viewport').toBeLessThanOrEqual(
+      page.viewportSize()!.height,
+    );
+  });
+});

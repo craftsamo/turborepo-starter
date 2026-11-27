@@ -9,13 +9,14 @@ import { useThemeToggle } from '../Theme';
 import { navItems } from './items';
 import { navigationSurfaceVariants } from './styles';
 import type { NavigationVariantProps } from './types';
+import { useHideOnScroll } from './useHideOnScroll';
 
 const bottomBarVariants = cva('z-40 sm:hidden', {
   variants: {
     variant: {
       docked: 'relative flex items-stretch border-t pb-[env(safe-area-inset-bottom)]',
       floating:
-        'fixed inset-x-0 bottom-[calc(1rem+env(safe-area-inset-bottom))] mx-auto flex w-[calc(100%-2rem)] max-w-80 flex-col items-end gap-2',
+        'fixed inset-x-0 bottom-[calc(1rem+env(safe-area-inset-bottom))] mx-auto flex w-[calc(100%-2rem)] max-w-80 flex-col items-end gap-2 transition-transform duration-200 ease-out motion-reduce:transition-none',
     },
   },
   defaultVariants: { variant: 'docked' },
@@ -83,19 +84,27 @@ const ThemeIcons = () => (
  * above it on its own glass button when floating, at the end of the row when
  * docked. Docked stays in the app-shell flow; floating overlays the page. Both
  * honor the safe-area inset and are hidden from `sm` up, where the `Toolbar`
- * takes over.
+ * takes over. When floating it slides away while the page scrolls down and
+ * returns on scroll up, at either end of the page and when focus enters it (see
+ * `useHideOnScroll`); it stays on screen while focus is inside it.
  */
 export const BottomNav = ({ variant = 'docked', surface = 'solid' }: NavigationVariantProps) => {
   const pathname = usePathname();
   const { toggle } = useThemeToggle();
+  const { hidden, show } = useHideOnScroll(pathname);
+  const slidAway = variant === 'floating' && hidden;
 
   return (
     <div
       data-slot='bottom-bar'
       data-variant={variant}
+      data-hidden={slidAway || undefined}
+      onFocus={show}
       className={cn(
         bottomBarVariants({ variant }),
         variant === 'docked' && navigationSurfaceVariants({ variant, surface }),
+        slidAway &&
+          'translate-y-[calc(100%+1rem+env(safe-area-inset-bottom))] focus-within:translate-y-0',
       )}
     >
       {variant === 'floating' && (
